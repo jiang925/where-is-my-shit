@@ -6,6 +6,16 @@ A centralized indexing and retrieval system for AI interactions across fragmente
 ## Core Value
 Never lose a conversation again: Instantly recall specific AI discussions or dev sessions across any platform and jump straight back into the original context.
 
+## Current Milestone: v1.1 Security & Hardening
+
+**Goal:** Harden the system for public/shared use and establish robust engineering practices (CI/CD, TDD).
+
+**Target features:**
+- **Security:** API Authentication (Basic/Token) to protect local endpoints.
+- **CI/CD:** GitHub Actions pipeline for automated testing and linting.
+- **Testing:** Comprehensive unit and integration test suite (TDD focus).
+- **Hardening:** Improved error handling for extension and watchers.
+
 ## Requirements
 
 ### Validated
@@ -28,7 +38,11 @@ Never lose a conversation again: Instantly recall specific AI discussions or dev
 
 ### Active
 
-(Use /gsd:new-milestone to define next requirements)
+- [ ] **SEC-01**: API requires authentication (Basic/Token) for ingestion and search.
+- [ ] **CI-01**: GitHub Actions pipeline runs tests and linting on push.
+- [ ] **TEST-01**: Unit test coverage > 80% for Core Engine.
+- [ ] **TEST-02**: Integration tests cover full Ingest -> Search flow.
+- [ ] **HARD-01**: Extension handles API errors gracefully with user feedback.
 
 ### Out of Scope
 
@@ -66,4 +80,4 @@ User uses multiple AI products daily:
 | **File Watchers for Dev** | Easiest low-friction way to capture logs from local tools without deep integration plugins. | ✓ Implemented |
 
 ---
-*Last updated: 2026-02-07 after v1.0 milestone*
+*Last updated: 2026-02-07 after start of v1.1 milestone*
