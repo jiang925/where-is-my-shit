@@ -3,6 +3,7 @@ import shutil
 import tempfile
 from unittest.mock import patch
 
+import numpy as np
 import pytest
 
 from src.app.core.config import settings
@@ -39,10 +40,10 @@ def db_client(test_db_path):
 @pytest.fixture(scope="function")
 def mock_embedding_model():
     with patch("src.app.services.embedding.TextEmbedding") as mock:
-        # Configure mock to return a generator with a dummy vector
+        # Configure mock to return a generator with a dummy numpy array vector
         mock_instance = mock.return_value
-        # embed returns a generator
-        mock_instance.embed.return_value = (x for x in [[0.1, 0.2, 0.3]])
+        # embed returns a generator that yields numpy arrays
+        mock_instance.embed.return_value = (np.array(x) for x in [[0.1, 0.2, 0.3]])
         yield mock
 
 
