@@ -8,37 +8,36 @@
 ## Current Position
 
 **Phase:** Phase 9: API Key Auth & Config Consolidation
-**Plan:** 03 (CLI Startup) of 03
-**Status:** 🟢 PHASE COMPLETE
-**Last activity:** 2026-02-09 - Completed 09-03 CLI Startup
+**Plan:** Complete
+**Status:** ✅ COMPLETE
+**Last activity:** 2026-02-09 - Phase 9 executed and verified.
 
 ```text
 [====================] 100%
 ```
 
 ## Performance Metrics
-- **Auth Flow:** API Key (Completed)
-- **Setup Time:** ~5 mins (Current) -> <1 min (Target)
+- **Auth Flow:** API Key (Achieved)
+- **Setup Time:** <1 min (Achieved via auto-config)
 - **Dependencies:** Reduced (Removed pyjwt, passlib)
 
 ## Accumulated Context
 
 ### Decisions
 - **API Key over JWT:** JWT refresh logic was too complex for a single-user local tool. API Keys provide better persistence for background watchers.
-- **uv for Setup:** Chosen for speed and the ability to manage the Python version and virtual environment in a single tool.
-- **Config Path:** Moving to `~/.wims/server.json` to follow standard Unix-like configuration patterns.
-- **Hot Reloading:** Implemented via `watchfiles` to allow key rotation without server restart.
-- **CLI Simplification:** Removed legacy `reset-password` command; auth is now managed solely via the config file.
+- **Config Persistence:** Configuration is stored in `~/.wims/server.json` and auto-generated on first run.
+- **Fail-Fast Startup:** Server exits immediately if the port is in use, rather than failing obscurely later.
+- **Startup UX:** The API Key is printed to stdout on startup for easy copy-pasting, improving the "one-command" experience.
 
 ### Key Learnings
-- Extension V3 service workers lose state frequently; a persistent API Key stored in `chrome.storage.sync` or `local` is more reliable than a memory-resident JWT.
-- Removing complex auth logic significantly simplifies the `lifespan` and startup code.
+- **Stateless Auth:** Removing session management significantly simplified the codebase and reduced dependencies.
+- **Hot Reloading:** Using `watchfiles` allows for config changes (like key rotation) without restarting the server.
 
 ### Blockers / Risks
-- **Backward Compatibility:** Need to ensure the Extension doesn't break for existing v1.1 users during the transition (or provide a clear upgrade path).
-- **Extension Update:** The Chrome extension MUST be updated to send `X-API-Key` instead of `Authorization: Bearer`.
+- **Extension Update Required:** The Chrome extension MUST be updated (Phase 11) to send `X-API-Key` instead of Bearer tokens. Existing users will need to update.
 
 ## Session Continuity
 
-**Last session end:** Completed Phase 09.
-**Current session goal:** Phase completed. Ready for Phase 10 (Extension Update).
+**Last session end:** Completed Phase 9 (API Key Auth).
+**Current session goal:** Begin Phase 10 (Modernized Deployment).
+
