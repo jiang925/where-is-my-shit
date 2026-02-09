@@ -122,10 +122,16 @@ class WimsClient:
             return False
 
         except requests.exceptions.ConnectionError:
-            logger.warning(f"Connection error to WIMS Core at {self.ingest_url}. Retries exhausted. Is the service running?")
+            logger.warning(
+                f"Connection error to WIMS Core at {self.ingest_url}. "
+                "Retries exhausted. Is the service running?"
+            )
             return False
         except requests.exceptions.Timeout:
-            logger.warning(f"Timeout connecting to WIMS Core at {self.ingest_url}. Retries exhausted.")
+            logger.warning(
+                f"Timeout connecting to WIMS Core at {self.ingest_url}. "
+                "Retries exhausted."
+            )
             return False
         except AuthError:
             raise

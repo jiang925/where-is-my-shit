@@ -1,10 +1,11 @@
 import time
 from typing import Annotated, Dict, Tuple
-from fastapi import APIRouter, HTTPException, status, Depends, Request
-from pydantic import BaseModel
-import structlog
 
-from src.app.core.auth import verify_password, create_access_token, generate_secret_key
+import structlog
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from pydantic import BaseModel
+
+from src.app.core.auth import create_access_token, generate_secret_key, verify_password
 from src.app.db.auth import AuthDB
 
 logger = structlog.get_logger()

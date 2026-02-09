@@ -13,7 +13,7 @@ export interface SearchResult {
     title?: string;
     url?: string;
     conversation_id?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 
