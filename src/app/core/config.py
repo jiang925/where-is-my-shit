@@ -39,6 +39,53 @@ class ConfigManager:
     def config(self) -> ServerConfig:
         return self._config
 
+    async def watch_loop(self):
+        """
+        Watch for changes to the configuration file and reload automatically.
+        """
+        from watchfiles import awatch
+
+        logger.info(f"Starting configuration watcher on {self.path}")
+
+        try:
+            # watchfiles.awatch yields when changes occur
+            async for _ in awatch(self.path):
+                logger.info(f"Detected change in {self.path}, reloading...")
+                self._reload()
+        except Exception as e:
+            logger.error(f"Error in config watcher: {e}")
+
+    def _reload(self):
+        """
+        Reload configuration from disk and update internal state.
+        """
+        try:
+            # We use the existing logic which handles reading JSON
+            # We don't want _load_or_create to create a NEW one if reading fails slightly
+            # (e.g. race condition), but _load_or_create handles validation.
+            # If the file is gone, _load_or_create will create a new one, which might be okay
+            # or might be dangerous if it was just a transient FS issue.
+            # However, for this task, relying on _load_or_create is acceptable
+            # as it includes the "load" logic.
+
+            # Re-read the file directly to avoid the "creation" side effect if we can help it,
+            # but _load_or_create is robust. Let's use it but maybe suppress logging or just use it.
+            # Actually, if we are reloading, the file SHOULD exist.
+
+            if not self.path.exists():
+                logger.warning("Config file missing during reload, skipping...")
+                return
+
+            with open(self.path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            new_config = ServerConfig.model_validate(data)
+            self._config = new_config
+            logger.info("Configuration reloaded successfully")
+
+        except Exception as e:
+            logger.error(f"Failed to reload configuration: {e}")
+
     def _load_or_create(self) -> ServerConfig:
         """
         Load config from disk or create a new one with a generated API key if missing.
