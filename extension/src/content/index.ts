@@ -3,6 +3,8 @@ import { getSettings } from '../lib/storage';
 import { BaseExtractor } from './extractors/base';
 import { MessageObserver } from './observers/mutation-observer';
 import { ChatGPTExtractor } from './extractors/chatgpt';
+import { GeminiExtractor } from './extractors/gemini';
+import { PerplexityExtractor } from './extractors/perplexity';
 
 console.log('[WIMS Content] Script loaded on:', window.location.href);
 
@@ -19,9 +21,11 @@ async function init() {
     return;
   }
 
-  // Instantiate all extractors (Gemini and Perplexity added in Plan 03)
+  // Instantiate all extractors
   const extractors: BaseExtractor[] = [
-    new ChatGPTExtractor()
+    new ChatGPTExtractor(),
+    new GeminiExtractor(),
+    new PerplexityExtractor()
   ];
 
   // Find matching extractor
