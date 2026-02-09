@@ -28,7 +28,7 @@ class IngestRequest(BaseModel):
     Payload for incoming documents to be ingested.
     Does not include the vector as it is generated server-side.
     """
-    id: str
+    id: Optional[str] = None
     conversation_id: str
     platform: str
     title: str = ""
@@ -36,6 +36,17 @@ class IngestRequest(BaseModel):
     role: str = "user"
     timestamp: datetime
     url: str = ""
+
+
+class SearchRequest(BaseModel):
+    """
+    Payload for search queries.
+    """
+    query: str
+    limit: int = 50
+    # Optional filters could be added here in the future
+    conversation_id: Optional[str] = None
+    platform: Optional[str] = None
 
 
 class SearchResult(BaseModel):
