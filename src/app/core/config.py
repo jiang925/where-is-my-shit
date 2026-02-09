@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
     DB_PATH: str = "data/wims.lance"
+    AUTH_DB_PATH: str = "data/auth.db"
 
 settings = Settings()
 
