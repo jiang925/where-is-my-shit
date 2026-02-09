@@ -16,12 +16,18 @@ logging.basicConfig(
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.watcher import LogWatcher
+from src.sources.claude import ClaudeWatcher
 
 def main():
     # Default location for Claude history
     history_file = os.environ.get("CLAUDE_HISTORY_FILE", "~/.claude/history.jsonl")
 
-    watcher = LogWatcher(history_file)
+    # Initialize watchers
+    watchers = [
+        ClaudeWatcher(history_file)
+    ]
+
+    watcher = LogWatcher(watchers)
     watcher.start()
 
 if __name__ == "__main__":
