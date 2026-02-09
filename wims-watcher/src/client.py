@@ -1,5 +1,7 @@
 import logging
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 import json
 from typing import Dict, Any
 
@@ -13,6 +15,17 @@ class WimsClient:
         self.base_url = base_url.rstrip('/')
         self.ingest_url = f"{self.base_url}/api/v1/ingest"
 
+        self.session = requests.Session()
+        retry_strategy = Retry(
+            total=5,
+            backoff_factor=1,
+            status_forcelist=[500, 502, 503, 504],
+            allowed_methods=["POST"]
+        )
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        self.session.mount("http://", adapter)
+        self.session.mount("https://", adapter)
+
     def ingest(self, payload: Dict[str, Any]) -> bool:
         """
         Send a payload to the ingestion endpoint.
@@ -20,7 +33,7 @@ class WimsClient:
         """
         try:
             logger.debug(f"Sending payload to {self.ingest_url}")
-            response = requests.post(
+            response = self.session.post(
                 self.ingest_url,
                 json=payload,
                 headers={"Content-Type": "application/json"},
@@ -34,7 +47,10 @@ class WimsClient:
                 return False
 
         except requests.exceptions.ConnectionError:
-            logger.error(f"Connection error to WIMS Core at {self.ingest_url}. Is the service running?")
+            logger.warning(f"Connection error to WIMS Core at {self.ingest_url}. Retries exhausted. Is the service running?")
+            return False
+        except requests.exceptions.Timeout:
+            logger.warning(f"Timeout connecting to WIMS Core at {self.ingest_url}. Retries exhausted.")
             return False
         except Exception as e:
             logger.error(f"Error during ingest: {e}")
