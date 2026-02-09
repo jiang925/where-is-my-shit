@@ -12,11 +12,11 @@ class BaseWatcher(ABC):
     """
     Abstract base class for all log watchers.
     """
-    def __init__(self, source_name: str, file_path: str):
+    def __init__(self, source_name: str, file_path: str, client: Optional[WimsClient] = None):
         self.source_name = source_name
         self.file_path = Path(file_path).expanduser().resolve()
         self.state_manager = StateManager()
-        self.client = WimsClient()
+        self.client = client if client else WimsClient()
 
     @abstractmethod
     def check(self):

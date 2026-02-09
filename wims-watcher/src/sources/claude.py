@@ -9,8 +9,8 @@ from .base import BaseWatcher
 logger = logging.getLogger(__name__)
 
 class ClaudeWatcher(BaseWatcher):
-    def __init__(self, file_path: str):
-        super().__init__("claude-code", file_path)
+    def __init__(self, file_path: str, client: Optional[Any] = None):
+        super().__init__("claude-code", file_path, client)
 
     def check(self):
         """

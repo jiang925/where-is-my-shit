@@ -14,8 +14,8 @@ class AntigravityWatcher(ClaudeWatcher):
     Watcher for Antigravity logs.
     Inherits from ClaudeWatcher to reuse file reading and line processing logic.
     """
-    def __init__(self, file_path: str):
-        super().__init__(file_path)
+    def __init__(self, file_path: str, client: Optional[Any] = None):
+        super().__init__(file_path, client)
         self.source_name = "antigravity"
 
     def parse_line(self, line: str) -> Optional[Dict[str, Any]]:

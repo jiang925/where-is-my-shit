@@ -15,8 +15,8 @@ class CursorWatcher(BaseWatcher):
     Watcher for Cursor IDE chat history.
     Reads from SQLite state database (state.vscdb).
     """
-    def __init__(self, db_path: str):
-        super().__init__("cursor", db_path)
+    def __init__(self, db_path: str, client: Optional[Any] = None):
+        super().__init__("cursor", db_path, client)
         self.db_path = Path(db_path).expanduser().resolve()
 
     def check(self):

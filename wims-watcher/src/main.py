@@ -20,12 +20,29 @@ from src.sources.claude import ClaudeWatcher
 from src.sources.antigravity import AntigravityWatcher
 from src.sources.cursor import CursorWatcher
 from src.client import WimsClient
+from src.config import load_config
 
 def main():
-    # Check connection to Core Engine
-    client = WimsClient()
+    # Load configuration
+    config = load_config()
+
+    # Initialize Client with auth
+    client = WimsClient(base_url=config["api_url"], password=config["password"])
+
+    # Check connection and auth status
     if not client.check_connection():
         logging.warning(f"Core Engine not reachable at {client.base_url}. Watcher will retry ingestion, but ensure wims-core service is running.")
+
+    if client.token:
+        logging.info("Initialized with existing authentication token.")
+    else:
+        logging.info("No token found. Attempting initial login...")
+        if client.login():
+            logging.info("Successfully authenticated as admin.")
+        else:
+            logging.error("Authentication failed. Watcher will attempt to login again during ingestion, but verify credentials in ~/.wims/config.json")
+
+    # Default location for Claude history
 
     # Default location for Claude history
     claude_history_file = os.environ.get("CLAUDE_HISTORY_FILE", "~/.claude/history.jsonl")
@@ -44,14 +61,14 @@ def main():
 
     # Add Claude Watcher
     if os.path.exists(os.path.expanduser(claude_history_file)):
-        watchers.append(ClaudeWatcher(claude_history_file))
+        watchers.append(ClaudeWatcher(claude_history_file, client=client))
     else:
         logging.warning(f"Claude history file not found at {claude_history_file}")
 
     # Add Antigravity Watcher
     expanded_ag_path = os.path.expanduser(antigravity_log_file)
     if os.path.exists(expanded_ag_path):
-        watchers.append(AntigravityWatcher(expanded_ag_path))
+        watchers.append(AntigravityWatcher(expanded_ag_path, client=client))
     else:
         # Check if directory exists and pick latest
         ag_dir = os.path.dirname(expanded_ag_path)
@@ -61,7 +78,7 @@ def main():
                 files = [os.path.join(ag_dir, f) for f in os.listdir(ag_dir) if f.endswith('.log')]
                 if files:
                     latest_log = max(files, key=os.path.getmtime)
-                    watchers.append(AntigravityWatcher(latest_log))
+                    watchers.append(AntigravityWatcher(latest_log, client=client))
                     logging.info(f"Watching latest Antigravity log: {latest_log}")
             except Exception as e:
                 logging.error(f"Error finding Antigravity logs: {e}")
@@ -71,7 +88,7 @@ def main():
     # Add Cursor Watcher
     if cursor_state_db:
          if os.path.exists(os.path.expanduser(cursor_state_db)):
-            watchers.append(CursorWatcher(cursor_state_db))
+            watchers.append(CursorWatcher(cursor_state_db, client=client))
     else:
         # Try to auto-discover latest cursor workspace
         cursor_base = os.path.expanduser("~/.config/Cursor/User/workspaceStorage")
@@ -86,7 +103,7 @@ def main():
                 if db_files:
                     # Pick the most recently modified
                     latest_db = max(db_files, key=os.path.getmtime)
-                    watchers.append(CursorWatcher(latest_db))
+                    watchers.append(CursorWatcher(latest_db, client=client))
                     logging.info(f"Watching latest Cursor state DB: {latest_db}")
                 else:
                     logging.warning("No Cursor state.vscdb files found.")
