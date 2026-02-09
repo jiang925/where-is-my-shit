@@ -8,10 +8,10 @@
 Requirements for initial release. Each maps to roadmap phases.
 
 ### Ingestion: Web
-- [ ] **WEB-01**: Browser extension captures ChatGPT conversations (content + metadata)
-- [ ] **WEB-02**: Browser extension captures Gemini conversations
-- [ ] **WEB-03**: Browser extension captures Perplexity conversations
-- [ ] **WEB-04**: Extension detects new content and pushes to local server (real-time/near real-time)
+- [x] **WEB-01**: Browser extension captures ChatGPT conversations (content + metadata)
+- [x] **WEB-02**: Browser extension captures Gemini conversations
+- [x] **WEB-03**: Browser extension captures Perplexity conversations
+- [x] **WEB-04**: Extension detects new content and pushes to local server (real-time/near real-time)
 
 ### Ingestion: Dev
 - [ ] **DEV-01**: Local watcher indexes Claude Code logs from disk
@@ -64,10 +64,10 @@ Explicitly excluded. Documented to prevent scope creep.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| WEB-01 | Phase 2 | Pending |
-| WEB-02 | Phase 2 | Pending |
-| WEB-03 | Phase 2 | Pending |
-| WEB-04 | Phase 2 | Pending |
+| WEB-01 | Phase 2 | Complete |
+| WEB-02 | Phase 2 | Complete |
+| WEB-03 | Phase 2 | Complete |
+| WEB-04 | Phase 2 | Complete |
 | DEV-01 | Phase 3 | Pending |
 | DEV-02 | Phase 3 | Pending |
 | DEV-03 | Phase 3 | Pending |
