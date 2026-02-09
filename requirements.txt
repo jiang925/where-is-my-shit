@@ -12,3 +12,7 @@ pytest>=8.0.0
 pytest-asyncio>=0.23.0
 httpx>=0.26.0
 ruff>=0.2.0
+
+# Security
+pyjwt>=2.8.0
+passlib[argon2]>=1.7.4
