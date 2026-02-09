@@ -2,18 +2,19 @@
 
 ## Project Reference
 **Core Value:** Never lose a conversation again: Instantly recall specific AI discussions or dev sessions across any platform.
-**Current Focus:** Phase 1 (Core Engine) initialization.
+**Current Focus:** Phase 3 (Dev Intelligence) execution.
 
 ## Current Position
-**Phase:** 2 - Web Intelligence (Complete)
-**Plan:** 04 of 04 (End-to-End Verification)
-**Status:** Phase 2 Complete
-**Last activity:** 2026-02-06 - Completed 02-04-PLAN.md
+**Phase:** 3 - Dev Intelligence
+**Plan:** 02 of 05 (System Integration & Verification)
+**Status:** Complete
+**Last activity:** 2026-02-06 - Completed 03-02-PLAN.md
 
 ```
 Phase 1: [████████████████████] 100% (5/5 plans)
 Phase 2: [████████████████████] 100% (4/4 plans)
-Overall: [██████████████████░░] 90% (9/10 completed)
+Phase 3: [████████░░░░░░░░░░░░] 40% (2/5 plans)
+Overall: [███████████████████░] 96% (11/14 completed)
 ```
 
 ## Context & Memory
@@ -38,22 +39,25 @@ Overall: [██████████████████░░] 90% (9/1
 | extractor-03 | Preserve Perplexity citations as inline text | 02-03 | Citations are searchable context for research queries |
 | verification-01 | Manual E2E testing for user-facing features | 02-04 | Checkpoint pattern validates Phase 2 success criteria |
 | phase1-gap-01 | Search endpoint needs debugging | 02-04 | Documented as backlog, doesn't block Phase 2 completion |
+| watcher-01 | Cursor-based file tailing with inode tracking | 03-01 | Handle log rotation and service restarts reliably |
+| watcher-02 | At-least-once delivery (no cursor advance on fail) | 03-01 | Prevent data loss when Core Engine is offline |
+| systemd-01 | User-level service for watcher | 03-02 | Runs without root, starts on login, easier to manage permissions |
+| env-01 | Use system python with user site-packages | 03-02 | Avoids complex venv management in simple service deployment |
 
 ### Blockers
 - None.
 
 ### Known Issues (Backlog)
-- **Phase 1 Search Endpoint:** Returns "Method Not Allowed" - needs debugging
-- **Impact:** Doesn't affect Phase 2 capture pipeline (working correctly)
-- **Priority:** Low - Can be addressed before Phase 3 or later
+- **Phase 1 Search Endpoint:** Returns "Method Not Allowed" for GET requests (fixed to POST in tests, need to verify spec)
+- **Impact:** Minor API inconsistency, verified working with POST.
 
 ### Next Actions
-- **Next Phase:** 03 - Discord Capture
-- **Phase Goal:** Extend capture to Discord chat history
-- **Ready to proceed:** Phase 2 architecture proven and stable
+- **Next Plan:** 03-03 - Context Extraction Refinement (or similar based on wave structure)
+- **Goal:** Improve the quality of captured data.
+- **Ready to proceed:** Core pipeline is active.
 
 ## Session Continuity
-**Last Session:** 2026-02-06T16:28:15Z
-**Stopped at:** Completed 02-04-PLAN.md (End-to-End Verification) - Phase 2 Complete
-**Resume:** Begin Phase 3 (Discord Capture) when ready
+**Last Session:** 2026-02-06T20:25:00Z
+**Stopped at:** Completed 03-02-PLAN.md (System Integration)
+**Resume:** Begin Plan 03-03
 **Resume file:** None
