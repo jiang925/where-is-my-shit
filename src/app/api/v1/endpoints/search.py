@@ -1,12 +1,13 @@
 from typing import List, Dict, Any, Optional
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from fastapi.concurrency import run_in_threadpool
 
+from src.app.core.security import get_current_user
 from src.app.schemas.message import SearchRequest, SearchResponse, SearchResult, SearchResultGroup
 from src.app.services.embedding import EmbeddingService
 from src.app.db.client import db_client
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 @router.post("/search", response_model=SearchResponse)
 async def search_documents(request: SearchRequest):
