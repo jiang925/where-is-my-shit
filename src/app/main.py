@@ -1,10 +1,11 @@
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
+import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, FileResponse
 
 from src.app.core.config import get_settings
 from src.app.core.logging import setup_logging
@@ -36,8 +37,15 @@ app.add_middleware(
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
-app.mount("/static", StaticFiles(directory="src/static"), name="static")
+# Mount assets directory if it exists
+assets_path = "src/static/assets"
+if os.path.exists(assets_path):
+    app.mount("/assets", StaticFiles(directory=assets_path), name="assets")
 
+# Serve SPA for root path
 @app.get("/")
-async def root():
-    return RedirectResponse(url="/static/test.html")
+async def read_index():
+    return FileResponse('src/static/index.html')
+
+# Catch-all for SPA routing (optional, but good for react router later)
+# For now, just ensuring root works is enough per plan.
