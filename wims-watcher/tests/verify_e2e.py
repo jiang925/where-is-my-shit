@@ -1,10 +1,12 @@
+import json
 import os
+import subprocess
 import sys
 import time
-import json
-import requests
-import subprocess
 from pathlib import Path
+
+import requests
+
 
 def get_service_status():
     """Check if systemd service is active."""
@@ -84,7 +86,7 @@ def main():
     try:
         requests.get(f"{core_url}/docs", timeout=2)
         print("PASS: Core Engine is reachable.")
-    except:
+    except Exception:
         print("FAIL: Core Engine is not running at http://localhost:8000")
         print("Please start the Core Engine (uvicorn src.app.main:app) to fully verify.")
         # We can't verify ingestion if core is down, but we verified the service is up.

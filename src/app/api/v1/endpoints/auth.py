@@ -67,7 +67,8 @@ async def login(
         # Calculate delay: 1s, 2s, 4s... capped at 4s for this plan or higher
         # Plan says "1s/2s/4s"
         delay = min(4, 2 ** (new_count - 1))
-        if delay < 1: delay = 1
+        if delay < 1:
+            delay = 1
 
         logger.warning(f"Login failed for IP {client_ip}. Attempt {new_count}. Delaying {delay}s")
         time.sleep(delay)
