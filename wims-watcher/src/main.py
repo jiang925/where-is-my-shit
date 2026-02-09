@@ -24,29 +24,17 @@ def main():
     # Load configuration
     config = load_config()
 
-    # Initialize Client with auth
-    client = WimsClient(base_url=config["api_url"], password=config["password"])
+    # Initialize Client with API Key
+    client = WimsClient(base_url=config["api_url"], api_key=config["api_key"])
 
-    # Check connection and auth status
+    # Check connection
     if not client.check_connection():
         logging.warning(
             f"Core Engine not reachable at {client.base_url}. "
             "Watcher will retry ingestion, but ensure wims-core service is running."
         )
-
-    if client.token:
-        logging.info("Initialized with existing authentication token.")
     else:
-        logging.info("No token found. Attempting initial login...")
-        if client.login():
-            logging.info("Successfully authenticated as admin.")
-        else:
-            logging.error(
-                "Authentication failed. Watcher will attempt to login again during ingestion, "
-                "but verify credentials in ~/.wims/config.json"
-            )
-
-    # Default location for Claude history
+        logging.info(f"Connected to Core Engine at {client.base_url}")
 
     # Default location for Claude history
     claude_history_file = os.environ.get("CLAUDE_HISTORY_FILE", "~/.claude/history.jsonl")
