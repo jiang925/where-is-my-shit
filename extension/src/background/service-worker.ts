@@ -20,12 +20,10 @@ interface StatusResponse {
   queueSize: number;
   serverOnline: boolean;
   lastCaptureTimestamp: number;
-  authRequired: boolean;
 }
 
 // Global queue instance
 const queue = new OfflineQueue();
-let authRequired = false;
 
 console.log('[WIMS] Service worker initialized');
 
@@ -33,38 +31,32 @@ console.log('[WIMS] Service worker initialized');
  * Handle authentication errors
  */
 async function handleAuthError() {
-  if (!authRequired) {
-    console.log('[WIMS] Authentication required');
-    authRequired = true;
-    await chrome.action.setBadgeText({ text: 'LOGIN' });
-    await chrome.action.setBadgeBackgroundColor({ color: '#F44336' });
-  }
+  console.log('[WIMS] Authentication failed (Invalid API Key)');
+  await chrome.action.setBadgeText({ text: 'KEY' });
+  await chrome.action.setBadgeBackgroundColor({ color: '#F44336' });
 }
 
 /**
  * Clear authentication error state
  */
 async function clearAuthError() {
-  if (authRequired) {
-    console.log('[WIMS] Authentication restored');
-    authRequired = false;
-    await chrome.action.setBadgeText({ text: '' });
-  }
+  console.log('[WIMS] Authentication error cleared');
+  await chrome.action.setBadgeText({ text: '' });
 }
 
 /**
- * Listen for storage changes to detect login from popup
+ * Listen for storage changes to detect settings updates
  */
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName === 'local' && changes.settings) {
     const newSettings = changes.settings.newValue;
-    // If we have a token now, clear the auth error
-    if (newSettings?.authToken && authRequired) {
+    // If we have an API key now, clear the auth error
+    if (newSettings?.apiKey) {
       clearAuthError();
       // Resume queue processing
       queue.processQueue().catch(err => {
          if (err instanceof AuthError) handleAuthError();
-         else console.error('[WIMS] Queue processing error after login:', err);
+         else console.error('[WIMS] Queue processing error after settings update:', err);
       });
     }
   }
@@ -77,7 +69,8 @@ chrome.runtime.onMessage.addListener((message: MessagePayload, sender, sendRespo
   (async () => {
     try {
       if (message.type === 'MESSAGES_CAPTURED') {
-        await handleMessagesCaptured(message.payload as CapturePayload);
+        const payload = message.payload as CapturePayload;
+        await handleMessagesCaptured(payload);
         sendResponse({ success: true });
       } else if (message.type === 'GET_STATUS') {
         const status = await getStatus();
@@ -148,8 +141,7 @@ async function getStatus(): Promise<StatusResponse> {
   return {
     queueSize,
     serverOnline,
-    lastCaptureTimestamp: settings.lastCaptureTimestamp,
-    authRequired
+    lastCaptureTimestamp: settings.lastCaptureTimestamp
   };
 }
 
@@ -168,11 +160,6 @@ chrome.alarms.create('processQueue', { periodInMinutes: 1 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === 'processQueue') {
-    if (authRequired) {
-      console.log('[WIMS] Skipping queue processing due to auth requirement');
-      return;
-    }
-
     console.log('[WIMS] Processing queue on alarm');
     queue.processQueue().catch(async (err) => {
       if (err instanceof AuthError) {
