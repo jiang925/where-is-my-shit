@@ -6,14 +6,14 @@
 
 ## Current Position
 **Phase:** 2 - Web Intelligence (In Progress)
-**Plan:** 02 of 04 (ChatGPT Capture Pipeline)
-**Status:** Plan 02-02 Complete
-**Last activity:** 2026-02-06 - Completed 02-02-PLAN.md
+**Plan:** 03 of 04 (Multi-Platform Extractors)
+**Status:** Plan 02-03 Complete
+**Last activity:** 2026-02-06 - Completed 02-03-PLAN.md
 
 ```
 Phase 1: [████████████████████] 100% (5/5 plans)
-Phase 2: [██████████░░░░░░░░░░] 50% (2/4 plans)
-Overall: [██████████████░░░░░░] 70% (7/10 completed)
+Phase 2: [███████████████░░░░░] 75% (3/4 plans)
+Overall: [████████████████░░░░] 80% (8/10 completed)
 ```
 
 ## Context & Memory
@@ -33,15 +33,19 @@ Overall: [██████████████░░░░░░] 70% (7/1
 | dedup-01 | SHA-256 fingerprint with 10k LRU cache | 02-01 | Balance memory vs accuracy for scroll deduplication |
 | queue-01 | Offline queue with 10 retry limit | 02-01 | Handle server outages without unbounded growth |
 | timeout-01 | 10-second API request timeout | 02-01 | Complete before service worker termination (30s limit) |
+| extractor-01 | Multiple fallback DOM selectors (3-5 per element type) | 02-03 | Platform UIs change frequently, need robustness |
+| extractor-02 | Timestamp-based fallback conversation IDs | 02-03 | Handle unnamed/new conversations without URL-based ID |
+| extractor-03 | Preserve Perplexity citations as inline text | 02-03 | Citations are searchable context for research queries |
 
 ### Blockers
 - None.
 
 ### Next Actions
-- **Next Plan:** 02-03 - Gemini & Perplexity Extractors
-- **Phase Goal:** Complete Web Intelligence capture (4 plans total)
+- **Next Plan:** 02-04 - Popup UI
+- **Phase Goal:** Complete Web Intelligence phase (1 plan remaining)
 
 ## Session Continuity
-**Last Session:** 2026-02-06
-**Stopped at:** Completed 02-02-PLAN.md (ChatGPT Capture Pipeline)
-**Resume:** Execute 02-03-PLAN.md (Gemini & Perplexity Extractors)
+**Last Session:** 2026-02-06T15:17:24Z
+**Stopped at:** Completed 02-03-PLAN.md (Multi-Platform Extractors)
+**Resume:** Execute 02-04-PLAN.md (Popup UI)
+**Resume file:** None
