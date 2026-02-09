@@ -22,8 +22,10 @@ export class ApiClient {
       'Content-Type': 'application/json'
     };
 
-    if (settings.authToken) {
-      headers['Authorization'] = `Bearer ${settings.authToken}`;
+    if (settings.apiKey) {
+      headers['X-API-Key'] = settings.apiKey;
+    } else {
+      throw new AuthError('API Key is missing. Please configure it in extension options.');
     }
 
     return headers;
