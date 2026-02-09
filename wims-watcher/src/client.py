@@ -1,5 +1,4 @@
 import logging
-from pathlib import Path
 from typing import Any
 
 import requests
@@ -17,19 +16,16 @@ class AuthError(Exception):
 
 class WimsClient:
     """
-    Client for the WIMS Core Engine API.
+    Client for the WIMS Core Engine API using API Key authentication.
     """
 
-    def __init__(self, base_url: str = "http://localhost:8000", password: str | None = None):
+    def __init__(self, base_url: str = "http://localhost:8000", api_key: str | None = None):
         self.base_url = base_url.rstrip("/")
         self.ingest_url = f"{self.base_url}/api/v1/ingest"
-        self.auth_url = f"{self.base_url}/api/v1/auth/login"
-        self.password = password
-        self.token = None
-        self.token_file = Path.home() / ".wims" / "token"
+        self.api_key = api_key
 
-        # Try to load existing token
-        self._load_token()
+        if not self.api_key:
+            logger.warning("No API Key provided to WimsClient. Requests may fail.")
 
         self.session = requests.Session()
         retry_strategy = Retry(
@@ -39,54 +35,10 @@ class WimsClient:
         self.session.mount("http://", adapter)
         self.session.mount("https://", adapter)
 
-    def _load_token(self):
-        if self.token_file.exists():
-            try:
-                self.token = self.token_file.read_text().strip()
-            except Exception as e:
-                logger.warning(f"Failed to load token from {self.token_file}: {e}")
-
-    def _save_token(self, token: str):
-        try:
-            self.token_file.parent.mkdir(parents=True, exist_ok=True)
-            self.token_file.write_text(token)
-            self.token = token
-        except Exception as e:
-            logger.warning(f"Failed to save token to {self.token_file}: {e}")
-
-    def login(self) -> bool:
-        if not self.password:
-            logger.error("Cannot login: No password provided")
-            return False
-
-        try:
-            logger.info(f"Attempting login to {self.auth_url}")
-            response = self.session.post(
-                self.auth_url,
-                json={"password": self.password},
-                headers={"Content-Type": "application/json"},
-                timeout=10,
-            )
-
-            if response.status_code == 200:
-                data = response.json()
-                token = data.get("access_token")
-                if token:
-                    self._save_token(token)
-                    logger.info("Login successful")
-                    return True
-
-            logger.error(f"Login failed: {response.status_code} - {response.text}")
-            return False
-
-        except Exception as e:
-            logger.error(f"Login error: {e}")
-            return False
-
     def _get_headers(self) -> dict[str, str]:
         headers = {"Content-Type": "application/json"}
-        if self.token:
-            headers["Authorization"] = f"Bearer {self.token}"
+        if self.api_key:
+            headers["X-API-Key"] = self.api_key
         return headers
 
     def ingest(self, payload: dict[str, Any]) -> bool:
@@ -94,9 +46,6 @@ class WimsClient:
         Send a payload to the ingestion endpoint.
         Returns True if successful, False otherwise.
         """
-        return self._attempt_ingest(payload, retry_auth=True)
-
-    def _attempt_ingest(self, payload: dict[str, Any], retry_auth: bool = True) -> bool:
         try:
             logger.debug(f"Sending payload to {self.ingest_url}")
             response = self.session.post(
@@ -109,14 +58,9 @@ class WimsClient:
             if response.status_code in (200, 201, 202):
                 return True
 
-            if response.status_code == 401 and retry_auth:
-                logger.info("Authentication failed (401). Attempting re-login...")
-                if self.login():
-                    # Retry once
-                    return self._attempt_ingest(payload, retry_auth=False)
-                else:
-                    logger.error("Re-login failed.")
-                    raise AuthError("Authentication failed after retry")
+            if response.status_code == 401 or response.status_code == 403:
+                logger.error(f"Authentication failed: {response.status_code}. Check your API Key.")
+                return False
 
             logger.error(f"Ingest failed: {response.status_code} - {response.text}")
             return False
@@ -129,8 +73,6 @@ class WimsClient:
         except requests.exceptions.Timeout:
             logger.warning(f"Timeout connecting to WIMS Core at {self.ingest_url}. Retries exhausted.")
             return False
-        except AuthError:
-            raise
         except Exception as e:
             logger.error(f"Error during ingest: {e}")
             return False
