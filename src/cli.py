@@ -1,76 +1,71 @@
 import argparse
+import socket
 import sys
-from getpass import getpass
+from pathlib import Path
 
 import structlog
 import uvicorn
 
-from src.app.core.auth import generate_strong_password, get_password_hash
-from src.app.db.auth import AuthDB
+from src.app.core.config import config_manager
 
 logger = structlog.get_logger()
 
 
-def reset_password(args):
-    """Reset the admin password."""
-    # Ensure DB dir exists
-    auth_db = AuthDB()
-    auth_db.initialize()
-
-    if args.auto:
-        new_password = generate_strong_password()
-        print(f"Generated new password: {new_password}")
-    else:
-        print("Enter new admin password:")
-        p1 = getpass("Password: ")
-        p2 = getpass("Confirm: ")
-
-        if p1 != p2:
-            print("Error: Passwords do not match.")
-            sys.exit(1)
-
-        if not p1:
-            print("Error: Password cannot be empty.")
-            sys.exit(1)
-
-        new_password = p1
-
-    hashed_pw = get_password_hash(new_password)
-
-    # Update password and invalidate old tokens
-    auth_db.update_password(hashed_pw)
-    print("Password updated successfully. All existing sessions have been invalidated.")
+def is_port_available(host: str, port: int) -> bool:
+    """Check if the port is available."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        # Allow reuse address to avoid false negatives on restart
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            sock.bind((host, port))
+            return True
+        except OSError:
+            return False
 
 
 def start_server(args):
     """Start the uvicorn server."""
-    # We import main app here to avoid circular imports or early init issues if just running CLI tools
-    print(f"Starting WIMS server on {args.host}:{args.port}")
+    # Load settings (config_manager updated in main if --config provided)
+    settings = config_manager.config
 
-    uvicorn.run("src.app.main:app", host=args.host, port=args.port, reload=args.reload, log_level="info")
+    # CLI args override config
+    host = args.host if args.host else settings.host
+    port = args.port if args.port else settings.port
+
+    # Check port availability
+    if not is_port_available(host, port):
+        print(f"Error: Port {port} on {host} is already in use.")
+        sys.exit(1)
+
+    print(f"Starting WIMS server on {host}:{port}")
+    print(f"Using config: {config_manager.path}")
+
+    uvicorn.run("src.app.main:app", host=host, port=port, reload=args.reload, log_level="info")
 
 
 def main():
     parser = argparse.ArgumentParser(description="WIMS Management CLI")
-    subparsers = parser.add_subparsers(dest="command", help="Command to run")
+    # Global args
+    parser.add_argument("--config", help="Path to configuration file")
 
-    # reset-password command
-    pwd_parser = subparsers.add_parser("reset-password", help="Reset admin password")
-    pwd_parser.add_argument("--auto", action="store_true", help="Auto-generate a strong password")
+    subparsers = parser.add_subparsers(dest="command", help="Command to run")
 
     # start command
     start_parser = subparsers.add_parser("start", help="Start the server")
-    start_parser.add_argument("--host", default="127.0.0.1", help="Bind host (default: 127.0.0.1)")
-    start_parser.add_argument("--port", type=int, default=8000, help="Bind port (default: 8000)")
+    start_parser.add_argument("--host", help="Bind host (overrides config)")
+    start_parser.add_argument("--port", type=int, help="Bind port (overrides config)")
     start_parser.add_argument("--reload", action="store_true", help="Enable auto-reload")
 
     args = parser.parse_args()
 
-    if args.command == "reset-password":
-        reset_password(args)
-    elif args.command == "start":
+    # Update config path if provided
+    if args.config:
+        config_manager.set_config_path(args.config)
+
+    if args.command == "start":
         start_server(args)
     else:
+        # Default to help if no command
         parser.print_help()
         sys.exit(1)
 

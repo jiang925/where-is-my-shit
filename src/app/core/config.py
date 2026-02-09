@@ -40,12 +40,22 @@ class ConfigManager:
 
     def __init__(self, config_path: Path | str | None = None):
         if config_path is None:
-            # Default to ~/.wims/server.json
-            self.path = Path.home() / ".wims" / "server.json"
+            # Check env var first
+            env_path = os.environ.get("WIMS_CONFIG_FILE")
+            if env_path:
+                self.path = Path(env_path)
+            else:
+                # Default to ~/.wims/server.json
+                self.path = Path.home() / ".wims" / "server.json"
         else:
             self.path = Path(config_path)
 
         self._config: ServerConfig = self._load_or_create()
+
+    def set_config_path(self, config_path: Path | str):
+        """Update config path and reload."""
+        self.path = Path(config_path)
+        self._config = self._load_or_create()
 
     @property
     def config(self) -> ServerConfig:
