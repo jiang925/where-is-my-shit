@@ -4,7 +4,6 @@ interface StatusResponse {
   queueSize: number;
   serverOnline: boolean;
   lastCaptureTimestamp: number;
-  authRequired: boolean;
 }
 
 // DOM elements
@@ -16,11 +15,9 @@ const queueCount = document.getElementById('queueCount') as HTMLElement;
 const lastCapture = document.getElementById('lastCapture') as HTMLElement;
 const openOptions = document.getElementById('openOptions') as HTMLAnchorElement;
 
-const loginSection = document.getElementById('loginSection') as HTMLElement;
+const configWarning = document.getElementById('configWarning') as HTMLElement;
+const openOptionsLink = document.getElementById('openOptionsLink') as HTMLAnchorElement;
 const mainContent = document.getElementById('mainContent') as HTMLElement;
-const passwordInput = document.getElementById('passwordInput') as HTMLInputElement;
-const loginButton = document.getElementById('loginButton') as HTMLButtonElement;
-const loginError = document.getElementById('loginError') as HTMLElement;
 
 // Auto-refresh interval
 let refreshInterval: number | null = null;
@@ -33,11 +30,12 @@ async function init() {
   const settings = await getSettings();
   captureToggle.checked = settings.captureEnabled;
 
-  // Check if we need login immediately (no token)
-  if (!settings.authToken) {
-    showLogin(true);
+  // Check if we need configuration (no API key)
+  if (!settings.apiKey) {
+    showConfigWarning(true);
   } else {
-    // Update status to check if token is valid or server is reachable
+    showConfigWarning(false);
+    // Update status to check if server is reachable
     await updateStatus();
   }
 
@@ -49,66 +47,17 @@ async function init() {
   // Set up event listeners
   captureToggle.addEventListener('change', handleToggleChange);
   openOptions.addEventListener('click', handleOpenOptions);
-  loginButton.addEventListener('click', handleLogin);
-  passwordInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') handleLogin();
-  });
+  openOptionsLink.addEventListener('click', handleOpenOptions);
 }
 
 /**
- * Toggle login UI
+ * Toggle configuration warning
  */
-function showLogin(show: boolean) {
+function showConfigWarning(show: boolean) {
   if (show) {
-    loginSection.style.display = 'flex';
-    mainContent.style.display = 'none';
-    // Focus password input if showing login
-    setTimeout(() => passwordInput.focus(), 100);
+    configWarning.style.display = 'block';
   } else {
-    loginSection.style.display = 'none';
-    mainContent.style.display = 'block';
-  }
-}
-
-/**
- * Handle login submission
- */
-async function handleLogin() {
-  const password = passwordInput.value;
-  if (!password) return;
-
-  loginButton.disabled = true;
-  loginButton.textContent = 'Logging in...';
-  loginError.style.display = 'none';
-
-  try {
-    const settings = await getSettings();
-    const response = await fetch(`${settings.serverUrl}/api/v1/auth/token`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ password })
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      await setSettings({ authToken: data.access_token });
-      passwordInput.value = '';
-      showLogin(false);
-      await updateStatus();
-    } else {
-      const errorData = await response.json().catch(() => ({}));
-      loginError.textContent = errorData.detail || 'Invalid password';
-      loginError.style.display = 'block';
-    }
-  } catch (error) {
-    console.error('[WIMS Popup] Login error:', error);
-    loginError.textContent = 'Connection failed';
-    loginError.style.display = 'block';
-  } finally {
-    loginButton.disabled = false;
-    loginButton.textContent = 'Login';
+    configWarning.style.display = 'none';
   }
 }
 
@@ -139,12 +88,6 @@ async function updateStatus() {
     const response = await chrome.runtime.sendMessage({
       type: 'GET_STATUS'
     }) as StatusResponse;
-
-    // Check if auth is required
-    if (response.authRequired) {
-      showLogin(true);
-      return;
-    }
 
     // Update server status
     if (response.serverOnline) {

@@ -9,14 +9,9 @@
   <div id="popup-container">
     <h1>WIMS Capture</h1>
 
-    <!-- Login Section -->
-    <div id="loginSection" style="display: none;">
-      <p class="login-message">Authentication Required</p>
-      <div class="form-group">
-        <input type="password" id="passwordInput" placeholder="Enter Password" />
-      </div>
-      <div id="loginError" class="error-message" style="display: none;"></div>
-      <button id="loginButton" class="primary-button">Login</button>
+    <!-- Configuration Warning -->
+    <div id="configWarning" style="display: none; background-color: #fff3cd; color: #856404; padding: 10px; margin-bottom: 10px; border-radius: 4px; font-size: 13px;">
+      API Key missing. <a href="#" id="openOptionsLink">Open Settings</a>
     </div>
 
     <!-- Main Content -->
