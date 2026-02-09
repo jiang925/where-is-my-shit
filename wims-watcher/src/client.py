@@ -55,3 +55,14 @@ class WimsClient:
         except Exception as e:
             logger.error(f"Error during ingest: {e}")
             return False
+
+    def check_connection(self) -> bool:
+        """
+        Checks if the Core Engine is reachable.
+        """
+        try:
+            # Bypass self.session to avoid retries for this quick check
+            requests.get(self.base_url, timeout=1)
+            return True
+        except Exception:
+            return False
