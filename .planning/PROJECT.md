@@ -10,15 +10,25 @@ Never lose a conversation again: Instantly recall specific AI discussions or dev
 
 ### Validated
 
-(None yet — ship to validate)
+- [x] **WEB-01**: Browser extension captures ChatGPT conversations (content + metadata) — v1.0
+- [x] **WEB-02**: Browser extension captures Gemini conversations — v1.0
+- [x] **WEB-03**: Browser extension captures Perplexity conversations — v1.0
+- [x] **WEB-04**: Extension detects new content and pushes to local server (real-time/near real-time) — v1.0
+- [x] **DEV-01**: Local watcher indexes Claude Code logs from disk — v1.0
+- [x] **DEV-02**: Local watcher indexes Antigravity logs — v1.0
+- [x] **DEV-03**: Local watcher indexes Cursor chat logs — v1.0
+- [x] **CORE-01**: User can search by semantic meaning (embeddings) — v1.0
+- [x] **CORE-02**: Index stores conversation content, timestamp, source, and deep link URL — v1.0
+- [x] **CORE-03**: Results return "Deep Links" to exact message/scroll position where possible — v1.0
+- [x] **UI-01**: Standalone Web/App UI (React/Tauri) for searching — v1.0
+- [x] **UI-02**: Results displayed with source icons and relevance snippets — v1.0
+- [x] **DEP-01**: Central server packaged as a single "All-in-One" Docker image — v1.0
+- [x] **DEP-02**: Vector DB (LanceDB) embedded/packaged within the same Docker container (no external service dependencies) — v1.0
+- [x] **DEP-03**: Configuration via environment variables (API keys for embeddings, paths) — v1.0
 
 ### Active
 
-- [ ] **Central Server**: Self-hosted backend for ingestion, processing, and storage
-- [ ] **Hybrid Processing**: Local storage of data + Cloud APIs (OpenAI/Anthropic) for embeddings/summarization
-- [ ] **Web Ingestion**: Browser extension to auto-sync active chats from supported platforms
-- [ ] **Dev Ingestion**: Local file watchers/scanners to ingest logs from Claude Code/Cursor
-- [ ] **Search Interface**: Web UI (or MCP server) to query the index and return deep links
+(Use /gsd:new-milestone to define next requirements)
 
 ### Out of Scope
 
@@ -27,6 +37,12 @@ Never lose a conversation again: Instantly recall specific AI discussions or dev
 - **Bi-directional sync**: We index *from* platforms, we don't write *back* to them.
 
 ## Context
+
+Shipped v1.0 (MVP) on 2026-02-07.
+- **Status:** Functional end-to-end system.
+- **Tech Stack:** Python (FastAPI/FastEmbed/LanceDB), TypeScript (React/Chrome Extension).
+- **Scale:** ~3,500 LOC.
+- **Privacy:** Fully local operation (no cloud embeddings used in v1).
 
 User uses multiple AI products daily:
 - Web: ChatGPT, Claude, Gemini, Perplexity
@@ -45,9 +61,9 @@ User uses multiple AI products daily:
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| **Hybrid Architecture** | Local DB for privacy/control, Cloud APIs for quality/speed of embeddings/summaries. | — Pending |
-| **Extension for Web** | Official APIs for user chat history are often lacking or non-existent; DOM scraping/monitoring is required. | — Pending |
-| **File Watchers for Dev** | Easiest low-friction way to capture logs from local tools without deep integration plugins. | — Pending |
+| **Hybrid Architecture** | Local DB for privacy/control, Cloud APIs for quality/speed of embeddings/summaries. | ✓ Implemented (Local-only for v1) |
+| **Extension for Web** | Official APIs for user chat history are often lacking or non-existent; DOM scraping/monitoring is required. | ✓ Implemented |
+| **File Watchers for Dev** | Easiest low-friction way to capture logs from local tools without deep integration plugins. | ✓ Implemented |
 
 ---
-*Last updated: 2026-02-05 after initialization*
+*Last updated: 2026-02-07 after v1.0 milestone*
