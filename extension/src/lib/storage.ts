@@ -2,14 +2,14 @@ export interface Settings {
   captureEnabled: boolean;
   serverUrl: string;
   lastCaptureTimestamp: number;
-  authToken?: string;
+  apiKey: string;
 }
 
 const DEFAULT_SETTINGS: Settings = {
   captureEnabled: true,
   serverUrl: 'http://localhost:8000',
   lastCaptureTimestamp: 0,
-  authToken: ''
+  apiKey: ''
 };
 
 /**
