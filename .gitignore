@@ -45,3 +45,7 @@ data/
 .idea/
 .vscode/
 *.swp
+
+# Specific project ignores
+extension/node_modules/
+ui/node_modules/
