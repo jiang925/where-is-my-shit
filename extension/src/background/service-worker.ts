@@ -7,6 +7,7 @@ type MessageType = 'MESSAGES_CAPTURED' | 'GET_STATUS' | 'TOGGLE_CAPTURE';
 
 interface MessagePayload {
   type: MessageType;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   payload?: any;
 }
 

@@ -111,7 +111,7 @@ export class ChatGPTExtractor extends BaseExtractor {
           }
 
           // Extract content with special handling for code blocks and images
-          let content = this.extractContentWithSpecialHandling(element);
+          const content = this.extractContentWithSpecialHandling(element);
           if (!content.trim()) {
             return; // Skip empty messages
           }
