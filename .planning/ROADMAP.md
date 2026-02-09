@@ -30,12 +30,20 @@ A local-first indexing system to recall AI interactions across Web and Dev envir
 ## Phase 2: Web Intelligence
 **Goal:** Browser history and active chats are automatically indexed in real-time.
 
+**Plans:** 4 plans
+
 | Requirement | Description |
 |-------------|-------------|
 | **WEB-01** | Browser extension captures ChatGPT conversations |
 | **WEB-02** | Browser extension captures Gemini conversations |
 | **WEB-03** | Browser extension captures Perplexity conversations |
 | **WEB-04** | Extension detects new content and pushes to local server |
+
+Plans:
+- [ ] 02-01-PLAN.md — CORS + extension scaffold + shared infrastructure (types, queue, fingerprint, API client, base extractor)
+- [ ] 02-02-PLAN.md — ChatGPT extractor + service worker + MutationObserver + popup UI
+- [ ] 02-03-PLAN.md — Gemini and Perplexity extractors
+- [ ] 02-04-PLAN.md — End-to-end integration verification checkpoint
 
 **Success Criteria:**
 1. Extension installs in Chrome/Edge without policy errors.
@@ -75,6 +83,6 @@ A local-first indexing system to recall AI interactions across Web and Dev envir
 | Phase | Status | Completion |
 |-------|--------|------------|
 | 1. Core Engine | **Complete** | 100% |
-| 2. Web Intelligence | Pending | 0% |
+| 2. Web Intelligence | **Planning Complete** | 0% |
 | 3. Dev Intelligence | Pending | 0% |
 | 4. Unified Interface | Pending | 0% |
