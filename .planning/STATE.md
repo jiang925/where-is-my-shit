@@ -7,40 +7,39 @@
 
 ## Current Position
 
-**Phase:** Phase 10: Modernized Deployment
+**Phase:** Phase 11: Stateless Client Integration
 **Plan:** Complete
 **Status:** ✅ COMPLETE
-**Last activity:** 2026-02-09 - Phase 10 executed and verified.
+**Last activity:** 2026-02-09 - Phase 11 executed and verified.
 
 ```text
 [====================] 100%
 ```
 
 ## Performance Metrics
-- **Auth Flow:** API Key (Achieved)
+- **Auth Flow:** API Key (Extension & Watcher Integrated)
 - **Setup Time:** <1 min (Achieved via auto-config & uv)
 - **Dependencies:** Standardized (uv + pyproject.toml)
 
 ## Accumulated Context
 
 ### Decisions
-- **API Key over JWT:** JWT refresh logic was too complex for a single-user local tool. API Keys provide better persistence for background watchers.
-- **Config Persistence:** Configuration is stored in `~/.wims/server.json` and auto-generated on first run.
-- **Fail-Fast Startup:** Server exits immediately if the port is in use, rather than failing obscurely later.
-- **Startup UX:** The API Key is printed to stdout on startup for easy copy-pasting, improving the "one-command" experience.
-- **UV for Everything:** Standardized on `uv` for both local dev and Docker builds to ensure environment consistency.
-- **Pre-download Models:** `setup.sh` explicitly downloads embedding models (`BAAI/bge-small-en-v1.5`) to prevent first-request timeouts.
-- **Docker Multi-stage:** Used official `ghcr.io/astral-sh/uv` image to bootstrap `uv` in Dockerfile rather than curl scripts.
+- **Stateless Extension:** Extension updated to use `X-API-Key` and removed all login UI/JWT logic.
+- **Stateless Watcher:** Python watcher now runs entirely stateless, relying on `X-API-Key` from config/env.
+- **API Key over JWT:** JWT refresh logic was too complex for a single-user local tool. API Keys provide better persistence.
+- **Config Persistence:** Configuration is stored in `~/.wims/server.json`.
+- **Fail-Fast Startup:** Server exits immediately if the port is in use.
+- **Startup UX:** API Key printed on startup.
+- **UV for Everything:** Standardized on `uv`.
 
 ### Key Learnings
-- **Stateless Auth:** Removing session management significantly simplified the codebase and reduced dependencies.
-- **Hot Reloading:** Using `watchfiles` allows for config changes (like key rotation) without restarting the server.
-- **UV Speed:** `uv sync` is significantly faster than pip, making Docker builds much quicker.
+- **Stateless Auth:** Removing session management significantly simplified the codebase.
+- **Extension Store:** `chrome.storage.local` is sufficient for API keys; no need for `chrome.storage.sync` for local-only tools.
 
 ### Blockers / Risks
-- **Extension Update Required:** The Chrome extension MUST be updated (Phase 11) to send `X-API-Key` instead of Bearer tokens. Existing users will need to update.
+- None.
 
 ## Session Continuity
 
-**Last session end:** Completed Phase 10 (Modernized Deployment).
-**Current session goal:** Begin Phase 11 (Stateless Client Integration).
+**Last session end:** Completed Phase 11.
+**Current session goal:** Project Complete.
