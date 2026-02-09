@@ -3,6 +3,7 @@ import { ApiClient } from '../lib/api';
 
 // DOM elements
 const serverUrlInput = document.getElementById('serverUrl') as HTMLInputElement;
+const apiKeyInput = document.getElementById('apiKey') as HTMLInputElement;
 const saveButton = document.getElementById('saveButton') as HTMLButtonElement;
 const testButton = document.getElementById('testButton') as HTMLButtonElement;
 const statusDiv = document.getElementById('status') as HTMLDivElement;
@@ -14,6 +15,7 @@ async function init() {
   // Load current settings
   const settings = await getSettings();
   serverUrlInput.value = settings.serverUrl;
+  apiKeyInput.value = settings.apiKey;
 
   // Set up event listeners
   saveButton.addEventListener('click', handleSave);
@@ -53,6 +55,7 @@ function showStatus(message: string, type: 'success' | 'error' | 'info') {
  */
 async function handleSave() {
   const url = serverUrlInput.value.trim();
+  const apiKey = apiKeyInput.value.trim();
 
   // Validate URL
   if (!url) {
@@ -67,7 +70,7 @@ async function handleSave() {
 
   // Save settings
   try {
-    await setSettings({ serverUrl: url });
+    await setSettings({ serverUrl: url, apiKey });
     showStatus('Settings saved successfully!', 'success');
   } catch (error) {
     console.error('[WIMS Options] Failed to save settings:', error);
