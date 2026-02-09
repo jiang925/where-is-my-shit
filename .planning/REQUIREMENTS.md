@@ -68,9 +68,9 @@ Explicitly excluded. Documented to prevent scope creep.
 | WEB-02 | Phase 2 | Complete |
 | WEB-03 | Phase 2 | Complete |
 | WEB-04 | Phase 2 | Complete |
-| DEV-01 | Phase 3 | Pending |
-| DEV-02 | Phase 3 | Pending |
-| DEV-03 | Phase 3 | Pending |
+| DEV-01 | Phase 3 | Complete |
+| DEV-02 | Phase 3 | Complete |
+| DEV-03 | Phase 3 | Complete |
 | CORE-01 | Phase 1 | Complete |
 | CORE-02 | Phase 1 | Complete |
 | CORE-03 | Phase 1 | Complete |
