@@ -23,6 +23,8 @@ sys.path.append(str(WATCHER_SRC))
 
 from src.app.main import app
 from src.app.core.config import settings
+from src.app.db.auth import AuthDB
+from src.app.core.auth import get_password_hash
 
 # Helper to find a free port
 def get_free_port():
@@ -39,6 +41,22 @@ def live_server():
     Starts the FastAPI server in a separate thread.
     Returns the base URL.
     """
+
+    # Pre-seed database with test password
+    # This ensures the server starts with known credentials instead of generating random ones
+    try:
+        auth_db = AuthDB()
+        auth_db.initialize()
+
+        pw_hash = get_password_hash("test-password")
+        # Set valid_after to the past to avoid race conditions with JWT integer timestamps
+        # JWT iat is in seconds (int), while time.time() is float.
+        # If valid_after is 100.5 and iat is 100 (same second), 100 < 100.5 => revoked.
+        auth_db.update_password(pw_hash, valid_after=time.time() - 5)
+        auth_db.set_secret("test-jwt-secret")
+    except Exception as e:
+        print(f"Failed to seed auth DB: {e}")
+        raise
 
     port = get_free_port()
     host = "127.0.0.1"
