@@ -11,7 +11,7 @@ class WimsClient:
     """
     def __init__(self, base_url: str = "http://localhost:8000"):
         self.base_url = base_url.rstrip('/')
-        self.ingest_url = f"{self.base_url}/ingest"
+        self.ingest_url = f"{self.base_url}/api/v1/ingest"
 
     def ingest(self, payload: Dict[str, Any]) -> bool:
         """

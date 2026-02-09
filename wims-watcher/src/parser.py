@@ -1,5 +1,6 @@
 import json
 import logging
+from datetime import datetime
 from typing import List, Dict, Any, Tuple
 from pathlib import Path
 
@@ -82,13 +83,11 @@ def transform_entry(entry: Dict[str, Any]) -> Dict[str, Any]:
     }
     """
     return {
-        "source": "claude-code",
-        "external_id": entry.get("sessionId", "unknown"),
-        "timestamp": entry.get("timestamp"),
-        "content": entry.get("display", ""),
-        "metadata": {
-            "project": entry.get("project"),
-            "pasted_contents": entry.get("pastedContents"),
-            "original_entry": entry  # Optional: store full raw entry if needed
-        }
+        "conversation_id": entry.get("sessionId", "unknown"),
+        "platform": "claude-code",
+        "title": f"Session {entry.get('sessionId', 'unknown')[:8]}",
+        "content": entry.get("display", "") or "[Empty Command]",
+        "role": "user",
+        "timestamp": datetime.fromtimestamp(entry.get("timestamp", 0) / 1000.0).isoformat(),
+        "url": entry.get("project", "")
     }
