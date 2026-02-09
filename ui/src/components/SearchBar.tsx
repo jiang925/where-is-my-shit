@@ -1,0 +1,46 @@
+import { useState, useEffect } from 'react';
+import { Search, Loader2 } from 'lucide-react';
+import { cn } from '../lib/utils';
+
+interface SearchBarProps {
+  onSearch: (query: string) => void;
+  isLoading?: boolean;
+  className?: string;
+}
+
+export function SearchBar({ onSearch, isLoading, className }: SearchBarProps) {
+  const [value, setValue] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onSearch(value);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [value, onSearch]);
+
+  return (
+    <div className={cn("relative w-full max-w-2xl mx-auto", className)}>
+      <div className="relative flex items-center w-full h-12 rounded-lg focus-within:shadow-lg bg-white overflow-hidden border border-gray-200 transition-shadow">
+        <div className="grid place-items-center h-full w-12 text-gray-300">
+          {isLoading ? (
+            <Loader2 className="animate-spin h-5 w-5" />
+          ) : (
+            <Search className="h-5 w-5" />
+          )}
+        </div>
+
+        <input
+          className="peer h-full w-full outline-none text-gray-700 pr-2 placeholder-gray-400"
+          type="text"
+          id="search"
+          placeholder="Search your history..."
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          autoComplete="off"
+          autoFocus
+        />
+      </div>
+    </div>
+  );
+}

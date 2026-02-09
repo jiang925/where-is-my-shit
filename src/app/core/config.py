@@ -14,6 +14,10 @@ class Settings(BaseSettings):
     DB_PATH: str = "data/wims.lance"
     AUTH_DB_PATH: str = "data/auth.db"
 
+    # Security
+    CORS_ORIGINS: list[str] = ["http://localhost", "http://127.0.0.1"]
+    EXTENSION_ID: str = ""  # chrome-extension://<id>
+
 settings = Settings()
 
 def get_settings() -> Settings:

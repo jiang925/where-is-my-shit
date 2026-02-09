@@ -56,12 +56,16 @@ app = FastAPI(
 )
 
 # Add CORS middleware for Chrome extension communication
+origins = settings.CORS_ORIGINS
+if settings.EXTENSION_ID:
+    origins.append(f"chrome-extension://{settings.EXTENSION_ID}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Extension origins are chrome-extension://... which vary per install
-    allow_methods=["GET", "POST"],
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
-    allow_credentials=False,
 )
 
 app.include_router(api_router, prefix=settings.API_V1_STR)

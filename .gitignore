@@ -32,6 +32,8 @@ venv/
 env/
 ENV/
 .env
+.venv/
+.verify_venv/
 
 # Database
 *.db
