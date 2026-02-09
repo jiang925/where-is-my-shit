@@ -1,5 +1,5 @@
 import time
-from typing import Annotated, Dict, Tuple
+from typing import Annotated
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -13,7 +13,7 @@ router = APIRouter()
 
 # Simple in-memory storage for failed attempts: {ip: (count, last_attempt_time)}
 # In a production environment with multiple workers, this should be in Redis/Memcached
-failed_attempts: Dict[str, Tuple[int, float]] = {}
+failed_attempts: dict[str, tuple[int, float]] = {}
 
 class LoginRequest(BaseModel):
     password: str
