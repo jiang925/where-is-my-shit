@@ -74,8 +74,8 @@ Explicitly excluded. Documented to prevent scope creep.
 | CORE-01 | Phase 1 | Complete |
 | CORE-02 | Phase 1 | Complete |
 | CORE-03 | Phase 1 | Complete |
-| UI-01 | Phase 4 | Pending |
-| UI-02 | Phase 4 | Pending |
+| UI-01 | Phase 4 | Complete |
+| UI-02 | Phase 4 | Complete |
 | DEP-01 | Phase 1 | Complete |
 | DEP-02 | Phase 1 | Complete |
 | DEP-03 | Phase 1 | Complete |
