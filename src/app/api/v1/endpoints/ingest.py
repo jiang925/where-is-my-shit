@@ -3,12 +3,12 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.concurrency import run_in_threadpool
 
-from src.app.core.security import get_current_user
+from src.app.core.auth import verify_api_key
 from src.app.db.client import db_client
 from src.app.schemas.message import IngestRequest, Message
 from src.app.services.embedding import EmbeddingService
 
-router = APIRouter(dependencies=[Depends(get_current_user)])
+router = APIRouter(dependencies=[Depends(verify_api_key)])
 
 
 @router.post("/ingest", status_code=status.HTTP_201_CREATED)
