@@ -40,7 +40,25 @@ async def search_documents(request: SearchRequest):
             search_builder = search_builder.where(f"conversation_id = '{request.conversation_id}'")
 
         # Execute
-        results = await run_in_threadpool(search_builder.to_pydantic, SearchResult)
+        # Use to_list() to avoid pandas dependency and handle score mapping manually
+        results_list = await run_in_threadpool(search_builder.to_list)
+
+        results: List[SearchResult] = []
+        for r in results_list:
+            # map _distance to score if present
+            # LanceDB returns _distance (lower is better) for euclidean/cosine?
+            # Actually for cosine similarity default, it might be distance.
+            # Let's just use it as score for now.
+            if "_distance" in r:
+                r["score"] = r.pop("_distance")
+            else:
+                r["score"] = 0.0
+
+            # Ensure vector is removed if it's returned (we don't want it in response payload usually)
+            if "vector" in r:
+                del r["vector"]
+
+            results.append(SearchResult(**r))
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Search execution failed: {str(e)}")
