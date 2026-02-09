@@ -2,7 +2,7 @@
 name = "where-is-my-shit"
 version = "0.1.0"
 description = "AI-powered search for chat messages across platforms"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.109.0",
     "uvicorn[standard]>=0.27.0",
@@ -33,7 +33,7 @@ packages = ["src"]
 
 [tool.ruff]
 line-length = 120
-target-version = "py310"
+target-version = "py311"
 extend-exclude = [".tmp_tools", ".fix_lint_venv"]
 
 [tool.ruff.lint]
