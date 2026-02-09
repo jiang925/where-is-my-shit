@@ -6,78 +6,53 @@ A centralized indexing and retrieval system for AI interactions across fragmente
 ## Core Value
 Never lose a conversation again: Instantly recall specific AI discussions or dev sessions across any platform and jump straight back into the original context.
 
-## Current Milestone: v1.1 Security & Hardening
+## Current Milestone: v1.2 (Planning)
+
+**Status:** Planning / TBD
+
+## Recent Milestone: v1.1 Security & Hardening (Shipped)
 
 **Goal:** Harden the system for public/shared use and establish robust engineering practices (CI/CD, TDD).
 
-**Target features:**
-- **Security:** API Authentication (Basic/Token) to protect local endpoints.
-- **CI/CD:** GitHub Actions pipeline for automated testing and linting.
-- **Testing:** Comprehensive unit and integration test suite (TDD focus).
-- **Hardening:** Improved error handling for extension and watchers.
-
-## Requirements
-
 ### Validated
-
-- [x] **WEB-01**: Browser extension captures ChatGPT conversations (content + metadata) — v1.0
-- [x] **WEB-02**: Browser extension captures Gemini conversations — v1.0
-- [x] **WEB-03**: Browser extension captures Perplexity conversations — v1.0
-- [x] **WEB-04**: Extension detects new content and pushes to local server (real-time/near real-time) — v1.0
-- [x] **DEV-01**: Local watcher indexes Claude Code logs from disk — v1.0
-- [x] **DEV-02**: Local watcher indexes Antigravity logs — v1.0
-- [x] **DEV-03**: Local watcher indexes Cursor chat logs — v1.0
-- [x] **CORE-01**: User can search by semantic meaning (embeddings) — v1.0
-- [x] **CORE-02**: Index stores conversation content, timestamp, source, and deep link URL — v1.0
-- [x] **CORE-03**: Results return "Deep Links" to exact message/scroll position where possible — v1.0
-- [x] **UI-01**: Standalone Web/App UI (React/Tauri) for searching — v1.0
-- [x] **UI-02**: Results displayed with source icons and relevance snippets — v1.0
-- [x] **DEP-01**: Central server packaged as a single "All-in-One" Docker image — v1.0
-- [x] **DEP-02**: Vector DB (LanceDB) embedded/packaged within the same Docker container (no external service dependencies) — v1.0
-- [x] **DEP-03**: Configuration via environment variables (API keys for embeddings, paths) — v1.0
-
-### Active
-
-- [ ] **SEC-01**: API requires authentication (Basic/Token) for ingestion and search.
-- [ ] **CI-01**: GitHub Actions pipeline runs tests and linting on push.
-- [ ] **TEST-01**: Unit test coverage > 80% for Core Engine.
-- [ ] **TEST-02**: Integration tests cover full Ingest -> Search flow.
-- [ ] **HARD-01**: Extension handles API errors gracefully with user feedback.
-
-### Out of Scope
-
-- **Chatting with the index**: This is for *finding* the old chat, not RAG-based Q&A (v1 focus is search/recall).
-- **Full local LLMs**: Using Cloud APIs for the heavy lifting (embeddings/summary) to keep local footprint light, per user preference.
-- **Bi-directional sync**: We index *from* platforms, we don't write *back* to them.
+- [x] **SEC-01**: API requires authentication (Basic/Token) for ingestion and search.
+- [x] **SEC-02**: System generates/validates JWT tokens with expiration.
+- [x] **SEC-03**: User can set an initial password via CLI/Env var on first run.
+- [x] **SEC-04**: Passwords are hashed (Argon2/bcrypt) before storage.
+- [x] **SEC-05**: API binds explicitly to `127.0.0.1` by default.
+- [x] **CI-01**: GitHub Actions workflow runs tests and linting on push.
+- [x] **CI-02**: GitHub Actions workflow runs Frontend/Extension linting & build on push.
+- [x] **CI-03**: Workflow fails if code style (Ruff/ESLint) is not compliant.
+- [x] **TEST-01**: Unit test suite covers Core Engine services (Embedding, DB).
+- [x] **TEST-02**: Integration tests cover full Ingest -> Search flow.
+- [x] **TEST-03**: Frontend components have basic unit tests (Vitest).
+- [x] **HARD-01**: Extension handles API errors gracefully with user feedback.
+- [x] **HARD-02**: Watchers support authenticated requests.
+- [x] **HARD-03**: CORS configured with strict allow-list.
 
 ## Context
 
-Shipped v1.0 (MVP) on 2026-02-07.
-- **Status:** Functional end-to-end system.
+Shipped v1.1 on 2026-02-07.
+- **Status:** Secure, authenticated system with CI/CD.
 - **Tech Stack:** Python (FastAPI/FastEmbed/LanceDB), TypeScript (React/Chrome Extension).
-- **Scale:** ~3,500 LOC.
 - **Privacy:** Fully local operation (no cloud embeddings used in v1).
-
-User uses multiple AI products daily:
-- Web: ChatGPT, Claude, Gemini, Perplexity
-- Dev: Antigravity, Claude Code, Cursor
-- Problem: Native search sucks, fragmentation makes finding "that one conversation" impossible.
-- Privacy: Prefers local data storage but okay with Cloud LLMs for processing.
 
 ## Constraints
 
 - **Type**: Privacy — Data stored locally (hybrid model).
 - **Type**: Usability — Must provide deep links to original content, not just text recall.
-- **Type**: Integration — Must handle "closed ecosystems" via browser extension (no official APIs for chat history often available).
+- **Type**: Integration — Must handle "closed ecosystems" via browser extension.
 - **Type**: Performance — Local watchers must be lightweight/low-load.
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| **Hybrid Architecture** | Local DB for privacy/control, Cloud APIs for quality/speed of embeddings/summaries. | ✓ Implemented (Local-only for v1) |
-| **Extension for Web** | Official APIs for user chat history are often lacking or non-existent; DOM scraping/monitoring is required. | ✓ Implemented |
-| **File Watchers for Dev** | Easiest low-friction way to capture logs from local tools without deep integration plugins. | ✓ Implemented |
+| **Hybrid Architecture** | Local DB for privacy/control, Cloud APIs for quality/speed. | ✓ Implemented (Local-only for v1) |
+| **Extension for Web** | DOM scraping/monitoring required for closed APIs. | ✓ Implemented |
+| **File Watchers for Dev** | Low-friction log capture. | ✓ Implemented |
+| **JWT Auth** | Stateless, secure, easy to verify in distributed clients. | ✓ Implemented (v1.1) |
+| **Local Binding** | `127.0.0.1` restriction prevents LAN exposure by default. | ✓ Implemented (v1.1) |
 
 ---
-*Last updated: 2026-02-07 after start of v1.1 milestone*
+*Last updated: 2026-02-07 (v1.1 Shipped)*
