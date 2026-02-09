@@ -8,18 +8,18 @@
 ## Current Position
 
 **Phase:** Phase 9: API Key Auth & Config Consolidation
-**Plan:** 01 (Config Infrastructure) of 03
+**Plan:** 02 (Auth Switchover) of 03
 **Status:** 🟡 IN PROGRESS
-**Last activity:** 2026-02-09 - Completed 09-01 Config Infrastructure
+**Last activity:** 2026-02-09 - Completed 09-02 Auth Switchover
 
 ```text
-[======--------------] 33%
+[===========---------] 66%
 ```
 
 ## Performance Metrics
-- **Auth Flow:** JWT (Current) -> API Key (Target)
+- **Auth Flow:** API Key (Completed)
 - **Setup Time:** ~5 mins (Current) -> <1 min (Target)
-- **Dependencies:** Manual venv (Current) -> uv (Target)
+- **Dependencies:** Reduced (Removed pyjwt, passlib)
 
 ## Accumulated Context
 
@@ -31,11 +31,13 @@
 
 ### Key Learnings
 - Extension V3 service workers lose state frequently; a persistent API Key stored in `chrome.storage.sync` or `local` is more reliable than a memory-resident JWT.
+- Removing complex auth logic significantly simplifies the `lifespan` and startup code.
 
 ### Blockers / Risks
 - **Backward Compatibility:** Need to ensure the Extension doesn't break for existing v1.1 users during the transition (or provide a clear upgrade path).
+- **Extension Update:** The Chrome extension MUST be updated to send `X-API-Key` instead of `Authorization: Bearer`.
 
 ## Session Continuity
 
-**Last session end:** Completed robust configuration system with hot-reloading.
-**Current session goal:** Proceed to auth switchover (Plan 02).
+**Last session end:** Completed auth switchover (Plan 02).
+**Current session goal:** Proceed to CLI startup (Plan 03).
