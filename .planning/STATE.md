@@ -5,34 +5,43 @@
 **Current Focus:** Phase 1 (Core Engine) initialization.
 
 ## Current Position
-**Phase:** 1 - Core Engine (Complete)
-**Plan:** 05 of 05 (Deployment)
-**Status:** Complete
-**Last activity:** 2026-02-05 - Completed Phase 01
+**Phase:** 2 - Web Intelligence (In Progress)
+**Plan:** 01 of 04 (Extension Foundation)
+**Status:** Plan 02-01 Complete
+**Last activity:** 2026-02-06 - Completed 02-01-PLAN.md
 
 ```
-[████████████████████] 100%
+Phase 1: [████████████████████] 100% (5/5 plans)
+Phase 2: [█████░░░░░░░░░░░░░░░] 25% (1/4 plans)
+Overall: [████████████░░░░░░░░] 60% (6/10 completed)
 ```
 
 ## Context & Memory
 
 ### Decisions
-- **Architecture:** Hybrid Sidecar (Python/FastAPI server + Chrome Extension).
-- **Storage:** LanceDB (embedded) for zero-dependency deployment.
-- **Scope:** Read-only ingestion (no write-back to platforms).
-- **Embedding:** `BAAI/bge-small-en-v1.5` (384d) for local CPU performance.
-- **Database:** LanceDB with FTS and Vector indices (FLAT initially).
-- **API Pattern:** Async embedding generation using threadpools to prevent blocking.
-- **Search:** Results grouped by `conversation_id` to provide context.
+
+| ID | Decision | Plan | Rationale |
+|----|----------|------|-----------|
+| arch-01 | Hybrid Sidecar (Python/FastAPI server + Chrome Extension) | 01-01 | Separation of concerns: server for embeddings, extension for capture |
+| storage-01 | LanceDB (embedded) for zero-dependency deployment | 01-02 | No external database required |
+| scope-01 | Read-only ingestion (no write-back to platforms) | 01-01 | Simpler architecture, avoid platform API restrictions |
+| embedding-01 | `BAAI/bge-small-en-v1.5` (384d) for local CPU performance | 01-02 | Good quality/speed tradeoff for CPU-only systems |
+| db-index-01 | LanceDB with FTS and Vector indices (FLAT initially) | 01-03 | Hybrid search for best recall |
+| api-pattern-01 | Async embedding generation using threadpools | 01-03 | Prevent blocking main event loop |
+| search-01 | Results grouped by `conversation_id` | 01-04 | Show conversation context not just individual messages |
+| cors-01 | Wildcard CORS origins for extension support | 02-01 | Extension origins vary per install, safe for localhost |
+| dedup-01 | SHA-256 fingerprint with 10k LRU cache | 02-01 | Balance memory vs accuracy for scroll deduplication |
+| queue-01 | Offline queue with 10 retry limit | 02-01 | Handle server outages without unbounded growth |
+| timeout-01 | 10-second API request timeout | 02-01 | Complete before service worker termination (30s limit) |
 
 ### Blockers
 - None.
 
 ### Next Actions
-- **Plan 04:** Implement Search API details (Hybrid FTS + Vector).
-- **Plan 05:** "All-in-One" Docker setup.
+- **Next Plan:** 02-02 - Service Worker + ChatGPT Extractor + Popup UI
+- **Phase Goal:** Complete Web Intelligence capture (4 plans total)
 
 ## Session Continuity
-**Last Session:** 2026-02-05
-**Stopped at:** Completed 01-03-PLAN.md
-**Resume:** Execute 01-04-PLAN.md (Search Refinement)
+**Last Session:** 2026-02-06
+**Stopped at:** Completed 02-01-PLAN.md (Extension Foundation)
+**Resume:** Execute 02-02-PLAN.md (Service Worker + ChatGPT Extractor)
