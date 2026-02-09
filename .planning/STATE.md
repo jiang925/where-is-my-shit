@@ -2,42 +2,28 @@
 
 ## Project Reference
 
-**Core Value:** Never lose a conversation again: Instantly recall specific AI discussions or dev sessions across any platform.
-**Current Focus:** Milestone v1.1 - Security, Testing, and Hardening.
+See: .planning/PROJECT.md (updated 2026-02-08)
+
+**Core value:** Never lose a conversation again: Instantly recall specific AI discussions or dev sessions.
+**Current focus:** Milestone v1.2 Simplify & Deploy
 
 ## Current Position
 
-**Phase:** 8 - Hotfix Auth
-**Plan:** 01 of 01 (Fix JWT Timestamp Precision)
-**Status:** Complete
-**Progress:** ██████████ 100%
-
-### Current Plan
-Phase 8 Plan 01 is complete. Fixed critical JWT timestamp precision bug.
-
-## Performance Metrics
-
-- **Test Coverage:** Integration Auth Flow (100% Pass)
-- **Lint Compliance:** 100% enforced via CI
-- **Security:** Full Auth Middleware & CORS (Verified via Integration Tests)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-08 — Milestone v1.2 started
 
 ## Context & Memory
 
 ### Decisions
-- **Auth Strategy:** Self-hosted JWT (no external provider).
-- **Extension Auth:** "Login First" pattern. Extension blocks operations until user authenticates via Popup.
-- **Token Storage:** `chrome.storage.local` used for persistence (survives browser restart, no cloud sync).
-- **Error Handling:** Queue pauses immediately on 401/403, resumes automatically after login.
-- **Revocation:** Timestamp-based revocation (`token_valid_after`) for global password resets.
-- **Watcher Config:** Standardized on `~/.wims/config.json` for credentials.
-- **Watcher Token:** Persisted in `~/.wims/token` to minimize login requests.
-- **Watcher Auth:** Automatic retry on 401 with re-login flow.
-- **Integration Testing:** Uses real `uvicorn` server fixture with temporary databases to verify full HTTP stack and client behavior.
-- **JWT Validation:** Cast `token_valid_after` to int to avoid floating point precision race conditions.
+- **Auth Strategy:** Switch from JWT to Persistent API Key (simpler for local tools).
+- **Config:** Centralize in `~/.wims/server.json`.
+- **Deployment:** Adopt `uv` for dependency management.
 
 ### Blockers
-- **Environment:** Local python environment required manual dependency installation (`passlib`, `pyjwt`, `httpx`, `pytest`). Future setup should use `requirements.txt` strictly.
+- None.
 
 ### Session Continuity
-- **Last Action:** Completed Phase 8 Plan 01 (Hotfix Auth).
-- **Next Action:** Ready for deployment or further maintenance.
+- **Last Action:** Completed research for v1.2.
+- **Next Action:** Define requirements and create roadmap.

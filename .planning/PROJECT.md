@@ -6,9 +6,15 @@ A centralized indexing and retrieval system for AI interactions across fragmente
 ## Core Value
 Never lose a conversation again: Instantly recall specific AI discussions or dev sessions across any platform and jump straight back into the original context.
 
-## Current Milestone: v1.2 (Planning)
+## Current Milestone: v1.2 Simplify & Deploy
 
-**Status:** Planning / TBD
+**Goal:** Remove friction from setup and daily use by simplifying authentication (API Keys) and modernizing deployment.
+
+**Target features:**
+- **Persistent API Key Auth:** Replace complex JWT flow with simple, persistent keys.
+- **Unified Configuration:** Centralize server/watcher config in `~/.wims/server.json`.
+- **Frictionless Setup:** One-command install/start using `uv` and standardized scripts.
+- **Client Updates:** Update Extension and Watchers to support stateless API Key auth.
 
 ## Recent Milestone: v1.1 Security & Hardening (Shipped)
 
@@ -51,8 +57,10 @@ Shipped v1.1 on 2026-02-07.
 | **Hybrid Architecture** | Local DB for privacy/control, Cloud APIs for quality/speed. | ✓ Implemented (Local-only for v1) |
 | **Extension for Web** | DOM scraping/monitoring required for closed APIs. | ✓ Implemented |
 | **File Watchers for Dev** | Low-friction log capture. | ✓ Implemented |
-| **JWT Auth** | Stateless, secure, easy to verify in distributed clients. | ✓ Implemented (v1.1) |
+| **JWT Auth** | Stateless, secure, easy to verify in distributed clients. | ⚠️ Revisit (v1.2: Moving to API Key) |
 | **Local Binding** | `127.0.0.1` restriction prevents LAN exposure by default. | ✓ Implemented (v1.1) |
+| **API Key Auth** | Simpler for local tools, persistent, no refresh token complexity. | (v1.2 Decision) |
+| **uv Package Manager** | Faster, robust venv handling, prevents system breakage. | (v1.2 Decision) |
 
 ---
-*Last updated: 2026-02-07 (v1.1 Shipped)*
+*Last updated: 2026-02-08 (Start of v1.2)*
