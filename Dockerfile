@@ -1,16 +1,19 @@
-# Use python 3.12 slim image
 FROM python:3.12-slim
+
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app
+    PYTHONPATH=/app \
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy
 
 # Set working directory
 WORKDIR /app
 
 # Install system dependencies
-# gcc and python3-dev might be needed for some python packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     python3-dev \
@@ -18,17 +21,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-install-project --no-dev
+
+# Add .venv to PATH
+ENV PATH="/app/.venv/bin:$PATH"
 
 # Pre-download the embedding model to cache it in the image
-# This ensures the container runs without internet access for model loading
 RUN python -c "from fastembed import TextEmbedding; TextEmbedding(model_name='BAAI/bge-small-en-v1.5')"
 
 # Copy application code
 COPY src ./src
 
-# Create directory for data (LanceDB)
+# Create directory for data
 RUN mkdir -p data
 
 # Expose port
