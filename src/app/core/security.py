@@ -49,8 +49,8 @@ def get_current_user(token: str = Depends(oauth2_scheme)) -> str:
             raise credentials_exception
 
         # Revocation check: Ensure token was issued after the last password reset/invalidation
-        # token_valid_after is a float timestamp
-        if iat is None or iat < token_valid_after:
+        # token_valid_after is a float timestamp, so we cast to int to compare seconds
+        if iat is None or iat < int(token_valid_after):
             logger.warning("Token revoked", iat=iat, valid_after=token_valid_after)
             raise credentials_exception
 
