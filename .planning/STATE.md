@@ -7,10 +7,10 @@
 
 ## Current Position
 
-**Phase:** Phase 9: API Key Auth & Config Consolidation
+**Phase:** Phase 10: Modernized Deployment
 **Plan:** Complete
 **Status:** ✅ COMPLETE
-**Last activity:** 2026-02-09 - Phase 9 executed and verified.
+**Last activity:** 2026-02-09 - Phase 10 executed and verified.
 
 ```text
 [====================] 100%
@@ -18,8 +18,8 @@
 
 ## Performance Metrics
 - **Auth Flow:** API Key (Achieved)
-- **Setup Time:** <1 min (Achieved via auto-config)
-- **Dependencies:** Reduced (Removed pyjwt, passlib)
+- **Setup Time:** <1 min (Achieved via auto-config & uv)
+- **Dependencies:** Standardized (uv + pyproject.toml)
 
 ## Accumulated Context
 
@@ -28,16 +28,19 @@
 - **Config Persistence:** Configuration is stored in `~/.wims/server.json` and auto-generated on first run.
 - **Fail-Fast Startup:** Server exits immediately if the port is in use, rather than failing obscurely later.
 - **Startup UX:** The API Key is printed to stdout on startup for easy copy-pasting, improving the "one-command" experience.
+- **UV for Everything:** Standardized on `uv` for both local dev and Docker builds to ensure environment consistency.
+- **Pre-download Models:** `setup.sh` explicitly downloads embedding models (`BAAI/bge-small-en-v1.5`) to prevent first-request timeouts.
+- **Docker Multi-stage:** Used official `ghcr.io/astral-sh/uv` image to bootstrap `uv` in Dockerfile rather than curl scripts.
 
 ### Key Learnings
 - **Stateless Auth:** Removing session management significantly simplified the codebase and reduced dependencies.
 - **Hot Reloading:** Using `watchfiles` allows for config changes (like key rotation) without restarting the server.
+- **UV Speed:** `uv sync` is significantly faster than pip, making Docker builds much quicker.
 
 ### Blockers / Risks
 - **Extension Update Required:** The Chrome extension MUST be updated (Phase 11) to send `X-API-Key` instead of Bearer tokens. Existing users will need to update.
 
 ## Session Continuity
 
-**Last session end:** Completed Phase 9 (API Key Auth).
-**Current session goal:** Begin Phase 10 (Modernized Deployment).
-
+**Last session end:** Completed Phase 10 (Modernized Deployment).
+**Current session goal:** Begin Phase 11 (Stateless Client Integration).
