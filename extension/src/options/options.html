@@ -12,9 +12,14 @@
     <div class="setting">
       <label for="serverUrl">Server URL:</label>
       <input type="text" id="serverUrl" placeholder="http://localhost:8000">
+      <div class="help-text">URL of your WIMS server (e.g., http://localhost:8000)</div>
     </div>
 
-    <button id="saveButton">Save Settings</button>
+    <div class="button-group">
+      <button id="saveButton">Save Settings</button>
+      <button id="testButton" class="secondary">Test Connection</button>
+    </div>
+
     <div id="status"></div>
   </div>
   <script src="options.js"></script>
