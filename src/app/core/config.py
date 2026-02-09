@@ -16,9 +16,21 @@ class ServerConfig(BaseModel):
     Persistent server configuration model.
     Saved to ~/.wims/server.json by default.
     """
+    # Dynamic settings (persisted in JSON)
     api_key: str
     port: int = 8000
     host: str = "127.0.0.1"
+
+    # Static/Legacy settings (defaults for now, can be overridden in JSON if needed)
+    PROJECT_NAME: str = "WIMS Core"
+    API_V1_STR: str = "/api/v1"
+    LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
+    DB_PATH: str = "data/wims.lance"
+    AUTH_DB_PATH: str = "data/auth.db"
+
+    # Security
+    CORS_ORIGINS: list[str] = ["http://localhost", "http://127.0.0.1"]
+    EXTENSION_ID: str = ""  # chrome-extension://<id>
 
 
 class ConfigManager:
@@ -43,7 +55,11 @@ class ConfigManager:
         """
         Watch for changes to the configuration file and reload automatically.
         """
-        from watchfiles import awatch
+        try:
+            from watchfiles import awatch
+        except ImportError:
+            logger.warning("watchfiles not installed, hot reloading disabled")
+            return
 
         logger.info(f"Starting configuration watcher on {self.path}")
 
@@ -60,18 +76,6 @@ class ConfigManager:
         Reload configuration from disk and update internal state.
         """
         try:
-            # We use the existing logic which handles reading JSON
-            # We don't want _load_or_create to create a NEW one if reading fails slightly
-            # (e.g. race condition), but _load_or_create handles validation.
-            # If the file is gone, _load_or_create will create a new one, which might be okay
-            # or might be dangerous if it was just a transient FS issue.
-            # However, for this task, relying on _load_or_create is acceptable
-            # as it includes the "load" logic.
-
-            # Re-read the file directly to avoid the "creation" side effect if we can help it,
-            # but _load_or_create is robust. Let's use it but maybe suppress logging or just use it.
-            # Actually, if we are reloading, the file SHOULD exist.
-
             if not self.path.exists():
                 logger.warning("Config file missing during reload, skipping...")
                 return
@@ -79,6 +83,7 @@ class ConfigManager:
             with open(self.path, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
+            # We use model_validate to ensure the new config is valid before swapping
             new_config = ServerConfig.model_validate(data)
             self._config = new_config
             logger.info("Configuration reloaded successfully")
@@ -146,4 +151,17 @@ class ConfigManager:
                 pass
             raise
 
-# Global instance will be added in Task 3
+
+# Global instance
+config_manager = ConfigManager()
+
+
+def get_settings() -> ServerConfig:
+    """
+    Get the current snapshot of the server configuration.
+    """
+    return config_manager.config
+
+
+# Backward compatibility
+settings = config_manager.config
