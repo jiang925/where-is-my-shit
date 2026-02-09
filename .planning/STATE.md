@@ -6,11 +6,12 @@
 
 ## Current Position
 **Phase:** 1 - Core Engine
-**Status:** Planned
-**Progress:** 0%
+**Plan:** 02 of 05 (Core Data Persistence)
+**Status:** In progress
+**Last activity:** 2026-02-05 - Completed 01-02-PLAN.md
 
 ```
-[░░░░░░░░░░░░░░░░░░░░] 0%
+[████████░░░░░░░░░░░░] 40%
 ```
 
 ## Context & Memory
@@ -19,14 +20,18 @@
 - **Architecture:** Hybrid Sidecar (Python/FastAPI server + Chrome Extension).
 - **Storage:** LanceDB (embedded) for zero-dependency deployment.
 - **Scope:** Read-only ingestion (no write-back to platforms).
+- **Embedding:** `BAAI/bge-small-en-v1.5` (384d) for local CPU performance.
+- **Database:** LanceDB with FTS and Vector indices (FLAT initially).
 
 ### Blockers
 - None.
 
 ### Next Actions
-- Initialize `/src` structure for FastAPI backend.
-- Set up Dockerfile for "All-in-One" deployment.
+- **Plan 03:** Implement Ingestion API (FastAPI endpoints).
+- **Plan 04:** Implement Search API (Hybrid FTS + Vector).
+- **Plan 05:** "All-in-One" Docker setup.
 
 ## Session Continuity
-**Last Update:** 2026-02-05
-** Roadmap created. Ready to begin Phase 1 implementation.**
+**Last Session:** 2026-02-05
+**Stopped at:** Completed 01-02-PLAN.md
+**Resume:** Execute 01-03-PLAN.md (API Layer)
