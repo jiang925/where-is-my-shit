@@ -12,23 +12,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: "3.10"
-          cache: 'pip'
+          enable-cache: true
+
+      - name: Set up Python 3.10
+        run: uv python install 3.10
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: uv sync --all-extras
 
       - name: Lint with Ruff
-        run: ruff check .
+        run: uv run ruff check .
 
       - name: Check formatting with Ruff
-        run: ruff format --check .
+        run: uv run ruff format --check .
 
       - name: Run tests
-        run: pytest
+        run: uv run pytest
 
   frontend-check:
     runs-on: ubuntu-latest

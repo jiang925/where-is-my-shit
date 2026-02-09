@@ -1,24 +1,24 @@
-import time
 import logging
+import time
 from pathlib import Path
-from typing import List, Dict
-from watchdog.observers import Observer
+
 from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
 
 from .sources.base import BaseWatcher
 
 logger = logging.getLogger(__name__)
 
+
 class MultiSourceEventHandler(FileSystemEventHandler):
     """
     Handles file system events for multiple watchers.
     """
-    def __init__(self, watchers: List[BaseWatcher]):
+
+    def __init__(self, watchers: list[BaseWatcher]):
         self.watchers = watchers
         # Map resolved paths to watchers for quick lookup
-        self.path_map: Dict[str, BaseWatcher] = {
-            str(w.file_path.resolve()): w for w in watchers
-        }
+        self.path_map: dict[str, BaseWatcher] = {str(w.file_path.resolve()): w for w in watchers}
 
     def on_modified(self, event):
         if event.is_directory:
@@ -32,11 +32,13 @@ class MultiSourceEventHandler(FileSystemEventHandler):
             logger.info(f"File modified: {event.src_path} (Source: {watcher.source_name})")
             watcher.check()
 
+
 class LogWatcher:
     """
     Main watcher class that sets up the observer for multiple sources.
     """
-    def __init__(self, watchers: List[BaseWatcher]):
+
+    def __init__(self, watchers: list[BaseWatcher]):
         self.watchers = watchers
         self.observer = Observer()
         self.event_handler = MultiSourceEventHandler(self.watchers)

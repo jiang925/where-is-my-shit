@@ -1,14 +1,14 @@
 import json
-import os
 import sys
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any
 
 # Standard config paths
 CONFIG_DIR = Path.home() / ".wims"
 CONFIG_FILE = CONFIG_DIR / "config.json"
 
-def load_config() -> Dict[str, Any]:
+
+def load_config() -> dict[str, Any]:
     """
     Load configuration from ~/.wims/config.json
     Returns a dictionary with 'api_url' and 'password'.
@@ -24,15 +24,12 @@ def load_config() -> Dict[str, Any]:
 
     if not CONFIG_FILE.exists():
         print(f"Error: Config file not found at {CONFIG_FILE}")
-        print(f"Please create it with content like:")
-        print(json.dumps({
-            "api_url": "http://localhost:8000",
-            "password": "your-admin-password"
-        }, indent=2))
+        print("Please create it with content like:")
+        print(json.dumps({"api_url": "http://localhost:8000", "password": "your-admin-password"}, indent=2))
         sys.exit(1)
 
     try:
-        with open(CONFIG_FILE, 'r') as f:
+        with open(CONFIG_FILE) as f:
             config = json.load(f)
     except json.JSONDecodeError:
         print(f"Error: Invalid JSON in {CONFIG_FILE}")

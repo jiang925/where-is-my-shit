@@ -34,6 +34,8 @@ ENV/
 .env
 .venv/
 .verify_venv/
+.fix_lint_venv/
+.tmp_tools/
 
 # Database
 *.db

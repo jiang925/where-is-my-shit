@@ -1,23 +1,27 @@
-from contextlib import asynccontextmanager
-from typing import AsyncGenerator
 import os
-import sys
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 
+import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse, FileResponse
-import structlog
 
+from src.app.api.v1.endpoints import auth as auth_endpoint
+from src.app.api.v1.router import api_router
+from src.app.core.auth import (
+    generate_secret_key,
+    generate_strong_password,
+    get_password_hash,
+)
 from src.app.core.config import get_settings
 from src.app.core.logging import setup_logging
-from src.app.db.client import init_db
 from src.app.db.auth import AuthDB
-from src.app.core.auth import get_password_hash, generate_strong_password, generate_secret_key
-from src.app.api.v1.router import api_router
-from src.app.api.v1.endpoints import auth as auth_endpoint
+from src.app.db.client import init_db
 
 logger = structlog.get_logger()
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -40,12 +44,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         auth_db.set_secret(jwt_secret)
 
         # PRINT TO STDOUT as requested
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print(f"INITIAL ADMIN PASSWORD: {initial_password}")
-        print("="*60 + "\n")
+        print("=" * 60 + "\n")
         logger.info("Generated initial admin password")
 
     yield
+
 
 settings = get_settings()
 
@@ -76,10 +81,12 @@ assets_path = "src/static/assets"
 if os.path.exists(assets_path):
     app.mount("/assets", StaticFiles(directory=assets_path), name="assets")
 
+
 # Serve SPA for root path
 @app.get("/")
 async def read_index():
-    return FileResponse('src/static/index.html')
+    return FileResponse("src/static/index.html")
+
 
 # Catch-all for SPA routing (optional, but good for react router later)
 # For now, just ensuring root works is enough per plan.

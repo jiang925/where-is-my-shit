@@ -1,10 +1,12 @@
 import shutil
-import psutil
-from fastapi import APIRouter, Depends
 
-from src.app.db.client import get_db, DBClient
+import psutil
+from fastapi import APIRouter
+
+from src.app.db.client import DBClient
 
 router = APIRouter()
+
 
 @router.get("/health")
 async def health_check():
@@ -34,10 +36,7 @@ async def health_check():
         "system": {
             "memory_percent": mem.percent,
             "cpu_percent": psutil.cpu_percent(),
-            "disk_percent": (disk.used / disk.total) * 100
+            "disk_percent": (disk.used / disk.total) * 100,
         },
-        "database": {
-            "connected": True,
-            "row_count": row_count
-        }
+        "database": {"connected": True, "row_count": row_count},
     }

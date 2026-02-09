@@ -1,8 +1,9 @@
 import sys
+from datetime import datetime
+from pathlib import Path
+
 import pytest
 import requests
-from pathlib import Path
-from datetime import datetime
 
 # Add wims-watcher src to path to import client
 # (This is also done in conftest.py but good to be explicit if run standalone)
@@ -11,13 +12,15 @@ WATCHER_SRC = PROJECT_ROOT / "wims-watcher" / "src"
 if str(WATCHER_SRC) not in sys.path:
     sys.path.append(str(WATCHER_SRC))
 
-from client import WimsClient, AuthError
+from client import WimsClient
+
 
 # Temporary directory for token storage
 @pytest.fixture
 def temp_token_file(tmp_path):
     token_file = tmp_path / "token"
     return token_file
+
 
 @pytest.fixture
 def client(live_server, temp_token_file):
@@ -30,6 +33,7 @@ def client(live_server, temp_token_file):
     # Override token file to avoid writing to ~/.wims/token
     c.token_file = temp_token_file
     return c
+
 
 def test_scenario_a_happy_path(client):
     """
@@ -49,11 +53,12 @@ def test_scenario_a_happy_path(client):
         "platform": "test-platform",
         "content": "This is a test message",
         "role": "user",
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
     }
 
     # ingest returns True on success
     assert client.ingest(payload) is True
+
 
 def test_scenario_b_bad_password(live_server, temp_token_file):
     """
@@ -74,6 +79,7 @@ def test_scenario_b_bad_password(live_server, temp_token_file):
     assert c.login() is False
     assert c.token is None
 
+
 def test_scenario_c_no_auth(live_server):
     """
     Scenario C: No Auth
@@ -86,12 +92,13 @@ def test_scenario_c_no_auth(live_server):
         "platform": "test-platform",
         "content": "This should fail",
         "role": "user",
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
     }
 
     # Request without Authorization header
     response = requests.post(ingest_url, json=payload)
     assert response.status_code == 401
+
 
 def test_scenario_d_token_refresh(client):
     """
@@ -102,7 +109,6 @@ def test_scenario_d_token_refresh(client):
     """
     # 1. Login first to get a valid token
     assert client.login() is True
-    original_token = client.token
 
     # 2. Sabotage the token
     client.token = "invalid.token.string"
@@ -116,7 +122,7 @@ def test_scenario_d_token_refresh(client):
         "platform": "test-platform",
         "content": "This should trigger refresh",
         "role": "user",
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
     }
 
     # This should internally:

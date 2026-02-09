@@ -11,15 +11,12 @@ import requests
 def get_service_status():
     """Check if systemd service is active."""
     try:
-        result = subprocess.run(
-            ["systemctl", "--user", "is-active", "wims-watcher"],
-            capture_output=True,
-            text=True
-        )
+        result = subprocess.run(["systemctl", "--user", "is-active", "wims-watcher"], capture_output=True, text=True)
         return result.stdout.strip() == "active"
     except Exception as e:
         print(f"Error checking service status: {e}")
         return False
+
 
 def append_history_event(history_file):
     """Append a test event to history file."""
@@ -29,28 +26,25 @@ def append_history_event(history_file):
         "display": "WIMS Verification Test",
         "project": "/home/pter/code/where-is-my-shit",
         "cwd": "/home/pter/code/where-is-my-shit",
-        "type": "prompt"
+        "type": "prompt",
     }
 
-    with open(history_file, 'a') as f:
+    with open(history_file, "a") as f:
         f.write(json.dumps(event) + "\n")
 
     return event
+
 
 def verify_ingestion(base_url, session_id):
     """Check if the event appears in search results."""
     # Note: Search endpoint is POST /api/v1/search
     search_url = f"{base_url}/api/v1/search"
-    payload = {
-        "query": "WIMS Verification Test",
-        "limit": 5,
-        "conversation_id": None
-    }
+    payload = {"query": "WIMS Verification Test", "limit": 5, "conversation_id": None}
 
     # Retry a few times as ingestion is async
     for i in range(10):
         try:
-            print(f"Checking search results (attempt {i+1})...")
+            print(f"Checking search results (attempt {i + 1})...")
             response = requests.post(search_url, json=payload, timeout=5)
             if response.status_code == 200:
                 results = response.json()
@@ -71,6 +65,7 @@ def verify_ingestion(base_url, session_id):
         time.sleep(1)
 
     return False
+
 
 def main():
     print("Starting End-to-End Verification...")
@@ -110,6 +105,7 @@ def main():
     else:
         print("FAIL: Test event not found in Core Engine search after timeout.")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

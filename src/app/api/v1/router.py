@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from src.app.api.v1.endpoints import ingest, search, health
+from src.app.api.v1.endpoints import health, ingest, search
 
 api_router = APIRouter()
 

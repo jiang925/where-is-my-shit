@@ -1,21 +1,22 @@
 import json
 import logging
 import sqlite3
-import time
-from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from .base import BaseWatcher
 
 logger = logging.getLogger(__name__)
+
 
 class CursorWatcher(BaseWatcher):
     """
     Watcher for Cursor IDE chat history.
     Reads from SQLite state database (state.vscdb).
     """
-    def __init__(self, db_path: str, client: Optional[Any] = None):
+
+    def __init__(self, db_path: str, client: Any | None = None):
         super().__init__("cursor", db_path, client)
         self.db_path = Path(db_path).expanduser().resolve()
 
@@ -78,23 +79,23 @@ class CursorWatcher(BaseWatcher):
 
             new_entries = []
 
-            conversations = state.get('conversations', [])
+            conversations = state.get("conversations", [])
             if not conversations and isinstance(state, list):
                 # Sometimes it's just a list of conversations
                 conversations = state
 
             for conv in conversations:
-                conv_id = conv.get('id', 'unknown')
-                messages = conv.get('messages', [])
+                conv_id = conv.get("id", "unknown")
+                messages = conv.get("messages", [])
 
                 for msg in messages:
                     # Extract timestamp (ms)
-                    ts = msg.get('timestamp') or msg.get('createdAt')
+                    ts = msg.get("timestamp") or msg.get("createdAt")
                     if not ts:
                         continue
 
                     # Normalize to float seconds if needed (usually ms in JS)
-                    if ts > 10000000000: # Assuming ms
+                    if ts > 10000000000:  # Assuming ms
                         ts_sec = ts / 1000.0
                     else:
                         ts_sec = float(ts)
@@ -123,16 +124,16 @@ class CursorWatcher(BaseWatcher):
         except Exception as e:
             logger.error(f"Error processing Cursor data: {e}")
 
-    def _transform_message(self, conv_id: str, msg: Dict[str, Any], timestamp: float) -> Optional[Dict[str, Any]]:
-        text = msg.get('text') or msg.get('content')
+    def _transform_message(self, conv_id: str, msg: dict[str, Any], timestamp: float) -> dict[str, Any] | None:
+        text = msg.get("text") or msg.get("content")
         if not text:
             return None
 
-        role = msg.get('role', 'user') # user or ai/assistant
+        role = msg.get("role", "user")  # user or ai/assistant
 
         return {
             "conversation_id": conv_id,
-            "external_id": msg.get('id', f"{conv_id}-{timestamp}"),
+            "external_id": msg.get("id", f"{conv_id}-{timestamp}"),
             "platform": "cursor",
             "title": f"Cursor Chat {conv_id[:8]}",
             "content": text,
@@ -140,11 +141,11 @@ class CursorWatcher(BaseWatcher):
             "timestamp": datetime.fromtimestamp(timestamp).isoformat(),
             "url": "",
             "metadata": {
-                "model": msg.get('model'),
-                "context": msg.get('context') # If available
-            }
+                "model": msg.get("model"),
+                "context": msg.get("context"),  # If available
+            },
         }
 
-    def parse_line(self, line: str) -> Optional[Dict[str, Any]]:
+    def parse_line(self, line: str) -> dict[str, Any] | None:
         # Not used for SQLite watcher
         pass

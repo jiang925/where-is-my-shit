@@ -1,5 +1,7 @@
 from typing import Literal
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -18,7 +20,9 @@ class Settings(BaseSettings):
     CORS_ORIGINS: list[str] = ["http://localhost", "http://127.0.0.1"]
     EXTENSION_ID: str = ""  # chrome-extension://<id>
 
+
 settings = Settings()
+
 
 def get_settings() -> Settings:
     return settings

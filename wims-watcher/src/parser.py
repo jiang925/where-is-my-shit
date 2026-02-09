@@ -1,12 +1,13 @@
 import json
 import logging
 from datetime import datetime
-from typing import List, Dict, Any, Tuple
 from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
-def read_new_entries(file_path: Path, offset: int) -> Tuple[List[Dict[str, Any]], int]:
+
+def read_new_entries(file_path: Path, offset: int) -> tuple[list[dict[str, Any]], int]:
     """
     Reads new lines from file starting at byte offset.
     Returns (list of parsed JSON dicts, new byte offset).
@@ -19,7 +20,7 @@ def read_new_entries(file_path: Path, offset: int) -> Tuple[List[Dict[str, Any]]
     new_offset = offset
 
     try:
-        with open(file_path, 'rb') as f:
+        with open(file_path, "rb") as f:
             f.seek(offset)
             chunk = f.read()
 
@@ -27,19 +28,19 @@ def read_new_entries(file_path: Path, offset: int) -> Tuple[List[Dict[str, Any]]
                 return [], offset
 
             # Find last newline to ensure we only process complete lines
-            last_newline_index = chunk.rfind(b'\n')
+            last_newline_index = chunk.rfind(b"\n")
 
             if last_newline_index == -1:
                 # No complete line found, wait for more data
                 return [], offset
 
             # Extract valid chunk up to the last newline
-            valid_chunk = chunk[:last_newline_index + 1]
+            valid_chunk = chunk[: last_newline_index + 1]
             new_offset = offset + len(valid_chunk)
 
             # Decode and parse
             try:
-                text = valid_chunk.decode('utf-8')
+                text = valid_chunk.decode("utf-8")
                 for line in text.splitlines():
                     if line.strip():
                         try:
@@ -48,11 +49,11 @@ def read_new_entries(file_path: Path, offset: int) -> Tuple[List[Dict[str, Any]]
                         except json.JSONDecodeError:
                             logger.warning(f"Skipping invalid JSON line: {line[:50]}...")
             except UnicodeDecodeError as e:
-                 logger.error(f"Unicode decode error in log file: {e}")
-                 # In a real robust watcher we might want to skip bad bytes,
-                 # but for now we'll just not advance if it's catastrophic,
-                 # or advance and skip. Here we advance.
-                 pass
+                logger.error(f"Unicode decode error in log file: {e}")
+                # In a real robust watcher we might want to skip bad bytes,
+                # but for now we'll just not advance if it's catastrophic,
+                # or advance and skip. Here we advance.
+                pass
 
             return entries, new_offset
 
@@ -60,7 +61,8 @@ def read_new_entries(file_path: Path, offset: int) -> Tuple[List[Dict[str, Any]]
         logger.error(f"Error reading {file_path}: {e}")
         return [], offset
 
-def transform_entry(entry: Dict[str, Any]) -> Dict[str, Any]:
+
+def transform_entry(entry: dict[str, Any]) -> dict[str, Any]:
     """
     Transforms a Claude Code history entry into a WIMS ingestion payload.
 
@@ -89,5 +91,5 @@ def transform_entry(entry: Dict[str, Any]) -> Dict[str, Any]:
         "content": entry.get("display", "") or "[Empty Command]",
         "role": "user",
         "timestamp": datetime.fromtimestamp(entry.get("timestamp", 0) / 1000.0).isoformat(),
-        "url": entry.get("project", "")
+        "url": entry.get("project", ""),
     }

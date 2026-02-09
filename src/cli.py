@@ -1,13 +1,15 @@
 import argparse
 import sys
-import uvicorn
-import structlog
 from getpass import getpass
 
-from src.app.core.auth import get_password_hash, generate_strong_password
+import structlog
+import uvicorn
+
+from src.app.core.auth import generate_strong_password, get_password_hash
 from src.app.db.auth import AuthDB
 
 logger = structlog.get_logger()
+
 
 def reset_password(args):
     """Reset the admin password."""
@@ -39,18 +41,14 @@ def reset_password(args):
     auth_db.update_password(hashed_pw)
     print("Password updated successfully. All existing sessions have been invalidated.")
 
+
 def start_server(args):
     """Start the uvicorn server."""
     # We import main app here to avoid circular imports or early init issues if just running CLI tools
     print(f"Starting WIMS server on {args.host}:{args.port}")
 
-    uvicorn.run(
-        "src.app.main:app",
-        host=args.host,
-        port=args.port,
-        reload=args.reload,
-        log_level="info"
-    )
+    uvicorn.run("src.app.main:app", host=args.host, port=args.port, reload=args.reload, log_level="info")
+
 
 def main():
     parser = argparse.ArgumentParser(description="WIMS Management CLI")
@@ -75,6 +73,7 @@ def main():
     else:
         parser.print_help()
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

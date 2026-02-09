@@ -15,22 +15,22 @@ router = APIRouter()
 # In a production environment with multiple workers, this should be in Redis/Memcached
 failed_attempts: dict[str, tuple[int, float]] = {}
 
+
 class LoginRequest(BaseModel):
     password: str
+
 
 class Token(BaseModel):
     access_token: str
     token_type: str
 
+
 def get_auth_db():
     return AuthDB()
 
+
 @router.post("/login", response_model=Token)
-async def login(
-    request: Request,
-    login_data: LoginRequest,
-    auth_db: Annotated[AuthDB, Depends(get_auth_db)]
-):
+async def login(request: Request, login_data: LoginRequest, auth_db: Annotated[AuthDB, Depends(get_auth_db)]):
     """
     Authenticate user and return JWT token.
     Implements progressive delay on failure (1s/2s/4s) to slow down brute force attacks.
@@ -47,10 +47,7 @@ async def login(
 
     if not auth_data:
         logger.error("Auth system not initialized")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="System not initialized"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="System not initialized")
 
     password_hash, _, jwt_secret = auth_data
 
@@ -89,9 +86,6 @@ async def login(
         jwt_secret = generate_secret_key()
         auth_db.set_secret(jwt_secret)
 
-    access_token = create_access_token(
-        data={"sub": "admin"},
-        secret_key=jwt_secret
-    )
+    access_token = create_access_token(data={"sub": "admin"}, secret_key=jwt_secret)
 
     return Token(access_token=access_token, token_type="bearer")

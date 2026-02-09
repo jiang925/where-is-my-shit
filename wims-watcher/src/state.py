@@ -1,10 +1,11 @@
 import json
-import os
 import logging
+import os
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Any
 
 logger = logging.getLogger(__name__)
+
 
 class StateManager:
     """
@@ -12,7 +13,7 @@ class StateManager:
     Persists state to ~/.local/state/wims/watcher_cursor.json
     """
 
-    def __init__(self, state_file: Optional[Path] = None):
+    def __init__(self, state_file: Path | None = None):
         if state_file:
             self.state_file = state_file
         else:
@@ -23,18 +24,14 @@ class StateManager:
         # Ensure directory exists
         self.state_file.parent.mkdir(parents=True, exist_ok=True)
 
-        self.cursor_data: Dict[str, Any] = {
-            "offset": 0,
-            "inode": 0,
-            "file_path": ""
-        }
+        self.cursor_data: dict[str, Any] = {"offset": 0, "inode": 0, "file_path": ""}
         self.load()
 
     def load(self) -> None:
         """Load state from disk."""
         if self.state_file.exists():
             try:
-                with open(self.state_file, 'r') as f:
+                with open(self.state_file) as f:
                     data = json.load(f)
                     self.cursor_data.update(data)
                 logger.debug(f"Loaded state: {self.cursor_data}")
@@ -44,7 +41,7 @@ class StateManager:
     def save(self) -> None:
         """Save state to disk."""
         try:
-            with open(self.state_file, 'w') as f:
+            with open(self.state_file, "w") as f:
                 json.dump(self.cursor_data, f, indent=2)
         except Exception as e:
             logger.error(f"Failed to save state to {self.state_file}: {e}")
@@ -75,8 +72,8 @@ class StateManager:
         # If inode changed or path changed, start from beginning (or tail?)
         # For this use case, if log rotated, we probably want to start new file from 0
         if stored_path == str(path) and stored_inode != current_inode:
-             logger.info(f"File rotated (inode changed). Resetting cursor for {file_path}")
-             return 0
+            logger.info(f"File rotated (inode changed). Resetting cursor for {file_path}")
+            return 0
 
         return 0
 

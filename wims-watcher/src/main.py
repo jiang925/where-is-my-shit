@@ -1,26 +1,24 @@
 import logging
 import os
 import sys
-from pathlib import Path
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(sys.stdout)
-    ]
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)],
 )
 
 # Add src to path if running directly
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.watcher import LogWatcher
-from src.sources.claude import ClaudeWatcher
-from src.sources.antigravity import AntigravityWatcher
-from src.sources.cursor import CursorWatcher
 from src.client import WimsClient
 from src.config import load_config
+from src.sources.antigravity import AntigravityWatcher
+from src.sources.claude import ClaudeWatcher
+from src.sources.cursor import CursorWatcher
+from src.watcher import LogWatcher
+
 
 def main():
     # Load configuration
@@ -31,7 +29,10 @@ def main():
 
     # Check connection and auth status
     if not client.check_connection():
-        logging.warning(f"Core Engine not reachable at {client.base_url}. Watcher will retry ingestion, but ensure wims-core service is running.")
+        logging.warning(
+            f"Core Engine not reachable at {client.base_url}. "
+            "Watcher will retry ingestion, but ensure wims-core service is running."
+        )
 
     if client.token:
         logging.info("Initialized with existing authentication token.")
@@ -40,7 +41,10 @@ def main():
         if client.login():
             logging.info("Successfully authenticated as admin.")
         else:
-            logging.error("Authentication failed. Watcher will attempt to login again during ingestion, but verify credentials in ~/.wims/config.json")
+            logging.error(
+                "Authentication failed. Watcher will attempt to login again during ingestion, "
+                "but verify credentials in ~/.wims/config.json"
+            )
 
     # Default location for Claude history
 
@@ -75,7 +79,7 @@ def main():
         if os.path.exists(ag_dir) and os.path.isdir(ag_dir):
             # basic logic to find latest log
             try:
-                files = [os.path.join(ag_dir, f) for f in os.listdir(ag_dir) if f.endswith('.log')]
+                files = [os.path.join(ag_dir, f) for f in os.listdir(ag_dir) if f.endswith(".log")]
                 if files:
                     latest_log = max(files, key=os.path.getmtime)
                     watchers.append(AntigravityWatcher(latest_log, client=client))
@@ -87,7 +91,7 @@ def main():
 
     # Add Cursor Watcher
     if cursor_state_db:
-         if os.path.exists(os.path.expanduser(cursor_state_db)):
+        if os.path.exists(os.path.expanduser(cursor_state_db)):
             watchers.append(CursorWatcher(cursor_state_db, client=client))
     else:
         # Try to auto-discover latest cursor workspace
@@ -110,7 +114,7 @@ def main():
             except Exception as e:
                 logging.error(f"Error discovering Cursor DB: {e}")
         else:
-             logging.warning(f"Cursor workspace storage not found at {cursor_base}")
+            logging.warning(f"Cursor workspace storage not found at {cursor_base}")
 
     if not watchers:
         logging.error("No watchers could be initialized. Exiting.")
@@ -118,6 +122,7 @@ def main():
 
     watcher = LogWatcher(watchers)
     watcher.start()
+
 
 if __name__ == "__main__":
     main()

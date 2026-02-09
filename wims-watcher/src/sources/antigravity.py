@@ -1,24 +1,24 @@
 import json
 import logging
-import re
-from typing import Any, Dict, Optional
 from datetime import datetime
+from typing import Any
 
-from .base import BaseWatcher
 from .claude import ClaudeWatcher
 
 logger = logging.getLogger(__name__)
+
 
 class AntigravityWatcher(ClaudeWatcher):
     """
     Watcher for Antigravity logs.
     Inherits from ClaudeWatcher to reuse file reading and line processing logic.
     """
-    def __init__(self, file_path: str, client: Optional[Any] = None):
+
+    def __init__(self, file_path: str, client: Any | None = None):
         super().__init__(file_path, client)
         self.source_name = "antigravity"
 
-    def parse_line(self, line: str) -> Optional[Dict[str, Any]]:
+    def parse_line(self, line: str) -> dict[str, Any] | None:
         """
         Parses an Antigravity log line.
         Supports JSON format.
@@ -35,7 +35,7 @@ class AntigravityWatcher(ClaudeWatcher):
             logger.error(f"Error parsing Antigravity line: {e}")
             return None
 
-    def _transform_entry(self, entry: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def _transform_entry(self, entry: dict[str, Any]) -> dict[str, Any] | None:
         """
         Transforms an Antigravity log entry into a WIMS ingestion payload.
         """
@@ -71,11 +71,7 @@ class AntigravityWatcher(ClaudeWatcher):
         session_id = entry.get("session_id", "unknown")
 
         # Build metadata
-        metadata = {
-            "agent_id": agent_id,
-            "level": entry.get("level", "INFO"),
-            "source_type": "antigravity_log"
-        }
+        metadata = {"agent_id": agent_id, "level": entry.get("level", "INFO"), "source_type": "antigravity_log"}
 
         # Add any other interesting fields to metadata
         for k, v in entry.items():
@@ -88,8 +84,8 @@ class AntigravityWatcher(ClaudeWatcher):
             "platform": "antigravity",
             "title": f"Antigravity Session {session_id}",
             "content": str(message),
-            "role": "assistant" if entry.get("level") == "response" else "user", # Heuristic mapping
+            "role": "assistant" if entry.get("level") == "response" else "user",  # Heuristic mapping
             "timestamp": timestamp,
             "url": "",
-            "metadata": metadata
+            "metadata": metadata,
         }

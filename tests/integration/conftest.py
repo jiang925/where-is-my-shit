@@ -1,11 +1,12 @@
 import os
 import sys
-import time
 import threading
-import pytest
-import uvicorn
-import requests
+import time
 from pathlib import Path
+
+import pytest
+import requests
+import uvicorn
 
 # Set test environment variables BEFORE importing app to ensure settings load correctly
 os.environ["WIMS_PASSWORD"] = "test-password"
@@ -21,19 +22,21 @@ sys.path.append(str(PROJECT_ROOT))
 WATCHER_SRC = PROJECT_ROOT / "wims-watcher" / "src"
 sys.path.append(str(WATCHER_SRC))
 
-from src.app.main import app
-from src.app.core.config import settings
-from src.app.db.auth import AuthDB
 from src.app.core.auth import get_password_hash
+from src.app.db.auth import AuthDB
+from src.app.main import app
+
 
 # Helper to find a free port
 def get_free_port():
     import socket
+
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind(("", 0))
     port = s.getsockname()[1]
     s.close()
     return port
+
 
 @pytest.fixture(scope="session")
 def live_server():
@@ -89,6 +92,7 @@ def live_server():
             os.remove("data/test_auth.db")
         # LanceDB cleanup might be more complex if it's a directory
         import shutil
+
         if os.path.exists("data/test_wims.lance"):
             shutil.rmtree("data/test_wims.lance")
     except Exception as e:

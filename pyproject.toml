@@ -1,11 +1,46 @@
+[project]
+name = "where-is-my-shit"
+version = "0.1.0"
+description = "AI-powered search for chat messages across platforms"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "lancedb>=0.5.0",
+    "fastembed>=0.2.0",
+    "structlog>=24.1.0",
+    "python-json-logger>=2.0.7",
+    "pydantic-settings>=2.1.0",
+    "psutil>=5.9.0",
+    "pyjwt>=2.8.0",
+    "passlib[argon2]>=1.7.4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "httpx>=0.26.0",
+    "ruff>=0.2.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
 [tool.ruff]
-# Same as Black.
 line-length = 120
 target-version = "py310"
+extend-exclude = [".tmp_tools", ".fix_lint_venv"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
-ignore = []
+ignore = [
+    "E402",  # Module level import not at top of file (needed for sys.path manipulation in tests)
+]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

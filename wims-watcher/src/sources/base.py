@@ -1,18 +1,20 @@
+import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Optional
-import logging
+from typing import Any
 
-from ..state import StateManager
 from ..client import WimsClient
+from ..state import StateManager
 
 logger = logging.getLogger(__name__)
+
 
 class BaseWatcher(ABC):
     """
     Abstract base class for all log watchers.
     """
-    def __init__(self, source_name: str, file_path: str, client: Optional[WimsClient] = None):
+
+    def __init__(self, source_name: str, file_path: str, client: WimsClient | None = None):
         self.source_name = source_name
         self.file_path = Path(file_path).expanduser().resolve()
         self.state_manager = StateManager()
@@ -27,7 +29,7 @@ class BaseWatcher(ABC):
         pass
 
     @abstractmethod
-    def parse_line(self, line: str) -> Optional[Dict[str, Any]]:
+    def parse_line(self, line: str) -> dict[str, Any] | None:
         """
         Parse a single line from the log file.
         Returns a dictionary suitable for WIMS ingestion, or None if invalid.

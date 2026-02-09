@@ -1,24 +1,27 @@
 import logging
+from pathlib import Path
+from typing import Any
+
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-import json
-import os
-from pathlib import Path
-from typing import Dict, Any, Optional
 
 logger = logging.getLogger(__name__)
 
+
 class AuthError(Exception):
     """Raised when authentication fails."""
+
     pass
+
 
 class WimsClient:
     """
     Client for the WIMS Core Engine API.
     """
-    def __init__(self, base_url: str = "http://localhost:8000", password: Optional[str] = None):
-        self.base_url = base_url.rstrip('/')
+
+    def __init__(self, base_url: str = "http://localhost:8000", password: str | None = None):
+        self.base_url = base_url.rstrip("/")
         self.ingest_url = f"{self.base_url}/api/v1/ingest"
         self.auth_url = f"{self.base_url}/api/v1/auth/login"
         self.password = password
@@ -30,10 +33,7 @@ class WimsClient:
 
         self.session = requests.Session()
         retry_strategy = Retry(
-            total=5,
-            backoff_factor=1,
-            status_forcelist=[500, 502, 503, 504],
-            allowed_methods=["POST"]
+            total=5, backoff_factor=1, status_forcelist=[500, 502, 503, 504], allowed_methods=["POST"]
         )
         adapter = HTTPAdapter(max_retries=retry_strategy)
         self.session.mount("http://", adapter)
@@ -65,7 +65,7 @@ class WimsClient:
                 self.auth_url,
                 json={"password": self.password},
                 headers={"Content-Type": "application/json"},
-                timeout=10
+                timeout=10,
             )
 
             if response.status_code == 200:
@@ -83,27 +83,27 @@ class WimsClient:
             logger.error(f"Login error: {e}")
             return False
 
-    def _get_headers(self) -> Dict[str, str]:
+    def _get_headers(self) -> dict[str, str]:
         headers = {"Content-Type": "application/json"}
         if self.token:
             headers["Authorization"] = f"Bearer {self.token}"
         return headers
 
-    def ingest(self, payload: Dict[str, Any]) -> bool:
+    def ingest(self, payload: dict[str, Any]) -> bool:
         """
         Send a payload to the ingestion endpoint.
         Returns True if successful, False otherwise.
         """
         return self._attempt_ingest(payload, retry_auth=True)
 
-    def _attempt_ingest(self, payload: Dict[str, Any], retry_auth: bool = True) -> bool:
+    def _attempt_ingest(self, payload: dict[str, Any], retry_auth: bool = True) -> bool:
         try:
             logger.debug(f"Sending payload to {self.ingest_url}")
             response = self.session.post(
                 self.ingest_url,
                 json=payload,
                 headers=self._get_headers(),
-                timeout=5  # Short timeout for local service
+                timeout=5,  # Short timeout for local service
             )
 
             if response.status_code in (200, 201, 202):
@@ -123,15 +123,11 @@ class WimsClient:
 
         except requests.exceptions.ConnectionError:
             logger.warning(
-                f"Connection error to WIMS Core at {self.ingest_url}. "
-                "Retries exhausted. Is the service running?"
+                f"Connection error to WIMS Core at {self.ingest_url}. Retries exhausted. Is the service running?"
             )
             return False
         except requests.exceptions.Timeout:
-            logger.warning(
-                f"Timeout connecting to WIMS Core at {self.ingest_url}. "
-                "Retries exhausted."
-            )
+            logger.warning(f"Timeout connecting to WIMS Core at {self.ingest_url}. Retries exhausted.")
             return False
         except AuthError:
             raise

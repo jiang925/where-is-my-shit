@@ -1,8 +1,7 @@
 from datetime import datetime
-from typing import List, Optional
 
 from lancedb.pydantic import LanceModel, Vector
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class Message(LanceModel):
@@ -10,6 +9,7 @@ class Message(LanceModel):
     Core message model for LanceDB storage.
     Represents a single message or document chunk from a platform.
     """
+
     id: str
     conversation_id: str
     platform: str
@@ -28,7 +28,8 @@ class IngestRequest(BaseModel):
     Payload for incoming documents to be ingested.
     Does not include the vector as it is generated server-side.
     """
-    id: Optional[str] = None
+
+    id: str | None = None
     conversation_id: str
     platform: str
     title: str = ""
@@ -42,18 +43,20 @@ class SearchRequest(BaseModel):
     """
     Payload for search queries.
     """
+
     query: str
     limit: int = 50
     offset: int = 0
     # Optional filters could be added here in the future
-    conversation_id: Optional[str] = None
-    platform: Optional[str] = None
+    conversation_id: str | None = None
+    platform: str | None = None
 
 
 class SearchResult(BaseModel):
     """
     Single result from a search query.
     """
+
     id: str
     conversation_id: str
     platform: str
@@ -69,13 +72,15 @@ class SearchResultGroup(BaseModel):
     """
     Results grouped by conversation.
     """
+
     conversation_id: str
-    results: List[SearchResult]
+    results: list[SearchResult]
 
 
 class SearchResponse(BaseModel):
     """
     Grouped search results.
     """
-    groups: List[SearchResultGroup]
+
+    groups: list[SearchResultGroup]
     count: int

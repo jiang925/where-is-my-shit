@@ -1,13 +1,15 @@
 import uuid
-from fastapi import APIRouter, HTTPException, status, Depends
+
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.concurrency import run_in_threadpool
 
 from src.app.core.security import get_current_user
+from src.app.db.client import db_client
 from src.app.schemas.message import IngestRequest, Message
 from src.app.services.embedding import EmbeddingService
-from src.app.db.client import db_client
 
 router = APIRouter(dependencies=[Depends(get_current_user)])
+
 
 @router.post("/ingest", status_code=status.HTTP_201_CREATED)
 async def ingest_document(request: IngestRequest):
@@ -40,7 +42,7 @@ async def ingest_document(request: IngestRequest):
             role=request.role,
             timestamp=request.timestamp,
             url=request.url,
-            vector=vector
+            vector=vector,
         )
     except Exception as e:
         raise HTTPException(status_code=422, detail=f"Validation failed: {str(e)}")

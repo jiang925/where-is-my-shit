@@ -1,15 +1,15 @@
 import json
 import logging
-from typing import Any, Dict, List, Tuple, Optional
 from datetime import datetime
-from pathlib import Path
+from typing import Any
 
 from .base import BaseWatcher
 
 logger = logging.getLogger(__name__)
 
+
 class ClaudeWatcher(BaseWatcher):
-    def __init__(self, file_path: str, client: Optional[Any] = None):
+    def __init__(self, file_path: str, client: Any | None = None):
         super().__init__("claude-code", file_path, client)
 
     def check(self):
@@ -42,9 +42,11 @@ class ClaudeWatcher(BaseWatcher):
             self.update_state(new_offset)
             logger.info(f"Updated cursor to {new_offset}")
         else:
-            logger.warning(f"Only ingested {success_count}/{len(new_lines)}. Not updating cursor to avoid data loss on retry.")
+            logger.warning(
+                f"Only ingested {success_count}/{len(new_lines)}. Not updating cursor to avoid data loss on retry."
+            )
 
-    def _read_new_lines(self, offset: int) -> Tuple[List[str], int]:
+    def _read_new_lines(self, offset: int) -> tuple[list[str], int]:
         """
         Reads new lines from file starting at byte offset.
         Returns (list of strings, new byte offset).
@@ -54,7 +56,7 @@ class ClaudeWatcher(BaseWatcher):
             return [], offset
 
         try:
-            with open(self.file_path, 'rb') as f:
+            with open(self.file_path, "rb") as f:
                 f.seek(offset)
                 chunk = f.read()
 
@@ -62,19 +64,19 @@ class ClaudeWatcher(BaseWatcher):
                     return [], offset
 
                 # Find last newline to ensure we only process complete lines
-                last_newline_index = chunk.rfind(b'\n')
+                last_newline_index = chunk.rfind(b"\n")
 
                 if last_newline_index == -1:
                     # No complete line found, wait for more data
                     return [], offset
 
                 # Extract valid chunk up to the last newline
-                valid_chunk = chunk[:last_newline_index + 1]
+                valid_chunk = chunk[: last_newline_index + 1]
                 new_offset = offset + len(valid_chunk)
 
                 # Decode and split
                 try:
-                    text = valid_chunk.decode('utf-8')
+                    text = valid_chunk.decode("utf-8")
                     lines = [line for line in text.splitlines() if line.strip()]
                     return lines, new_offset
                 except UnicodeDecodeError as e:
@@ -89,7 +91,7 @@ class ClaudeWatcher(BaseWatcher):
             logger.error(f"Error reading {self.file_path}: {e}")
             return [], offset
 
-    def parse_line(self, line: str) -> Optional[Dict[str, Any]]:
+    def parse_line(self, line: str) -> dict[str, Any] | None:
         try:
             entry = json.loads(line)
             return self._transform_entry(entry)
@@ -100,7 +102,7 @@ class ClaudeWatcher(BaseWatcher):
             logger.error(f"Error parsing line: {e}")
             return None
 
-    def _transform_entry(self, entry: Dict[str, Any]) -> Dict[str, Any]:
+    def _transform_entry(self, entry: dict[str, Any]) -> dict[str, Any]:
         """
         Transforms a Claude Code history entry into a WIMS ingestion payload.
         """
@@ -123,5 +125,5 @@ class ClaudeWatcher(BaseWatcher):
             "role": "user",
             "timestamp": datetime.fromtimestamp(entry.get("timestamp", 0) / 1000.0).isoformat(),
             "url": project or "",
-            "metadata": metadata
+            "metadata": metadata,
         }

@@ -1,18 +1,19 @@
-import lancedb
 import os
 from typing import Optional
+
+import lancedb
 
 from src.app.core.config import settings
 from src.app.schemas.message import Message
 
 
 class DBClient:
-    _instance: Optional['DBClient'] = None
-    _db: Optional[lancedb.DBConnection] = None
+    _instance: Optional["DBClient"] = None
+    _db: lancedb.DBConnection | None = None
 
     def __new__(cls):
         if cls._instance is None:
-            cls._instance = super(DBClient, cls).__new__(cls)
+            cls._instance = super().__new__(cls)
         return cls._instance
 
     def connect(self) -> lancedb.DBConnection:

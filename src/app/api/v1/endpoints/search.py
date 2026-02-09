@@ -1,13 +1,18 @@
-from typing import List, Dict, Any, Optional
-from fastapi import APIRouter, HTTPException, Query, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.concurrency import run_in_threadpool
 
 from src.app.core.security import get_current_user
-from src.app.schemas.message import SearchRequest, SearchResponse, SearchResult, SearchResultGroup
-from src.app.services.embedding import EmbeddingService
 from src.app.db.client import db_client
+from src.app.schemas.message import (
+    SearchRequest,
+    SearchResponse,
+    SearchResult,
+    SearchResultGroup,
+)
+from src.app.services.embedding import EmbeddingService
 
 router = APIRouter(dependencies=[Depends(get_current_user)])
+
 
 @router.post("/search", response_model=SearchResponse)
 async def search_documents(request: SearchRequest):
@@ -41,7 +46,7 @@ async def search_documents(request: SearchRequest):
         # Use to_list() to avoid pandas dependency and handle score mapping manually
         results_list = await run_in_threadpool(search_builder.to_list)
 
-        results: List[SearchResult] = []
+        results: list[SearchResult] = []
         for r in results_list:
             # map _distance to score if present
             # LanceDB returns _distance (lower is better) for euclidean/cosine?
@@ -62,7 +67,7 @@ async def search_documents(request: SearchRequest):
         raise HTTPException(status_code=500, detail=f"Search execution failed: {str(e)}")
 
     # 3. Group by conversation
-    grouped_map: Dict[str, List[SearchResult]] = {}
+    grouped_map: dict[str, list[SearchResult]] = {}
 
     for res in results:
         # TODO: Add score threshold check here if needed
@@ -71,23 +76,17 @@ async def search_documents(request: SearchRequest):
         grouped_map[res.conversation_id].append(res)
 
     # 4. Construct response
-    groups: List[SearchResultGroup] = []
+    groups: list[SearchResultGroup] = []
     total_count = 0
 
     for conv_id, items in grouped_map.items():
         # Sort items by timestamp or score? Usually score is already sorted by search.
         # But within a conversation, chronological might be better for reading?
         # Search returns relevance. Let's keep relevance for now.
-        groups.append(SearchResultGroup(
-            conversation_id=conv_id,
-            results=items
-        ))
+        groups.append(SearchResultGroup(conversation_id=conv_id, results=items))
         total_count += len(items)
 
     # If we want to strictly limit the number of ITEMS returned to request.limit:
     # We might need to trim. But let's return what we found for now.
 
-    return SearchResponse(
-        groups=groups,
-        count=total_count
-    )
+    return SearchResponse(groups=groups, count=total_count)
