@@ -1,4 +1,12 @@
 import { IngestPayload } from '../types/message';
+import { getSettings } from './storage';
+
+export class AuthError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'AuthError';
+  }
+}
 
 export class ApiClient {
   private serverUrl: string;
@@ -6,6 +14,19 @@ export class ApiClient {
 
   constructor(serverUrl: string) {
     this.serverUrl = serverUrl;
+  }
+
+  private async getHeaders(): Promise<HeadersInit> {
+    const settings = await getSettings();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+
+    if (settings.authToken) {
+      headers['Authorization'] = `Bearer ${settings.authToken}`;
+    }
+
+    return headers;
   }
 
   /**
@@ -17,16 +38,19 @@ export class ApiClient {
     const timeoutId = setTimeout(() => controller.abort(), this.REQUEST_TIMEOUT_MS);
 
     try {
+      const headers = await this.getHeaders();
       const response = await fetch(`${this.serverUrl}/api/v1/ingest`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers,
         body: JSON.stringify(payload),
         signal: controller.signal
       });
 
       clearTimeout(timeoutId);
+
+      if (response.status === 401 || response.status === 403) {
+        throw new AuthError(`Authentication failed: ${response.status}`);
+      }
 
       if (!response.ok) {
         throw new Error(`Server responded with ${response.status}`);
