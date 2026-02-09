@@ -2,7 +2,8 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse, RedirectResponse
 
 from src.app.core.config import get_settings
 from src.app.core.logging import setup_logging
@@ -25,6 +26,8 @@ app = FastAPI(
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
+app.mount("/static", StaticFiles(directory="src/static"), name="static")
+
 @app.get("/")
 async def root():
-    return JSONResponse(content={"msg": "WIMS Core Engine Ready"})
+    return RedirectResponse(url="/static/test.html")

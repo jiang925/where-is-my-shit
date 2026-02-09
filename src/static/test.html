@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WIMS Core Engine - Manual Test</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .card { border: 1px solid #ccc; padding: 20px; margin-bottom: 20px; border-radius: 8px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        textarea, input, select { width: 100%; padding: 8px; box-sizing: border-box; }
+        button { background-color: #007bff; color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 4px; }
+        button:hover { background-color: #0056b3; }
+        pre { background-color: #f4f4f4; padding: 10px; overflow-x: auto; border-radius: 4px; }
+        .status { margin-top: 10px; font-weight: bold; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>WIMS Core Engine - Test Console</h1>
+
+    <div class="card">
+        <h2>1. Ingest Content</h2>
+        <div class="form-group">
+            <label for="ingest-content">Content:</label>
+            <textarea id="ingest-content" rows="4">The quick brown fox jumps over the lazy dog.</textarea>
+        </div>
+        <div class="form-group">
+            <label for="ingest-platform">Platform:</label>
+            <select id="ingest-platform">
+                <option value="manual_test">Manual Test</option>
+                <option value="discord">Discord</option>
+                <option value="slack">Slack</option>
+            </select>
+        </div>
+        <button onclick="ingest()">Ingest</button>
+        <div id="ingest-result" class="status"></div>
+    </div>
+
+    <div class="card">
+        <h2>2. Search</h2>
+        <div class="form-group">
+            <label for="search-query">Query:</label>
+            <input type="text" id="search-query" value="fast animal">
+        </div>
+        <button onclick="search()">Search</button>
+        <div id="search-result"></div>
+    </div>
+
+    <script>
+        const API_BASE = '/api/v1';
+
+        async function ingest() {
+            const content = document.getElementById('ingest-content').value;
+            const platform = document.getElementById('ingest-platform').value;
+            const resultDiv = document.getElementById('ingest-result');
+
+            resultDiv.innerHTML = 'Ingesting...';
+            resultDiv.className = 'status';
+
+            try {
+                const response = await fetch(`${API_BASE}/ingest/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        content: content,
+                        platform: platform,
+                        author: 'tester',
+                        conversation_id: 'test-convo-' + Date.now(),
+                        timestamp: new Date().toISOString()
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.innerHTML = `Success! ID: ${data.id}`;
+                    resultDiv.className = 'status success';
+                    // Auto-fill search if it makes sense, or just leave it
+                } else {
+                    resultDiv.innerHTML = `Error: ${JSON.stringify(data)}`;
+                    resultDiv.className = 'status error';
+                }
+            } catch (e) {
+                resultDiv.innerHTML = `Network Error: ${e.message}`;
+                resultDiv.className = 'status error';
+            }
+        }
+
+        async function search() {
+            const query = document.getElementById('search-query').value;
+            const resultDiv = document.getElementById('search-result');
+
+            resultDiv.innerHTML = 'Searching...';
+
+            try {
+                const response = await fetch(`${API_BASE}/search/?q=${encodeURIComponent(query)}&limit=5`);
+                const data = await response.json();
+
+                resultDiv.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (e) {
+                resultDiv.innerHTML = `<div class="status error">Error: ${e.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>
