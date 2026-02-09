@@ -104,12 +104,24 @@ class ClaudeWatcher(BaseWatcher):
         """
         Transforms a Claude Code history entry into a WIMS ingestion payload.
         """
+        metadata = {}
+
+        project = entry.get("project")
+        if project:
+            metadata["project"] = project
+
+        pasted = entry.get("pastedContents")
+        if pasted:
+            metadata["pasted"] = pasted
+
         return {
             "conversation_id": entry.get("sessionId", "unknown"),
+            "external_id": entry.get("sessionId"),
             "platform": "claude-code",
             "title": f"Session {entry.get('sessionId', 'unknown')[:8]}",
             "content": entry.get("display", "") or "[Empty Command]",
             "role": "user",
             "timestamp": datetime.fromtimestamp(entry.get("timestamp", 0) / 1000.0).isoformat(),
-            "url": entry.get("project", "")
+            "url": project or "",
+            "metadata": metadata
         }
