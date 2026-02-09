@@ -29,11 +29,8 @@ async def search_documents(request: SearchRequest):
         # Use vector search primarily
         search_builder = table.search(query_vector)
 
-        # Apply limit (fetch more than requested to allow for grouping density)
-        # We want to return 'request.limit' groups? Or items?
-        # Usually limit applies to items. Let's fetch 2x items to get good groups.
-        fetch_limit = request.limit * 2
-        search_builder = search_builder.limit(fetch_limit)
+        # Apply limit and offset
+        search_builder = search_builder.limit(request.limit).offset(request.offset)
 
         # Apply filters if any
         if request.conversation_id:

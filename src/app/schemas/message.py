@@ -44,6 +44,7 @@ class SearchRequest(BaseModel):
     """
     query: str
     limit: int = 50
+    offset: int = 0
     # Optional filters could be added here in the future
     conversation_id: Optional[str] = None
     platform: Optional[str] = None
