@@ -6,12 +6,12 @@
 
 ## Current Position
 **Phase:** 1 - Core Engine
-**Plan:** 02 of 05 (Core Data Persistence)
+**Plan:** 03 of 05 (REST API Implementation)
 **Status:** In progress
-**Last activity:** 2026-02-05 - Completed 01-02-PLAN.md
+**Last activity:** 2026-02-05 - Completed 01-03-PLAN.md
 
 ```
-[████████░░░░░░░░░░░░] 40%
+[████████████░░░░░░░░] 60%
 ```
 
 ## Context & Memory
@@ -22,16 +22,17 @@
 - **Scope:** Read-only ingestion (no write-back to platforms).
 - **Embedding:** `BAAI/bge-small-en-v1.5` (384d) for local CPU performance.
 - **Database:** LanceDB with FTS and Vector indices (FLAT initially).
+- **API Pattern:** Async embedding generation using threadpools to prevent blocking.
+- **Search:** Results grouped by `conversation_id` to provide context.
 
 ### Blockers
 - None.
 
 ### Next Actions
-- **Plan 03:** Implement Ingestion API (FastAPI endpoints).
-- **Plan 04:** Implement Search API (Hybrid FTS + Vector).
+- **Plan 04:** Implement Search API details (Hybrid FTS + Vector).
 - **Plan 05:** "All-in-One" Docker setup.
 
 ## Session Continuity
 **Last Session:** 2026-02-05
-**Stopped at:** Completed 01-02-PLAN.md
-**Resume:** Execute 01-03-PLAN.md (API Layer)
+**Stopped at:** Completed 01-03-PLAN.md
+**Resume:** Execute 01-04-PLAN.md (Search Refinement)
