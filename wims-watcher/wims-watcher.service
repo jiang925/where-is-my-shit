@@ -1,0 +1,17 @@
+[Unit]
+Description=WIMS Watcher Service
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/code/where-is-my-shit/wims-watcher
+ExecStart=/usr/bin/python3 src/main.py
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+Environment=CLAUDE_HISTORY_FILE=%h/.claude/history.jsonl
+# Ensure local site-packages are found if not in default path (though they usually are)
+Environment=PYTHONPATH=%h/.local/lib/python3.12/site-packages
+
+[Install]
+WantedBy=default.target
