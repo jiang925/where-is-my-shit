@@ -118,6 +118,70 @@ input:checked + .slider:before {
   background-color: #f44336;
 }
 
+/* Login Section */
+#loginSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px 0;
+}
+
+.login-message {
+  margin: 0;
+  color: #666;
+  font-size: 13px;
+  text-align: center;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+input[type="password"] {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+input[type="password"]:focus {
+  border-color: #4CAF50;
+  outline: none;
+}
+
+.primary-button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  width: 100%;
+  transition: background-color 0.2s;
+}
+
+.primary-button:hover {
+  background-color: #45a049;
+}
+
+.primary-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: #f44336;
+  font-size: 12px;
+  text-align: center;
+  margin-top: -8px;
+}
+
 /* Actions */
 .actions {
   padding-top: 8px;

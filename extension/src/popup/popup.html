@@ -9,38 +9,51 @@
   <div id="popup-container">
     <h1>WIMS Capture</h1>
 
-    <div class="toggle-section">
-      <label class="toggle-label">
-        <span>Capture Enabled</span>
-        <label class="switch">
-          <input type="checkbox" id="captureToggle">
-          <span class="slider"></span>
+    <!-- Login Section -->
+    <div id="loginSection" style="display: none;">
+      <p class="login-message">Authentication Required</p>
+      <div class="form-group">
+        <input type="password" id="passwordInput" placeholder="Enter Password" />
+      </div>
+      <div id="loginError" class="error-message" style="display: none;"></div>
+      <button id="loginButton" class="primary-button">Login</button>
+    </div>
+
+    <!-- Main Content -->
+    <div id="mainContent">
+      <div class="toggle-section">
+        <label class="toggle-label">
+          <span>Capture Enabled</span>
+          <label class="switch">
+            <input type="checkbox" id="captureToggle">
+            <span class="slider"></span>
+          </label>
         </label>
-      </label>
-    </div>
-
-    <div class="status-section">
-      <div class="status-item">
-        <span class="status-label">Server:</span>
-        <span class="status-value">
-          <span class="status-dot" id="serverStatus"></span>
-          <span id="serverStatusText">Checking...</span>
-        </span>
       </div>
 
-      <div class="status-item" id="queueSection" style="display: none;">
-        <span class="status-label">Queued:</span>
-        <span class="status-value" id="queueCount">0</span>
+      <div class="status-section">
+        <div class="status-item">
+          <span class="status-label">Server:</span>
+          <span class="status-value">
+            <span class="status-dot" id="serverStatus"></span>
+            <span id="serverStatusText">Checking...</span>
+          </span>
+        </div>
+
+        <div class="status-item" id="queueSection" style="display: none;">
+          <span class="status-label">Queued:</span>
+          <span class="status-value" id="queueCount">0</span>
+        </div>
+
+        <div class="status-item">
+          <span class="status-label">Last capture:</span>
+          <span class="status-value" id="lastCapture">Never</span>
+        </div>
       </div>
 
-      <div class="status-item">
-        <span class="status-label">Last capture:</span>
-        <span class="status-value" id="lastCapture">Never</span>
+      <div class="actions">
+        <a href="#" id="openOptions">Settings</a>
       </div>
-    </div>
-
-    <div class="actions">
-      <a href="#" id="openOptions">Settings</a>
     </div>
   </div>
   <script src="popup.js"></script>
