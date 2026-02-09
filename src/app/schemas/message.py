@@ -64,9 +64,17 @@ class SearchResult(BaseModel):
     score: float
 
 
+class SearchResultGroup(BaseModel):
+    """
+    Results grouped by conversation.
+    """
+    conversation_id: str
+    results: List[SearchResult]
+
+
 class SearchResponse(BaseModel):
     """
     Grouped search results.
     """
-    results: List[SearchResult]
+    groups: List[SearchResultGroup]
     count: int
