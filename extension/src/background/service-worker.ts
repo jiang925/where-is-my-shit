@@ -1,7 +1,7 @@
 import { ExtractedMessage, IngestPayload } from '../types/message';
 import { OfflineQueue } from '../lib/queue';
 import { getSettings, setSettings } from '../lib/storage';
-import { ApiClient } from '../lib/api';
+import { ApiClient, AuthError } from '../lib/api';
 
 type MessageType = 'MESSAGES_CAPTURED' | 'GET_STATUS' | 'TOGGLE_CAPTURE';
 
@@ -20,12 +20,55 @@ interface StatusResponse {
   queueSize: number;
   serverOnline: boolean;
   lastCaptureTimestamp: number;
+  authRequired: boolean;
 }
 
 // Global queue instance
 const queue = new OfflineQueue();
+let authRequired = false;
 
 console.log('[WIMS] Service worker initialized');
+
+/**
+ * Handle authentication errors
+ */
+async function handleAuthError() {
+  if (!authRequired) {
+    console.log('[WIMS] Authentication required');
+    authRequired = true;
+    await chrome.action.setBadgeText({ text: 'LOGIN' });
+    await chrome.action.setBadgeBackgroundColor({ color: '#F44336' });
+  }
+}
+
+/**
+ * Clear authentication error state
+ */
+async function clearAuthError() {
+  if (authRequired) {
+    console.log('[WIMS] Authentication restored');
+    authRequired = false;
+    await chrome.action.setBadgeText({ text: '' });
+  }
+}
+
+/**
+ * Listen for storage changes to detect login from popup
+ */
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName === 'local' && changes.settings) {
+    const newSettings = changes.settings.newValue;
+    // If we have a token now, clear the auth error
+    if (newSettings?.authToken && authRequired) {
+      clearAuthError();
+      // Resume queue processing
+      queue.processQueue().catch(err => {
+         if (err instanceof AuthError) handleAuthError();
+         else console.error('[WIMS] Queue processing error after login:', err);
+      });
+    }
+  }
+});
 
 /**
  * Handle messages from content scripts and popup
@@ -73,7 +116,16 @@ async function handleMessagesCaptured(payload: CapturePayload): Promise<void> {
       url: msg.url
     };
 
-    await queue.enqueue(ingestPayload);
+    try {
+      await queue.enqueue(ingestPayload);
+    } catch (error) {
+      if (error instanceof AuthError) {
+        await handleAuthError();
+        // Continue loop to ensure all messages are at least enqueued (OfflineQueue saves before processing)
+      } else {
+        throw error;
+      }
+    }
   }
 
   // Update last capture timestamp
@@ -96,7 +148,8 @@ async function getStatus(): Promise<StatusResponse> {
   return {
     queueSize,
     serverOnline,
-    lastCaptureTimestamp: settings.lastCaptureTimestamp
+    lastCaptureTimestamp: settings.lastCaptureTimestamp,
+    authRequired
   };
 }
 
@@ -115,9 +168,18 @@ chrome.alarms.create('processQueue', { periodInMinutes: 1 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === 'processQueue') {
+    if (authRequired) {
+      console.log('[WIMS] Skipping queue processing due to auth requirement');
+      return;
+    }
+
     console.log('[WIMS] Processing queue on alarm');
-    queue.processQueue().catch(err => {
-      console.error('[WIMS] Queue processing error:', err);
+    queue.processQueue().catch(async (err) => {
+      if (err instanceof AuthError) {
+        await handleAuthError();
+      } else {
+        console.error('[WIMS] Queue processing error:', err);
+      }
     });
   }
 });
@@ -125,6 +187,10 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 /**
  * Process queue immediately on service worker startup
  */
-queue.processQueue().catch(err => {
-  console.error('[WIMS] Initial queue processing error:', err);
+queue.processQueue().catch(async (err) => {
+  if (err instanceof AuthError) {
+    await handleAuthError();
+  } else {
+    console.error('[WIMS] Initial queue processing error:', err);
+  }
 });

@@ -1,5 +1,5 @@
 import { IngestPayload } from '../types/message';
-import { ApiClient } from './api';
+import { ApiClient, AuthError } from './api';
 import { getSettings } from './storage';
 
 interface QueuedItem {
@@ -46,12 +46,22 @@ export class OfflineQueue {
       const settings = await getSettings();
       const client = new ApiClient(settings.serverUrl);
 
-      for (const item of queue) {
+      for (let i = 0; i < queue.length; i++) {
+        const item = queue[i];
         try {
           await client.sendMessage(item.payload);
           // Success - don't add to remaining
           console.log(`[WIMS Queue] Successfully sent message ${item.id}`);
-        } catch {
+        } catch (error) {
+          if (error instanceof AuthError) {
+            console.warn('[WIMS Queue] Auth error encountered, stopping queue processing');
+            // Add current failed item and all remaining items back to queue
+            remaining.push(item);
+            remaining.push(...queue.slice(i + 1));
+            await chrome.storage.local.set({ [this.STORAGE_KEY]: remaining });
+            throw error;
+          }
+
           item.retryCount++;
 
           if (item.retryCount < this.MAX_RETRIES) {
