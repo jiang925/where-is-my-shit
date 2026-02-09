@@ -1,45 +1,34 @@
 import secrets
-from datetime import UTC, datetime, timedelta
+from typing import Annotated
 
-import jwt
-from passlib.context import CryptContext
+from fastapi import HTTPException, Security, status
+from fastapi.security import APIKeyHeader
 
-# Password hashing configuration
-pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+from src.app.core.config import get_settings
 
-# JWT Configuration
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 1 week
+# Define the security scheme
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against a hash."""
-    return pwd_context.verify(plain_password, hashed_password)
+async def verify_api_key(
+    api_key_header_value: Annotated[str | None, Security(api_key_header)],
+) -> str:
+    """
+    Validate the API key from the X-API-Key header.
+    """
+    if not api_key_header_value:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Missing API Key",
+        )
 
+    settings = get_settings()
 
-def get_password_hash(password: str) -> str:
-    """Generate a hash for a password."""
-    return pwd_context.hash(password)
+    # Constant-time comparison to prevent timing attacks
+    if not secrets.compare_digest(api_key_header_value, settings.api_key):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid API Key",
+        )
 
-
-def create_access_token(data: dict, secret_key: str, expires_delta: timedelta | None = None) -> str:
-    """Create a JWT access token."""
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.now(UTC) + expires_delta
-    else:
-        expire = datetime.now(UTC) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-
-    to_encode.update({"exp": expire, "iat": datetime.now(UTC)})
-    encoded_jwt = jwt.encode(to_encode, secret_key, algorithm=ALGORITHM)
-    return encoded_jwt
-
-
-def generate_strong_password(length: int = 32) -> str:
-    """Generate a secure random password."""
-    return secrets.token_urlsafe(length)
-
-
-def generate_secret_key() -> str:
-    """Generate a secure random secret key for JWT."""
-    return secrets.token_hex(32)
+    return api_key_header_value
