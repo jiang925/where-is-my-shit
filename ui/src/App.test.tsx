@@ -3,11 +3,12 @@ import { describe, it, expect } from 'vitest';
 import App from './App';
 
 describe('App', () => {
-  it('renders search input', () => {
+  it('renders API key prompt when not authenticated', () => {
     render(<App />);
-    // Adjust this query based on actual SearchBar implementation
-    // For now assuming there is a textbox or placeholder
-    const searchInput = screen.getByRole('textbox');
-    expect(searchInput).toBeInTheDocument();
+    // App shows ApiKeyPrompt first when no API key in localStorage
+    const apiKeyInput = screen.getByLabelText('API Key');
+    expect(apiKeyInput).toBeInTheDocument();
+    expect(apiKeyInput).toHaveAttribute('type', 'password');
+    expect(apiKeyInput).toHaveAttribute('placeholder', 'sk-wims-...');
   });
 });
