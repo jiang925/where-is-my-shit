@@ -29,7 +29,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # Print startup banner with credentials
     print("\n" + "=" * 60)
-    print(f"🚀 WIMS Server Running")
+    print("🚀 WIMS Server Running")
     print(f"🔑 API Key: {settings.api_key}")
     print(f"📄 Config:  {config_manager.path}")
     print(f"📚 Docs:    http://{settings.host}:{settings.port}/docs")
@@ -81,6 +81,7 @@ async def serve_spa(full_path: str):
     # Allow API 404s to pass through as JSON
     if full_path.startswith("api/"):
         from fastapi import HTTPException
+
         raise HTTPException(status_code=404, detail="Not Found")
 
     # Check if it's a static file request that wasn't caught by mounted assets

@@ -1,7 +1,6 @@
 import argparse
 import socket
 import sys
-from pathlib import Path
 
 import structlog
 import uvicorn
