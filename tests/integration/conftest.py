@@ -22,8 +22,9 @@ sys.path.append(str(PROJECT_ROOT))
 WATCHER_SRC = PROJECT_ROOT / "wims-watcher" / "src"
 sys.path.append(str(WATCHER_SRC))
 
-from src.app.core.auth import get_password_hash
 from src.app.db.auth import AuthDB
+
+from src.app.core.auth import get_password_hash
 from src.app.main import app
 
 

@@ -16,6 +16,7 @@ class ServerConfig(BaseModel):
     Persistent server configuration model.
     Saved to ~/.wims/server.json by default.
     """
+
     # Dynamic settings (persisted in JSON)
     api_key: str
     port: int = 8000
@@ -90,7 +91,7 @@ class ConfigManager:
                 logger.warning("Config file missing during reload, skipping...")
                 return
 
-            with open(self.path, "r", encoding="utf-8") as f:
+            with open(self.path, encoding="utf-8") as f:
                 data = json.load(f)
 
             # We use model_validate to ensure the new config is valid before swapping
@@ -107,7 +108,7 @@ class ConfigManager:
         """
         if self.path.exists():
             try:
-                with open(self.path, "r", encoding="utf-8") as f:
+                with open(self.path, encoding="utf-8") as f:
                     data = json.load(f)
                 logger.info(f"Loaded configuration from {self.path}")
                 return ServerConfig.model_validate(data)

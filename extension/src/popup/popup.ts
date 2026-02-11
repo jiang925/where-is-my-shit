@@ -1,4 +1,4 @@
-import { getSettings, setSettings } from '../lib/storage';
+import { getSettings } from '../lib/storage';
 
 interface StatusResponse {
   queueSize: number;
@@ -17,7 +17,6 @@ const openOptions = document.getElementById('openOptions') as HTMLAnchorElement;
 
 const configWarning = document.getElementById('configWarning') as HTMLElement;
 const openOptionsLink = document.getElementById('openOptionsLink') as HTMLAnchorElement;
-const mainContent = document.getElementById('mainContent') as HTMLElement;
 
 // Auto-refresh interval
 let refreshInterval: number | null = null;
