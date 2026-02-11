@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SearchBar } from './components/SearchBar';
 import { ResultCard } from './components/ResultCard';
 import { useSearch } from './lib/api';
-import { Loader2 } from 'lucide-react';
+import { Loader2, KeyRound, LogOut } from 'lucide-react';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -15,7 +15,58 @@ const queryClient = new QueryClient({
   },
 });
 
-function SearchInterface() {
+function ApiKeyPrompt({ onSave }: { onSave: () => void }) {
+  const [key, setKey] = useState('');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (key.trim()) {
+      localStorage.setItem('wims_api_key', key.trim());
+      onSave();
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4 font-sans">
+      <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full border border-gray-100">
+        <div className="flex flex-col items-center mb-6">
+          <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center mb-4">
+            <KeyRound className="w-6 h-6 text-blue-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900">Authentication Required</h2>
+          <p className="text-gray-500 text-center mt-2">
+            Please enter your WIMS API Key to continue. You can find this in your server logs or <code>~/.wims/server.json</code>.
+          </p>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="apiKey" className="block text-sm font-medium text-gray-700 mb-1">
+              API Key
+            </label>
+            <input
+              type="password"
+              id="apiKey"
+              value={key}
+              onChange={(e) => setKey(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+              placeholder="sk-wims-..."
+              autoFocus
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={!key.trim()}
+            className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Connect
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function SearchInterface({ onLogout }: { onLogout: () => void }) {
   const [query, setQuery] = useState('');
 
   const {
@@ -51,11 +102,20 @@ function SearchInterface() {
     <div className="min-h-screen bg-gray-50 flex flex-col items-center font-sans text-gray-900">
       {/* Sticky Header */}
       <div className="sticky top-0 z-10 w-full bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm pt-4 pb-4 px-4">
-        <div className="max-w-3xl mx-auto w-full">
-          <SearchBar
-            onSearch={setQuery}
-            isLoading={isFetching && !isFetchingNextPage}
-          />
+        <div className="max-w-3xl mx-auto w-full flex items-center gap-4">
+          <div className="flex-1">
+            <SearchBar
+              onSearch={setQuery}
+              isLoading={isFetching && !isFetchingNextPage}
+            />
+          </div>
+          <button
+            onClick={onLogout}
+            className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            title="Disconnect / Change API Key"
+          >
+            <LogOut className="w-5 h-5" />
+          </button>
         </div>
       </div>
 
@@ -118,9 +178,20 @@ function SearchInterface() {
 }
 
 function App() {
+  const [hasKey, setHasKey] = useState(() => !!localStorage.getItem('wims_api_key'));
+
+  const handleLogout = () => {
+    localStorage.removeItem('wims_api_key');
+    setHasKey(false);
+  };
+
   return (
     <QueryClientProvider client={queryClient}>
-      <SearchInterface />
+      {hasKey ? (
+        <SearchInterface onLogout={handleLogout} />
+      ) : (
+        <ApiKeyPrompt onSave={() => setHasKey(true)} />
+      )}
     </QueryClientProvider>
   );
 }

@@ -55,15 +55,14 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Add CORS middleware for Chrome extension communication
-origins = settings.CORS_ORIGINS
-if settings.EXTENSION_ID:
-    origins.append(f"chrome-extension://{settings.EXTENSION_ID}")
-
+# Add CORS middleware
+# We use allow_origins=["*"] with allow_credentials=False because we are using
+# stateless API Key auth (X-API-Key) and this is a local tool that needs to be
+# accessible from any device on the local network (laptops, phones, etc).
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
@@ -76,7 +75,19 @@ if os.path.exists(assets_path):
     app.mount("/assets", StaticFiles(directory=assets_path), name="assets")
 
 
-# Serve SPA for root path
-@app.get("/")
-async def read_index():
+# Serve SPA for root path and any other path (client-side routing)
+@app.get("/{full_path:path}")
+async def serve_spa(full_path: str):
+    # Allow API 404s to pass through as JSON
+    if full_path.startswith("api/"):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Not Found")
+
+    # Check if it's a static file request that wasn't caught by mounted assets
+    # (e.g., vite.svg, robots.txt)
+    static_file_path = os.path.join("src/static", full_path)
+    if os.path.exists(static_file_path) and os.path.isfile(static_file_path):
+        return FileResponse(static_file_path)
+
+    # Otherwise serve index.html for SPA routing
     return FileResponse("src/static/index.html")
