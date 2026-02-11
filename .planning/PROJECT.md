@@ -6,15 +6,24 @@ A centralized indexing and retrieval system for AI interactions across fragmente
 ## Core Value
 Never lose a conversation again: Instantly recall specific AI discussions or dev sessions across any platform and jump straight back into the original context.
 
-## Current Milestone: v1.2 Simplify & Deploy
+## Current Milestone: v1.3 (Planning)
+
+**Goal:** Expand capabilities with advanced search and broader ingestion support.
+
+**Potential features:**
+- **Advanced Search:** Date ranges, source filtering, and fuzzy matching controls.
+- **Generic Ingestion:** Drag-and-drop support for PDF/MD files.
+- **Enhanced UI:** improved search results visualization.
+
+## Recent Milestone: v1.2 Simplify & Deploy (Shipped)
 
 **Goal:** Remove friction from setup and daily use by simplifying authentication (API Keys) and modernizing deployment.
 
-**Target features:**
-- **Persistent API Key Auth:** Replace complex JWT flow with simple, persistent keys.
-- **Unified Configuration:** Centralize server/watcher config in `~/.wims/server.json`.
-- **Frictionless Setup:** One-command install/start using `uv` and standardized scripts.
-- **Client Updates:** Update Extension and Watchers to support stateless API Key auth.
+**Shipped Features:**
+- **Persistent API Key Auth:** Replaced complex JWT flow with simple, persistent keys (`X-API-Key`).
+- **Unified Configuration:** Centralized server/watcher config in `~/.wims/server.json` with hot-reloading.
+- **Frictionless Setup:** One-command install/start using `uv` (`setup.sh`, `start.sh`).
+- **Client Updates:** Stateless Extension and Watchers supporting the new auth flow.
 
 ## Recent Milestone: v1.1 Security & Hardening (Shipped)
 
@@ -22,25 +31,15 @@ Never lose a conversation again: Instantly recall specific AI discussions or dev
 
 ### Validated
 - [x] **SEC-01**: API requires authentication (Basic/Token) for ingestion and search.
-- [x] **SEC-02**: System generates/validates JWT tokens with expiration.
-- [x] **SEC-03**: User can set an initial password via CLI/Env var on first run.
-- [x] **SEC-04**: Passwords are hashed (Argon2/bcrypt) before storage.
 - [x] **SEC-05**: API binds explicitly to `127.0.0.1` by default.
 - [x] **CI-01**: GitHub Actions workflow runs tests and linting on push.
-- [x] **CI-02**: GitHub Actions workflow runs Frontend/Extension linting & build on push.
-- [x] **CI-03**: Workflow fails if code style (Ruff/ESLint) is not compliant.
 - [x] **TEST-01**: Unit test suite covers Core Engine services (Embedding, DB).
-- [x] **TEST-02**: Integration tests cover full Ingest -> Search flow.
-- [x] **TEST-03**: Frontend components have basic unit tests (Vitest).
-- [x] **HARD-01**: Extension handles API errors gracefully with user feedback.
-- [x] **HARD-02**: Watchers support authenticated requests.
-- [x] **HARD-03**: CORS configured with strict allow-list.
 
 ## Context
 
-Shipped v1.1 on 2026-02-07.
-- **Status:** Secure, authenticated system with CI/CD.
-- **Tech Stack:** Python (FastAPI/FastEmbed/LanceDB), TypeScript (React/Chrome Extension).
+Shipped v1.2 on 2026-02-11.
+- **Status:** Simplified, secure, "one-command" deployable system.
+- **Tech Stack:** Python (FastAPI/FastEmbed/LanceDB), TypeScript (React/Chrome Extension), uv (dependency management).
 - **Privacy:** Fully local operation (no cloud embeddings used in v1).
 
 ## Constraints
@@ -57,10 +56,9 @@ Shipped v1.1 on 2026-02-07.
 | **Hybrid Architecture** | Local DB for privacy/control, Cloud APIs for quality/speed. | ✓ Implemented (Local-only for v1) |
 | **Extension for Web** | DOM scraping/monitoring required for closed APIs. | ✓ Implemented |
 | **File Watchers for Dev** | Low-friction log capture. | ✓ Implemented |
-| **JWT Auth** | Stateless, secure, easy to verify in distributed clients. | ⚠️ Revisit (v1.2: Moving to API Key) |
 | **Local Binding** | `127.0.0.1` restriction prevents LAN exposure by default. | ✓ Implemented (v1.1) |
-| **API Key Auth** | Simpler for local tools, persistent, no refresh token complexity. | (v1.2 Decision) |
-| **uv Package Manager** | Faster, robust venv handling, prevents system breakage. | (v1.2 Decision) |
+| **API Key Auth** | Simpler for local tools, persistent, no refresh token complexity. | ✓ Implemented (v1.2) |
+| **uv Package Manager** | Faster, robust venv handling, prevents system breakage. | ✓ Implemented (v1.2) |
 
 ---
-*Last updated: 2026-02-08 (Start of v1.2)*
+*Last updated: 2026-02-11 (End of v1.2)*
