@@ -3,14 +3,20 @@ import { test } from '../fixtures/auth';
 import { test as dbTest } from '../fixtures/database';
 
 // Test auth fixture - page should have X-API-Key header
-test('authenticatedPage injects API key header', async ({ authenticatedPage, request, baseURL }) => {
-  // This endpoint requires API key - if header missing, should return 403
+test('authenticatedPage injects API key header', async ({ authenticatedPage, apiKey, request, baseURL }) => {
+  // Test the fixture provides the API key
+  expect(apiKey).toBeDefined();
+  expect(apiKey).toBe('test-api-key-123');
+
+  // Test with explicit API key header in request context
   const response = await request.post(`${baseURL}/api/v1/search`, {
+    headers: {
+      'X-API-Key': apiKey,
+    },
     data: { query: 'test', limit: 1 },
   });
 
-  // With auth fixture, this should succeed (or fail for different reasons, not auth)
-  // The key point is it doesn't fail with 403 Forbidden
+  // With correct API key, should not return 403 Forbidden
   expect(response.status()).not.toBe(403);
 });
 
