@@ -1,4 +1,5 @@
-import { test, expect } from '../fixtures/auth';
+import { expect } from '@playwright/test';
+import { test } from '../fixtures/auth';
 import { test as dbTest } from '../fixtures/database';
 
 // Test auth fixture - page should have X-API-Key header
