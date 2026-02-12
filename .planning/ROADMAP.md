@@ -99,23 +99,28 @@ This milestone resolves UI/API connectivity issues, establishes comprehensive te
 | Phase | Name | Status | Plans | Last Updated |
 |-------|------|--------|-------|--------------|
 | 12 | Debug UI/API Connection | Complete | 1/1 | 2026-02-12 |
-| 13 | Test Infrastructure Setup | Not Started | 0 | - |
+| 13 | Test Infrastructure Setup | Complete | 2/2 | 2026-02-12 |
 | 14 | Core Integration Tests | Not Started | 0 | - |
 
-**Overall v1.3 Progress:** 1/3 phases (33%)
+**Overall v1.3 Progress:** 2/3 phases (67%)
 
-**Total v1.3 Plans:** 1
+**Total v1.3 Plans:** 3
 
 ### Phase 12 Plans
 
 - [x] [12-debug-ui-api-connection-01-PLAN.md](.planning/phases/12-debug-ui-api-connection/12-debug-ui-api-connection-01-PLAN.md) — Add CORS/auth regression tests and Vite proxy configuration
+
+### Phase 13 Plans
+
+- [x] [13-test-infrastructure-setup-01-PLAN.md](.planning/phases/13-test-infrastructure-setup/13-01-PLAN.md) — Install Playwright with auto-launch FastAPI server configuration
+- [x] [13-test-infrastructure-setup-02-PLAN.md](.planning/phases/13-test-infrastructure-setup/13-02-PLAN.md) — Create test fixtures for auth and database isolation
 
 **Previous Milestones:**
 - v1.2: 11 phases (Complete)
 - v1.1: 3 phases (Complete)
 - v1.0: 8 phases (Complete)
 
-**Total Completed Phases:** 22
+**Total Completed Phases:** 23
 
 ---
 
