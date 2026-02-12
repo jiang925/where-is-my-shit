@@ -1,7 +1,8 @@
 # Roadmap: Where Is My Shit (WIMS)
 
 ## Overview
-WIMS is evolving from a prototype to a robust, user-friendly local indexing tool. v1.2 has established a stable foundation with simplified auth and deployment.
+
+This milestone resolves UI/API connectivity issues, establishes comprehensive test infrastructure, and implements core integration tests to validate end-to-end functionality after v1.2 deployment.
 
 ## Completed Milestones
 
@@ -22,33 +23,96 @@ WIMS is evolving from a prototype to a robust, user-friendly local indexing tool
 - **Core:** Ingestion, Embedding, Vector Search.
 - **UI:** Basic React frontend.
 
-## Upcoming Milestones
+---
 
-### v1.3: Advanced Retrieval (Planned)
-**Goal:** Enhance the search experience to make finding content easier and more precise.
+## v1.3: UI/API Integration & Verification (Current)
 
-- **Requirements:**
-  - [ ] **SEARCH-01**: Date range filtering.
-  - [ ] **SEARCH-02**: Source type filtering (Claude vs. ChatGPT vs. Local).
-  - [ ] **SEARCH-03**: Fuzzy search threshold controls.
-  - [ ] **UI-01**: Enhanced search result cards with better metadata visualization.
+**Goal:** Verify platform functionality through automated testing and resolve connectivity issues.
 
-### v1.4: Expanded Ingestion (Future)
-**Goal:** Support more data sources beyond web chats.
+### Phase 12: Debug UI/API Connection
 
-- **Requirements:**
-  - [ ] **INGEST-01**: PDF/Markdown file ingestion.
-  - [ ] **INGEST-02**: Drag-and-drop upload interface.
-  - [ ] **INGEST-03**: Audio transcription integration (Whisper).
+**Goal:** Resolve network-level and authentication barriers preventing UI from accessing the API
 
-## Progress Tracking
+**Dependencies:**
+- v1.2 deployment complete
+- Running API and UI instances accessible locally
 
-| Phase | Status | Progress |
-|-------|--------|----------|
-| **v1.2 Phases** | | |
-| 9 - API Key Auth | Complete | 100% |
-| 10 - Modernized Deployment | Complete | 100% |
-| 11 - Stateless Clients | Complete | 100% |
+**Requirements:**
+- CORS-01: Allow localhost UI origin in CORS configuration
+- CORS-02: Permit necessary HTTP methods and headers for API interactions
+- CORS-03: Handle preflight OPTIONS requests correctly
+- AUTH-05: React frontend sends API key in `Authorization: Api-Key <token>` header format
+- AUTH-06: FastAPI validates API key from `Authorization` header using `ApiKeyHeader` security scheme
+
+**Success Criteria:**
+1. Developer can load UI in browser without CORS errors in console
+2. Developer can enter API key in UI and search requests include `Authorization: Api-Key <token>` header
+3. Developer can perform search requests that successfully reach the API with authentication
+4. Developer can view API endpoints in browser network tab seeing proper CORS headers and Authorization header
 
 ---
-*Last updated: 2026-02-11*
+
+### Phase 13: Test Infrastructure Setup
+
+**Goal:** Establish foundational testing framework for automated verification of platform functionality
+
+**Dependencies:**
+- Phase 12 complete (UI/API connection working)
+- GitHub Actions CI/CD workflow exists from v1.2
+
+**Requirements:**
+- TEST-05: Playwright 1.58.2 is installed and configured in the project
+- TEST-06: Playwright config launches FastAPI server automatically via webServer configuration
+- TEST-07: Database fixtures inject and clean up test data to prevent test interference
+- TEST-08: Test environment is configured with `.env.test` file for test-specific settings
+
+**Success Criteria:**
+1. Developer runs `npm run test:integration` and Playwright launches FastAPI automatically
+2. Developer can run integration tests and they pass with database setup/teardown
+3. Developer can add new tests using fixtures without duplicating setup code
+4. Test environment uses separate `.env.test` configuration without affecting development settings
+
+---
+
+### Phase 14: Core Integration Tests
+
+**Goal:** Verify critical platform workflows are working end-to-end from UI through API to search engine
+
+**Dependencies:**
+- Phase 12 complete (UI/API connection working)
+- Phase 13 complete (test infrastructure operational)
+
+**Requirements:**
+- INTEG-01: User can enter an API key, submit a search query, and see search results displayed in the UI
+- INTEG-02: User sees an appropriate error message when searching without an API key
+
+**Success Criteria:**
+1. Developer runs integration test and sees API key authentication succeed
+2. Developer runs integration test and receives search results containing results from test data
+3. Developer runs integration test and sees error message when API key is missing
+4. All integration tests pass reliably with explicit wait conditions (no `waitForTimeout`)
+
+---
+
+## Progress
+
+| Phase | Name | Status | Plans | Last Updated |
+|-------|------|--------|-------|--------------|
+| 12 | Debug UI/API Connection | Not Started | 0 | - |
+| 13 | Test Infrastructure Setup | Not Started | 0 | - |
+| 14 | Core Integration Tests | Not Started | 0 | - |
+
+**Overall v1.3 Progress:** 0/3 phases (0%)
+
+**Total v1.3 Plans:** 0
+
+**Previous Milestones:**
+- v1.2: 11 phases (Complete)
+- v1.1: 3 phases (Complete)
+- v1.0: 8 phases (Complete)
+
+**Total Completed Phases:** 22
+
+---
+
+*Last updated: 2026-02-12*
