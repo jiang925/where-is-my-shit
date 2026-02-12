@@ -1,756 +1,1075 @@
-# Architecture: UI/API Integration Testing for FastAPI + React
+# Architecture Research
 
-**Project:** Where Is My Shit (WIMS) v1.3
-**Domain:** Local-first personal search with API Key authentication
+**Domain:** AI Conversation Search & Browse UX Enhancements
 **Researched:** 2026-02-12
-**Focus:** Integration test architecture (Playwright + FastAPI + React)
+**Confidence:** HIGH
 
-## Recommended Architecture
+## Executive Summary
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                         Test Execution Flow                              │
-│                                                                         │
-│  ┌────────────────┐    ┌────────────────┐    ┌──────────────────────┐  │
-│  │   Playwright   │ →  │   FastAPI      │ →  │   Test Database      │  │
-│  │   Test Runner  │    │   Test Server  │    │   (LanceDB isolated) │  │
-│  │                │    │   (webServer)  │    │                      │  │
-│  └────────┬───────┘    └────────────────┘    └──────────────────────┘  │
-│           │                                                               │
-│           │ requests/assertions                                          │
-│           ↓                                                               │
-│  ┌────────────────┐    ┌────────────────┐                               │
-│  │   React App    │ ←  │   API Tests    │    Browser automation         │
-│  │   (Static)     │    │   (request)    │    + HTTP API validation      │
-│  └────────────────┘    └────────────────┘                               │
-└─────────────────────────────────────────────────────────────────────────┘
-```
+This architecture research identifies integration points for adding source filtering, path display with copy functionality, search relevance improvements, and browse page features to the existing FastAPI/React/LanceDB conversation search application.
 
-### Component Boundaries
+**Key Finding:** The existing architecture is well-suited for incremental enhancement. All four features integrate cleanly through:
+- Backend: Extend existing `/search` endpoint with query parameters, minimal schema changes
+- Frontend: New components that compose with existing SearchBar/ResultCard patterns
+- Data Model: No schema changes required - all metadata already present in LanceDB
 
-| Component | Responsibility | Communicates With |
-|-----------|---------------|-------------------|
-| **Playwright Test Runner** | Orchestrates test lifecycle, starts servers, runs assertions | FastAPI Test Server, React App, Test Database |
-| **FastAPI Test Server** | Serves API endpoints, accepts test requests | Playwright Test Runner, Test Database |
-| **Test Database** | Stores test conversation data, provides predictable responses | FastAPI Test Server, Test Fixtures |
-| **React App** | Static UI build served under `/`, renders search interface | Playwright Test Runner (for UI tests only) |
-| **Test Fixtures** | Seed test data, provide known sample data for assertions | Test Database, Test Files |
+**Build Strategy:** Features are independent and can be built in parallel or sequentially. Recommended order based on dependencies:
+1. Source filtering (foundation for browse page filtering)
+2. Path display with copy (standalone UI enhancement)
+3. Search relevance (algorithm improvement, no UI changes)
+4. Browse page (combines filtering + infinite scroll patterns)
 
-### Data Flow
+## Current Architecture Overview
+
+### System Diagram
 
 ```
-Test Fixtures → Test Database → FastAPI API → React UI → Playwright Assertions
-                 (seed              (endpoint         (render           (verify
-                  known data)         serves webapp)    results)           behavior)
+┌─────────────────────────────────────────────────────────────┐
+│                     Frontend Layer (React)                   │
+├─────────────────────────────────────────────────────────────┤
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐    │
+│  │SearchBar │  │ResultCard│  │  State   │  │Infinite  │    │
+│  │          │  │          │  │Management│  │ Scroll   │    │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘    │
+│       │             │             │             │           │
+├───────┴─────────────┴─────────────┴─────────────┴───────────┤
+│                     API Client (Axios)                       │
+│                  TanStack Query Caching                      │
+├─────────────────────────────────────────────────────────────┤
+│                     Backend Layer (FastAPI)                  │
+├─────────────────────────────────────────────────────────────┤
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │          API Router (/api/v1)                       │    │
+│  │  /ingest (POST) │ /search (POST) │ /health (GET)   │    │
+│  └────────┬────────────────┬────────────────┬─────────┘    │
+│           │                │                │               │
+│  ┌────────▼────────┐  ┌───▼──────────┐  ┌─▼──────────┐    │
+│  │ Embedding       │  │Search Logic  │  │Auth Guard  │    │
+│  │ Service         │  │(Vector Query)│  │(API Key)   │    │
+│  │(FastEmbed)      │  │              │  │            │    │
+│  └────────┬────────┘  └───┬──────────┘  └────────────┘    │
+│           │               │                                 │
+├───────────┴───────────────┴─────────────────────────────────┤
+│                     Data Layer (LanceDB)                     │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │  Messages Table                                      │   │
+│  │  - id, conversation_id, platform, title, content    │   │
+│  │  - role, timestamp, url, vector (384d)              │   │
+│  └──────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-**Flow Steps:**
-
-1. **Setup Phase** (`beforeAll` hook):
-   - Playwright starts FastAPI server via `webServer` config
-   - Fixtures seed test database with known conversation data
-   - Health check verifies backend is ready
-
-2. **Test Execution**:
-   - API Tests: Playwright uses `request` context directly against API endpoints
-   - UI Tests: Playwright launches browser, loads React app, triggers user interactions
-   - Backend processes requests against test database, returns JSON responses
-
-3. **Assertion Phase**:
-   - API Tests: Validate response structure, status codes, data types
-   - UI Tests: Validate DOM elements render correctly, display API data
-
-4. **Teardown Phase** (`afterAll` hook):
-   - Test database cleaned up (or entire test DB deleted)
-   - FastAPI server process terminated gracefully by Playwright
-
-## Test Directory Location
-
-### Recommended Structure
+### Existing Data Flow
 
 ```
-where-is-my-shit/
-├── src/                          # Backend Python source
-│   ├── app/
-│   │   ├── api/
-│   │   ├── db/
-│   │   └── main.py
-│   ├── static/                   # Built React app (dev: served by Vite)
-│   │   ├── index.html
-│   │   └── assets/
-│   └── tests/                    # Backend unit tests (existing)
-│       ├── test_api_endpoints.py
-│       └── conftest.py
-│
-├── ui/                           # Frontend React source
-│   ├── src/
-│   │   ├── components/
-│   │   ├── App.tsx
-│   │   └── main.tsx
-│   ├── playwright.config.ts      # NEW: Playwright configuration
-│   ├── playwright/               # NEW: Playwright integration tests
-│   │   ├── fixtures/             # Test data fixtures
-│   │   │   ├── conversations.json
-│   │   │   └── queries.json
-│   │   ├── setup/                # Test setup utilities
-│   │   │   ├── database.ts       # Database seeding/cleanup
-│   │   │   └── server.ts         # Server utilities (health checks)
-│   │   ├── api/                  # API integration tests
-│   │   │   ├── search.spec.ts    # Basic search functionality
-│   │   │   ├── auth.spec.ts      # API key authentication
-│   │   │   ├── errors.spec.ts    # Error handling
-│   │   │   └── cors.spec.ts      # CORS validation
-│   │   ├── ui/                   # UI integration tests
-│   │   │   ├── search-render.spec.ts    # UI renders results
-│   │   │   └── error-display.spec.ts    # Error message display
-│   │   └── auth/                 # Authentication tests
-│   │       └── api-key.spec.ts   # API key validation
-│   └── playwright-report/        # Generated test reports
-└── wims-watcher/                 # Chrome extension (separate concern)
+User Search Query
+    ↓
+SearchBar (debounce 300ms)
+    ↓
+TanStack useInfiniteQuery
+    ↓
+Axios POST /search {query, limit, offset}
+    ↓
+FastAPI /search endpoint
+    ↓
+EmbeddingService.embed_text(query) → vector
+    ↓
+LanceDB.search(vector).limit(50).offset(0)
+    ↓
+Transform: DB → SearchResult with nested meta
+    ↓
+Group by conversation_id
+    ↓
+Response: {groups: [], count: N}
+    ↓
+Frontend flattens groups → results[]
+    ↓
+ResultCard renders with infinite scroll
 ```
 
-### Rationale for `ui/playwright/` Location
+## Integration Points for New Features
 
-**Why NOT in `src/tests/integration/`:**
-1. TypeScript tests belong in the `ui/` directory with other frontend code
-2. Playwright is a frontend testing tool, naturally grouped with frontend source
-3. Keeps PHP-style "tests at project root" separation for backend (Pytest) vs frontend (Playwright)
-4. Package.json scripts (`npm run test:integration`) are cleaner when tests live in `ui/`
+### 1. Source Filtering
 
-**Why NOT in `ui/src/tests/`:**
-1. Vite already transpiles `ui/src/` for production builds
-2. Playwright tests should be compiled separately, not part of production bundles
-3. Clear separation: `src/` = production code, `playwright/` = test-only code
+**Backend Integration:**
 
-**Why NOT in top-level `tests/integration/`:**
-1. Confusing for developers expecting backend tests in `tests/`
-2. TypeScript compilation paths become complex (`../ui/node_modules` resolution)
-3. No clear way to run `npm run test:integration` from project root
-
-## Playwright Configuration (Backend Startup)
-
-### Recommended `webServer` Configuration
-
-**Location:** `ui/playwright.config.ts`
-
-```typescript
-import { defineConfig, devices } from '@playwright/test';
-
-export default defineConfig({
-  testDir: './playwright',
-
-  // Shared base URL for all tests - enables relative paths like '/'
-  use: {
-    baseURL: 'http://localhost:8000',
-    // Enable screenshot/video recording for failed tests
-    screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
-  },
-
-  // FastAPI test server startup
-  webServer: {
-    command: 'uv run uvicorn src.app.main:app --host 127.0.0.1 --port 8000',
-    url: 'http://localhost:8000/health',  // Health check endpoint
-    timeout: 30000,  // 30 seconds max startup time
-    reuseExistingServer: !process.env.CI,  // Local: reuse existing server, CI: start fresh
-    stdout: 'pipe',  // Capture stdout for debugging
-    stderr: 'pipe',  // Capture stderr for debugging
-    env: {
-      // Use isolated test database path
-      WIMS_DB_PATH: '.tmp/test_db',
-      // Use test-specific API key (known value for tests)
-      WIMS_API_KEY: 'test-api-key-for-integration-tests',
-      PLAYWRIGHT_TEST: '1',  // Signal to FastAPI that we're in test mode
-    },
-    cwd: '..',  // Start from project root (where uvicorn finds src/)
-  },
-
-  // Worker isolation (each test file runs in separate process)
-  fullyParallel: false,  // Sequential tests avoid race conditions
-  workers: 1,  // Single worker ensures database isolation
-
-  // Configure browsers for testing
-  projects: [
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
-  ],
-});
-```
-
-**Key Configuration Decisions:**
-
-1. **`webServer.command`**: Uses `uv run uvicorn` for startup
-   - `uv run` ensures same Python environment as development
-   - `src.app.main:app` points to FastAPI app module
-
-2. **`webServer.url`**: Uses health check endpoint for startup detection
-   - Backend MUST have `/health` endpoint returning 200-399 status
-   - Playwright waits for this URL to respond before running tests
-
-3. **`webServer.env`**: Passes test-specific environment variables
-   - Isolated database path prevents data pollution
-   - Test API key known by test suite for authentication
-   - `PLAYWRIGHT_TEST` flag allows backend to modify behavior for tests (e.g., disable analytics)
-
-4. **`webServer.reuseExistingServer: !process.env.CI`**:
-   - Local development: Don't restart server if already running (faster iterations)
-   - CI environment: Always start fresh server (clean state)
-
-5. **`fullyParallel: false` + `workers: 1`**:
-   - Sequential test execution prevents race conditions
-   - LanceDB file-based locks don't support concurrent write well
-   - Trade-off: Slower tests, but guaranteed isolation
-
-### Backend Health Check (Required Addition)
-
-**Purpose:** Provide Playwright with a reliable endpoint for server startup detection
-
-**Implementation:** `src/app/api/v1/endpoints/health.py` (if not exists)
+Location: `/search` endpoint (`src/app/api/v1/endpoints/search.py`)
 
 ```python
-from fastapi import APIRouter
+# EXISTING SearchRequest schema
+class SearchRequest(BaseModel):
+    query: str
+    limit: int = 50
+    offset: int = 0
+    conversation_id: str | None = None
+    platform: str | None = None  # ← ALREADY EXISTS but unused
 
-health_router = APIRouter()
+# MODIFY search endpoint to apply filter
+@router.post("/search", response_model=SearchResponse)
+async def search_documents(request: SearchRequest):
+    # ... existing embedding logic ...
 
-@health_router.get("/health")
-async def health_check():
-    """Health check endpoint for test orchestration."""
-    return {"status": "ok", "message": "WIMS is running"}
+    search_builder = table.search(query_vector)
+
+    # ADD: Apply platform filter if provided
+    if request.platform:
+        search_builder = search_builder.where(f"platform = '{request.platform}'")
+
+    # ... rest unchanged ...
 ```
 
-**Router Integration:** Updates `src/app/api/v1/router.py`:
+**Frontend Integration:**
 
-```python
-from src.app.api.v1.endpoints import health
-
-# Add health router (may already exist)
-api_router.include_router(health.health_router, tags=["health"])
-```
-
-## Fixture Organization
-
-### Custom Fixtures Architecture
-
-**Base Test Object:** `ui/playwright/fixtures/custom-test.ts`
+New component: `ui/src/components/SourceFilter.tsx`
 
 ```typescript
-import { test as base } from '@playwright/test';
+interface SourceFilterProps {
+  selectedSources: string[];
+  onSourcesChange: (sources: string[]) => void;
+  availableSources: string[];  // ['claude', 'chrome', 'terminal', etc.]
+}
 
-// Define fixture types
-type TestFixtures = {
-  authenticatedRequest: { get: (url: string) => Promise<Response> };
-  testDatabase: {
-    seedConversations: (data: Conversation[]) => Promise<void>;
-    clearConversations: () => Promise<void>;
+export function SourceFilter({ selectedSources, onSourcesChange }: SourceFilterProps) {
+  // Multi-select checkboxes or pills
+  // On change, triggers parent state update → new search query
+}
+```
+
+Integration into App.tsx:
+
+```typescript
+function SearchInterface() {
+  const [query, setQuery] = useState('');
+  const [selectedSources, setSelectedSources] = useState<string[]>([]);  // NEW
+
+  const { data, ... } = useSearch(query, selectedSources);  // MODIFY hook
+
+  return (
+    <>
+      <SearchBar onSearch={setQuery} />
+      <SourceFilter
+        selectedSources={selectedSources}
+        onSourcesChange={setSelectedSources}  // NEW
+      />
+      {/* Results */}
+    </>
+  );
+}
+```
+
+Modify `ui/src/lib/api.ts`:
+
+```typescript
+export const search = async ({
+  query,
+  limit = 20,
+  offset = 0,
+  platform = null  // NEW parameter
+}: SearchParams): Promise<SearchResponse> => {
+  const response = await api.post<BackendSearchResponse>('/search', {
+    query,
+    limit,
+    offset,
+    platform,  // Pass to backend
+  });
+  // ... rest unchanged ...
+}
+```
+
+**Data Model Changes:** None (platform field already exists)
+
+**Confidence:** HIGH - LanceDB SQL WHERE clause filtering is documented and platform field exists in schema.
+
+### 2. Path Display with Copy Button
+
+**Backend Integration:** None required - URL already in metadata
+
+**Frontend Integration:**
+
+Modify existing `ResultCard.tsx`:
+
+```typescript
+// ADD: Copy to clipboard hook
+import { useState } from 'react';
+
+function useCopyToClipboard() {
+  const [copied, setCopied] = useState(false);
+
+  const copy = async (text: string) => {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
-};
 
-// Extend base test with custom fixtures
-export const test = base.extend<TestFixtures>({
-  // Fixture 1: Pre-authenticated request context
-  authenticatedRequest: async ({ request }, use) => {
-    // Clone request context and add API key header
-    const authRequest = request.newContext({
-      extraHTTPHeaders: {
-        'X-API-Key': process.env.WIMS_API_KEY || 'test-api-key-for-integration-tests',
-      },
-    });
-    await use({ get: (url) => authRequest.get(url) });
-    await authRequest.dispose();
-  },
-
-  // Fixture 2: Database seeding utilities
-  testDatabase: async ({ request }, use) => {
-    const db = {
-      async seedConversations(data: Conversation[]) {
-        await request.post('/api/v1/ingest/batch', {
-          data: { conversations: data },
-          headers: {
-            'X-API-Key': process.env.WIMS_API_KEY || 'test-api-key-for-integration-tests',
-          },
-        });
-      },
-      async clearConversations() {
-        await request.delete('/api/v1/test/cleanup', {
-          headers: {
-            'X-API-Key': process.env.WIMS_API_KEY || 'test-api-key-for-integration-tests',
-          },
-        });
-      },
-    };
-    await use(db);
-  },
-});
-
-// Export test expectations
-export const expect = test.expect;
-```
-
-### Test Data File Placement
-
-**Fixtures Directory:** `ui/playwright/fixtures/`
-
-```
-fixtures/
-├── conversations.json       # Sample conversation data for seeding
-│   [
-│     {
-│       "id": "fixture-1",
-│       "content": "How do I change my password?",
-│       "source": "web",
-│       "timestamp": "2026-01-15T10:00:00Z",
-│       "metadata": {"url": "https://example.com", "title": "Help article"}
-│     },
-│     {
-│       "id": "fixture-2",
-│       "content": "What is the refund policy?",
-│       "source": "web",
-│       "timestamp": "2026-01-20T14:30:00Z",
-│       "metadata": {"url": "https://example.com", "title": "FAQ"}
-│     }
-│   ]
-├── queries.json             # Known queries with expected results
-│   {
-│     "exactMatch": {
-│       "query": "change my password",
-│       "expectedResults": ["fixture-1"],
-│       "expectedMinScore": 0.9
-│     },
-│     "partialMatch": {
-│       "query": "password",
-│       "expectedResults": ["fixture-1"],
-│       "expectedMinScore": 0.7
-│     },
-│     "noResults": {
-│       "query": "quantum physics",
-│       "expectedResults": [],
-│       "expectedMinScore": 0
-│     }
-│   }
-└── auth.json                # Test authentication scenarios
-    {
-      "validKey": "test-api-key-for-integration-tests",
-      "invalidKey": "invalid-key-should-fail",
-      "missingKey": ""
-    }
-```
-
-**Why JSON Files (Not TypeScript or Python):**
-- Platform-agnostic, can be loaded by both frontend test fixtures and backend test scripts
-- Easy to edit for test data changes without rebuilding
-- Git-friendly (diff-friendly, merge-friendly)
-- Can be consumed by multiple test suites (Playwright + future backend integration tests)
-
-## Server Lifecycle Management
-
-### Startup Sequence (Playwright Orchestrates)
-
-```
-1. Playwright executes test suite
-   ↓
-2. webServer startup checks reuseExistingServer
-   ├─ Local (server running): Attach to existing, skip startup
-   └─ CI (no server): Execute command to start new server
-   ↓
-3. Playwright runs uvicorn with test env vars
-   ↓
-4. FastAPI app initializes:
-   a. Loads config (WIMS_DB_PATH, WIMS_API_KEY, etc.)
-   b. Connects to test database (.tmp/test_db)
-   c. Registers API routes (/health, /api/v1/*)
-   d. Starts listening on localhost:8000
-   ↓
-5. Playwright polls /health endpoint
-   ↓
-6. /health returns 200 OK
-   ↓
-7. Playwright marks server as ready
-   ↓
-8. Tests execute (API + UI)
-```
-
-### Teardown Sequence
-
-```
-1. All tests complete
-   ↓
-2. Playwright triggers afterAll hooks
-   ↓
-3. Test fixtures clean up database
-   ↓
-4. Process cleanup begins:
-   ├─ Graceful shutdown: Send SIGTERM to uvicorn process
-   ├─ + configurable timeout (gracefulShutdown: { signal: 'SIGTERM', timeout: 500 })
-   ├─ If timeout exceeded: Send SIGKILL to force terminate
-   └─ On Windows: Always SIGKILL (Windows ignores SIGTERM)
-   ↓
-5. Server process terminated
-   ↓
-6. Test suite completes
-```
-
-### Multiple Server Support (Future-Proof)
-
-**If Dev Server + API Server Are Separate:**
-
-```typescript
-webServer: [
-  // API server
-  {
-    command: 'uv run uvicorn src.app.main:app --host 127.0.0.1 --port 8000',
-    url: 'http://localhost:8000/health',
-    name: 'api',
-  },
-  // Vite dev server (if testing hot-reload)
-  {
-    command: 'npm run dev -- --port 5173',
-    url: 'http://localhost:5173/',
-    name: 'vite',
-    reuseExistingServer: !process.env.CI,
-  },
-],
-```
-
-**For v1.3:** Single server (FastAPI serves static React build) is sufficient - Vite dev server not needed.
-
-## Patterns to Follow
-
-### Pattern 1: API Request Context with Authentication
-
-**When:** Tests need authenticated API access
-
-**Pattern:** Use `authenticatedRequest` custom fixture
-
-```typescript
-import { test, expect } from '../fixtures/custom-test';
-
-test('authenticated search request returns results', async ({ authenticatedRequest, testDatabase }) => {
-  // Seed test data
-  await testDatabase.seedConversations([
-    { id: 'test-1', content: 'password reset help', source: 'web' }
-  ]);
-
-  // Make authenticated request
-  const response = await authenticatedRequest.get('/api/v1/search?q=password');
-
-  // Assertions
-  expect(response.ok()).toBeTruthy();
-  const data = await response.json();
-  expect(data.results).toHaveLength(1);
-  expect(data.results[0].content).toContain('password');
-});
-```
-
-**Why:** Centralizes auth logic, reduces repetitive header cloning
-
-### Pattern 2: Database Seeding in beforeAll
-
-**When:** Multiple tests need same base data
-
-**Pattern:** Use worker-scoped `beforeAll` hook
-
-```typescript
-import { test, expect } from '@playwright/test';
-
-test.describe('Search Feature', () => {
-  test.beforeAll(async ({ request }) => {
-    // Seed once for all tests in this describe block
-    await request.post('/api/v1/test/seed', {
-      data: fixtures.conversations,
-      headers: { 'X-API-Key': process.env.WIMS_API_KEY },
-    });
-  });
-
-  test.afterAll(async ({ request }) => {
-    // Cleanup once after all tests
-    await request.delete('/api/v1/test/cleanup');
-  });
-
-  test('search finds exact match', async ({ page }) => {
-    await page.goto('/');
-    await page.fill('input[placeholder="Search"]', 'password');
-    await page.click('button[type="search"]');
-    await expect(page.getByText('password reset help')).toBeVisible();
-  });
-});
-```
-
-**Why:** Avoids redundant setup, ensures consistent starting state
-
-### Pattern 3: API Response Schema Validation
-
-**When:** Need to verify API contract
-
-**Pattern:** Use TypeScript interfaces + assertions
-
-```typescript
-interface SearchResponse {
-  results: Array<{
-    id: string;
-    content: string;
-    score: number;
-    timestamp: string;
-    source: string;
-  }>;
-  total: number;
-  query: string;
+  return { copied, copy };
 }
 
-test('search response matches expected schema', async ({ authenticatedRequest }) => {
-  const response = await authenticatedRequest.get('/api/v1/search?q=test');
-  const data: SearchResponse = await response.json();
+export function ResultCard({ result }: ResultCardProps) {
+  const { copied, copy } = useCopyToClipboard();
 
-  // Validate structure
-  expect(data).toHaveProperty('results');
-  expect(Array.isArray(data.results)).toBeTruthy();
-  expect(data).toHaveProperty('total');
-  expect(data).toHaveProperty('query');
+  // ADD: Path display section
+  const displayPath = result.meta.url || result.meta.conversation_id;
 
-  // Validate nested objects
-  if (data.results.length > 0) {
-    const firstResult = data.results[0];
-    expect(typeof firstResult.id).toBe('string');
-    expect(typeof firstResult.content).toBe('string');
-    expect(typeof firstResult.score).toBe('number');
-    expect(firstResult.score).toBeGreaterThanOrEqual(0);
-    expect(firstResult.score).toBeLessThanOrEqual(1);
-  }
-});
-```
+  return (
+    <div className="result-card">
+      {/* Existing content */}
 
-**Why:** Type safety, catches breaking API changes early
-
-### Pattern 4: UI Locator Strategies
-
-**When:** Testing React component rendering
-
-**Pattern:** Use semantic locators (role, label) over CSS selectors
-
-```typescript
-test('search results display correctly', async ({ page }) => {
-  await page.goto('/');
-  await page.getByLabel('Search query').fill('password');
-  await page.getByRole('button', { name: 'Search' }).click();
-
-  // Wait for results (Playwright auto-waits for element visibility)
-  const results = page.getByRole('listitem');
-
-  // Use semantic assertions
-  await expect(results.first()).toContainText('password');
-  await expect(results.first()).toBeVisible();
-
-  // Validate metadata
-  const resultMetadata = results.first().getByTestId('result-source');
-  await expect(resultMetadata).toHaveText('web');
-});
-```
-
-**Why:** Resilient to CSS changes, accessible-first approach
-
-## Anti-Patterns to Avoid
-
-### Anti-Pattern 1: Hardcoded Timeouts
-
-**What:** `await page.waitForTimeout(3000);`
-
-**Why bad:** Flaky tests, waste CI time, maskrace conditions
-
-**Instead:** Use Playwright auto-waiting
-
-```typescript
-// BAD: Arbitrary wait
-await page.waitForTimeout(3000);
-const result = page.locator('.result');
-
-// GOOD: Wait for element to be visible
-await expect(page.locator('.result')).toBeVisible();
-```
-
-### Anti-Pattern 2: Direct Database Access in Frontend Tests
-
-**What:** Writing SQL or LanceDB commands directly in Playwright tests
-
-**Why bad:** Bypasses API, tests wrong layer, couples frontend to backend internals
-
-**Instead:** Seed via API endpoints
-
-```typescript
-// BAD: Direct database access
-import lancedb from 'lancedb';
-const db = lancedb.connect('.tmp/test_db');
-const table = db.open_table('messages');
-await table.add([...]);  // Coupled to LanceDB schema
-
-// GOOD: Seed via API
-await request.post('/api/v1/ingest/batch', {
-  data: { conversations: [...] }
-});
-```
-
-### Anti-Pattern 3: Reusing Production Database
-
-**What:** Pointing tests at `wims.db` (production database path)
-
-**Why bad:** Data pollution, non-repeatable tests, irreversible changes
-
-**Instead:** Isolated test database
-
-```typescript
-// BAD: Production database
-webServer: {
-  env: { WIMS_DB_PATH: 'wims.db' }  // Destructive!
-}
-
-// GOOD: Isolated test database
-webServer: {
-  env: { WIMS_DB_PATH: '.tmp/test_db' }  // Disposable!
+      {/* NEW: Path display with copy button */}
+      {displayPath && (
+        <div className="flex items-center gap-2 text-xs text-gray-500 mt-2">
+          <code className="flex-1 truncate bg-gray-100 px-2 py-1 rounded">
+            {displayPath}
+          </code>
+          <button
+            onClick={() => copy(displayPath)}
+            className="p-1 hover:bg-gray-200 rounded"
+            title="Copy path"
+          >
+            {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }
 ```
 
-### Anti-Pattern 4: Over-MockedResponses
+**Data Model Changes:** None
 
-**What:** Mocking every API response in Playwright
+**Confidence:** HIGH - Clipboard API is standard, URL field exists in metadata.
+
+### 3. Search Relevance Improvements
+
+**Backend Integration:**
+
+Location: `/search` endpoint with hybrid search strategy
+
+**Option A: Metadata Boosting (Simplest)**
+
+```python
+# In search.py
+async def search_documents(request: SearchRequest):
+    # ... existing vector search ...
+
+    # ADD: Boost recent results
+    search_builder = search_builder.select([
+        "*",
+        # Recency boost: score = distance - (age_days * 0.01)
+        "(_distance - ((julianday('now') - julianday(timestamp)) * 0.01)) as boosted_score"
+    ])
+
+    results_list = await run_in_threadpool(search_builder.to_list)
+
+    # Sort by boosted_score instead of _distance
+    results_list = sorted(results_list, key=lambda x: x['boosted_score'])
+```
+
+**Option B: Hybrid Search (Better Quality)**
+
+```python
+# In search.py - requires LanceDB FTS
+async def search_documents(request: SearchRequest):
+    # Vector search
+    vector_results = table.search(query_vector).limit(100)
+
+    # Keyword search (if FTS index exists)
+    keyword_results = table.search(request.query, query_type="fts").limit(100)
+
+    # Reciprocal Rank Fusion
+    merged_results = reciprocal_rank_fusion([vector_results, keyword_results])
+
+    # Apply offset/limit after fusion
+    return merged_results[offset:offset+limit]
+```
+
+**Option C: Re-ranking Layer (Production Quality)**
+
+```python
+# New service: src/app/services/reranker.py
+from fastembed import TextEmbedding, Reranker
+
+class RerankerService:
+    def __init__(self):
+        self.reranker = Reranker(model_name="BAAI/bge-reranker-base")
+
+    def rerank(self, query: str, documents: list[dict], top_k: int = 50):
+        """Re-rank vector search results for better relevance."""
+        doc_texts = [d['content'] for d in documents]
+        scores = self.reranker.rerank(query, doc_texts)
+
+        # Combine scores with original documents
+        reranked = sorted(
+            zip(documents, scores),
+            key=lambda x: x[1],
+            reverse=True
+        )
+        return [doc for doc, score in reranked[:top_k]]
+
+# In search.py
+async def search_documents(request: SearchRequest):
+    # Get top 100 from vector search
+    results = await vector_search(query_vector, limit=100)
+
+    # Re-rank to top 50
+    reranked = await run_in_threadpool(
+        reranker_service.rerank,
+        request.query,
+        results,
+        top_k=50
+    )
+
+    return reranked[offset:offset+request.limit]
+```
+
+**Recommended Approach:** Start with Option A (metadata boosting), upgrade to Option C (re-ranking) if relevance is insufficient.
+
+**Frontend Integration:** None - transparent to UI
+
+**Data Model Changes:** None
+
+**Confidence:** MEDIUM-HIGH
+- Metadata boosting: HIGH confidence (simple SQL)
+- Hybrid search: MEDIUM confidence (depends on FTS index setup)
+- Re-ranking: HIGH confidence (fastembed supports re-ranking models)
+
+### 4. Browse Page (Chronological View)
+
+**Backend Integration:**
+
+New endpoint: `/browse` (or extend `/search` with `browse_mode` flag)
+
+```python
+# In src/app/api/v1/endpoints/search.py
+
+class BrowseRequest(BaseModel):
+    """Browse without semantic search - chronological order."""
+    limit: int = 50
+    offset: int = 0
+    platform: str | None = None  # Filter by source
+    start_date: datetime | None = None
+    end_date: datetime | None = None
+
+@router.post("/browse", response_model=SearchResponse)
+async def browse_documents(request: BrowseRequest):
+    """
+    Browse all documents in chronological order (no vector search).
+    Supports filtering by platform and date range.
+    """
+    table = db_client.get_table("messages")
+
+    # Build query without vector search
+    query = table.search()  # No vector = full table scan
+
+    # Apply filters
+    where_clauses = []
+    if request.platform:
+        where_clauses.append(f"platform = '{request.platform}'")
+    if request.start_date:
+        where_clauses.append(f"timestamp >= '{request.start_date.isoformat()}'")
+    if request.end_date:
+        where_clauses.append(f"timestamp <= '{request.end_date.isoformat()}'")
+
+    if where_clauses:
+        query = query.where(" AND ".join(where_clauses))
+
+    # Sort by timestamp descending (most recent first)
+    query = query.select(["*"]).order_by("timestamp DESC")
+
+    # Apply pagination
+    query = query.limit(request.limit).offset(request.offset)
+
+    # Execute
+    results_list = await run_in_threadpool(query.to_list)
+
+    # Transform to SearchResult format (same as /search)
+    results = transform_to_search_results(results_list)
+
+    return SearchResponse(groups=group_by_conversation(results), count=len(results))
+```
+
+**Frontend Integration:**
+
+New page component: `ui/src/pages/BrowsePage.tsx`
 
 ```typescript
-// BAD: Mocking backend responses
-await page.route('/api/v1/search*', route => route.fulfill({
-  status: 200,
-  body: JSON.stringify({ results: [mockData] })
-}));
+export function BrowsePage() {
+  const [selectedSources, setSelectedSources] = useState<string[]>([]);
+  const [dateRange, setDateRange] = useState<{start: Date | null, end: Date | null}>({
+    start: null,
+    end: null
+  });
+
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useBrowse({
+    platform: selectedSources[0],  // Single source for now
+    startDate: dateRange.start,
+    endDate: dateRange.end,
+  });
+
+  return (
+    <div>
+      <h1>Browse All Conversations</h1>
+
+      {/* Filter controls */}
+      <SourceFilter selectedSources={selectedSources} onChange={setSelectedSources} />
+      <DateRangePicker value={dateRange} onChange={setDateRange} />
+
+      {/* Results with infinite scroll */}
+      <div>
+        {data?.pages.map(page =>
+          page.results.map(result => <ResultCard key={result.id} result={result} />)
+        )}
+      </div>
+
+      {/* Infinite scroll trigger */}
+      {hasNextPage && <div ref={lastElementRef}>Loading...</div>}
+    </div>
+  );
+}
 ```
 
-**Why bad:** Tests pass even if backend is broken, defeats purpose of integration testing
-
-**Instead:** Test against real FastAPI server (configured via `webServer`)
-
-### Anti-Pattern 5: Monolithic Test Files
-
-**What:** 500-line `integration.spec.ts` testing auth, search, errors, everything
-
-**Why bad:** Hard to debug, slow feedback, violates single responsibility
-
-**Instead:** Split by feature
-
-```
-playwright/
-├── auth/api-key.spec.ts        # 50 lines, auth only
-├── api/search.spec.ts          # 100 lines, search API
-├── ui/search-render.spec.ts    # 80 lines, UI rendering
-└── errors/spec.ts              # 150 lines, error scenarios
-```
-
-## Scalability Considerations
-
-| Concern | Current Approach (v1.3) | At 100 Tests | At 1000 Tests |
-|---------|-------------------------|--------------|---------------|
-| **Test Execution Time** | Sequential (1 worker) | ~10-20 sec | ~2-5 min |
-| **Backend Startup** | Per test suite | Fast (reuse) | May need parallel workers |
-| **Database Isolation** | Single test DB | Sufficient | May need per-worker DBs |
-| **Flakiness Rate** | Low (1 worker) | Low | Higher (race conditions) |
-| **Debuggability** | High (sequential) | High | Medium (parallel logs) |
-
-### Horizontal Scaling (Future v2.0)
-
-**Problem:** `workers: 1` becomes bottleneck at high test count
-
-**Solution:** Database-per-worker isolation
+Add to `ui/src/lib/api.ts`:
 
 ```typescript
-// playwright.config.ts
-export default defineConfig({
-  // In v2.0, enable parallel workers
-  fullyParallel: true,
-  workers: process.env.CI ? 4 : 2,  // 4 workers in CI, 2 local
+export const browse = async ({
+  platform,
+  startDate,
+  endDate,
+  limit = 20,
+  offset = 0
+}: BrowseParams): Promise<SearchResponse> => {
+  const response = await api.post<BackendSearchResponse>('/browse', {
+    platform,
+    start_date: startDate?.toISOString(),
+    end_date: endDate?.toISOString(),
+    limit,
+    offset,
+  });
 
-  webServer: {
-    // Generate unique DB path per worker
-    env: {
-      WIMS_DB_PATH: `.tmp/test_db_${process.env.TEST_WORKER_ID}`,
-    },
-  },
-});
+  // Same transformation as search
+  const results = response.data.groups.flatMap(g => g.results);
+  return {
+    results,
+    total: response.data.count,
+    has_more: offset + limit < response.data.count,
+    next_offset: offset + limit,
+  };
+}
+
+export const useBrowse = (params: BrowseParams) => {
+  return useInfiniteQuery({
+    queryKey: ['browse', params.platform, params.startDate, params.endDate],
+    queryFn: async ({ pageParam = 0 }) => browse({ ...params, offset: pageParam }),
+    getNextPageParam: (lastPage) => lastPage.has_more ? lastPage.next_offset : undefined,
+    initialPageParam: 0,
+  });
+}
 ```
+
+Routing setup: Add to `ui/src/App.tsx`:
+
+```typescript
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<SearchInterface />} />
+          <Route path="/browse" element={<BrowsePage />} />
+        </Routes>
+      </BrowserRouter>
+    </QueryClientProvider>
+  );
+}
+```
+
+**Performance Consideration:** For large datasets (>10K documents), browse page needs virtual scrolling:
+
+```typescript
+import { useVirtualizer } from '@tanstack/react-virtual';
+
+function BrowsePage() {
+  const parentRef = useRef<HTMLDivElement>(null);
+
+  const virtualizer = useVirtualizer({
+    count: data?.pages.flatMap(p => p.results).length ?? 0,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 150,  // Estimated card height
+  });
+
+  return (
+    <div ref={parentRef} style={{ height: '100vh', overflow: 'auto' }}>
+      <div style={{ height: `${virtualizer.getTotalSize()}px` }}>
+        {virtualizer.getVirtualItems().map(virtualRow => {
+          const result = allResults[virtualRow.index];
+          return (
+            <div
+              key={virtualRow.key}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                transform: `translateY(${virtualRow.start}px)`,
+              }}
+            >
+              <ResultCard result={result} />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+```
+
+**Data Model Changes:** None
+
+**Confidence:** HIGH - Browse is simpler than search (no vector embedding), uses existing pagination patterns.
+
+## Component Architecture Patterns
+
+### Pattern 1: Filter State Management
+
+**What:** Centralized filter state that affects query parameters
+
+**When to use:** Source filtering, date range filtering, any faceted search
 
 **Trade-offs:**
-- **Pros:** 4-8x faster test execution
-- **Cons:** 4-8x more disk usage, complex cleanup logic
+- Pro: Single source of truth for filters
+- Pro: Easy to sync with URL query params
+- Con: Props drilling if deeply nested
+- Con: All components re-render on filter change
+
+**Example:**
+```typescript
+// Container component owns filter state
+function SearchContainer() {
+  const [filters, setFilters] = useState<SearchFilters>({
+    sources: [],
+    dateRange: null,
+  });
+
+  const { data } = useSearch({ query, ...filters });
+
+  return (
+    <>
+      <FilterPanel filters={filters} onChange={setFilters} />
+      <ResultsList data={data} />
+    </>
+  );
+}
+```
+
+**Alternative:** Use URL search params as state:
+
+```typescript
+function SearchContainer() {
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const filters = {
+    sources: searchParams.getAll('source'),
+    query: searchParams.get('q') || '',
+  };
+
+  const { data } = useSearch(filters);
+
+  // Filters stored in URL automatically
+}
+```
+
+### Pattern 2: Optimistic Copy Feedback
+
+**What:** Immediate UI feedback before async operation completes
+
+**When to use:** Copy to clipboard, like/favorite actions, quick state toggles
+
+**Trade-offs:**
+- Pro: Feels instant to user
+- Pro: Works offline for most operations
+- Con: Must handle rollback if operation fails
+- Con: Can desync if multiple clients
+
+**Example:**
+```typescript
+function useCopyWithFeedback() {
+  const [copied, setCopied] = useState(false);
+
+  const copy = async (text: string) => {
+    setCopied(true);  // Optimistic update
+
+    try {
+      await navigator.clipboard.writeText(text);
+      // Success - keep showing checkmark
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      // Rollback on failure
+      setCopied(false);
+      toast.error('Failed to copy');
+    }
+  };
+
+  return { copied, copy };
+}
+```
+
+### Pattern 3: Infinite Query Invalidation
+
+**What:** Smart cache invalidation when underlying data changes
+
+**When to use:** Real-time updates, after mutations, filter changes
+
+**Trade-offs:**
+- Pro: Always shows fresh data
+- Pro: Minimal refetch (only stale pages)
+- Con: Can cause scroll jump if not handled
+- Con: Network overhead if invalidating too often
+
+**Example:**
+```typescript
+function SearchInterface() {
+  const queryClient = useQueryClient();
+  const [query, setQuery] = useState('');
+  const [filters, setFilters] = useState({});
+
+  const { data } = useInfiniteQuery({
+    queryKey: ['search', query, filters],
+    queryFn: ({ pageParam = 0 }) => search({ query, filters, offset: pageParam }),
+  });
+
+  // When filters change, invalidate and refetch from page 0
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ['search', query] });
+  }, [filters]);
+
+  return <ResultsList data={data} />;
+}
+```
+
+### Pattern 4: Virtualized Infinite Scroll
+
+**What:** Combine virtual scrolling with infinite loading for massive datasets
+
+**When to use:** Browse page with 10K+ items, chat history, logs
+
+**Trade-offs:**
+- Pro: Handles unlimited data without memory leak
+- Pro: Maintains 60fps with 100K+ items
+- Con: Complex implementation (two state machines)
+- Con: Scroll restoration tricky
+
+**Example:**
+```typescript
+function VirtualBrowseList() {
+  const { data, fetchNextPage, hasNextPage } = useInfiniteQuery({
+    queryKey: ['browse'],
+    queryFn: ({ pageParam = 0 }) => browse({ offset: pageParam }),
+  });
+
+  const allItems = data?.pages.flatMap(p => p.results) ?? [];
+
+  const parentRef = useRef<HTMLDivElement>(null);
+  const virtualizer = useVirtualizer({
+    count: hasNextPage ? allItems.length + 1 : allItems.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 150,
+    overscan: 5,
+  });
+
+  useEffect(() => {
+    const [lastItem] = [...virtualizer.getVirtualItems()].reverse();
+
+    if (!lastItem) return;
+
+    // When scrolling past 80% of loaded items, fetch next page
+    if (lastItem.index >= allItems.length - 1 && hasNextPage) {
+      fetchNextPage();
+    }
+  }, [virtualizer.getVirtualItems(), fetchNextPage, hasNextPage]);
+
+  return (
+    <div ref={parentRef} style={{ height: '100vh', overflow: 'auto' }}>
+      <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
+        {virtualizer.getVirtualItems().map(virtualRow => {
+          const isLoaderRow = virtualRow.index > allItems.length - 1;
+          const item = allItems[virtualRow.index];
+
+          return (
+            <div
+              key={virtualRow.key}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: `${virtualRow.size}px`,
+                transform: `translateY(${virtualRow.start}px)`,
+              }}
+            >
+              {isLoaderRow ? (
+                <div>Loading more...</div>
+              ) : (
+                <ResultCard result={item} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+```
+
+## Data Flow for New Features
+
+### Source Filtering Flow
+
+```
+User clicks "Claude" filter
+    ↓
+setSelectedSources(['claude'])
+    ↓
+TanStack Query invalidates ['search', query]
+    ↓
+useInfiniteQuery re-executes with new queryKey
+    ↓
+POST /search { query: "hello", platform: "claude", limit: 20, offset: 0 }
+    ↓
+FastAPI applies .where("platform = 'claude'")
+    ↓
+LanceDB returns filtered results
+    ↓
+Frontend renders only Claude results
+```
+
+### Copy Path Flow
+
+```
+User clicks copy button
+    ↓
+useCopyToClipboard().copy(result.meta.url)
+    ↓
+navigator.clipboard.writeText(url)
+    ↓
+setCopied(true) → UI shows checkmark
+    ↓
+setTimeout 2s → setCopied(false) → UI resets to copy icon
+```
+
+### Browse Page Flow
+
+```
+User navigates to /browse
+    ↓
+BrowsePage mounts → useBrowse() hook
+    ↓
+POST /browse { limit: 50, offset: 0 }
+    ↓
+FastAPI: table.search().order_by("timestamp DESC")
+    ↓
+LanceDB returns chronological results (no vector search)
+    ↓
+Frontend renders with infinite scroll
+    ↓
+User scrolls to bottom → Intersection Observer fires
+    ↓
+fetchNextPage() → POST /browse { limit: 50, offset: 50 }
+    ↓
+Append to existing pages
+```
+
+## Scaling Considerations
+
+| Scale | Architecture Adjustments |
+|-------|--------------------------|
+| 0-10K documents | Current architecture sufficient. Single-server FastAPI + embedded LanceDB handles well. |
+| 10K-100K documents | Add browse page virtual scrolling (@tanstack/react-virtual). Consider re-ranking for relevance. Consider database indices on platform, timestamp for faster filtering. |
+| 100K-1M documents | Move to LanceDB Cloud or self-hosted server mode (separate process). Add Redis cache for frequently accessed conversations. Implement hybrid search (vector + FTS) for better relevance. |
+| 1M+ documents | Shard by date range or platform. Implement result caching at API layer. Consider approximate nearest neighbor (ANN) index tuning. Add pagination limits (cap at 1000 results per query). |
+
+### Scaling Priorities
+
+1. **First bottleneck:** Browse page scroll performance with 10K+ items
+   - **Solution:** Virtual scrolling with @tanstack/react-virtual
+   - **When:** Immediately if dataset > 10K items
+   - **Impact:** Maintains 60fps, prevents memory bloat
+
+2. **Second bottleneck:** LanceDB file locking with multiple writers
+   - **Solution:** Move to LanceDB server mode (separate process)
+   - **When:** Multiple concurrent writers (e.g., multiple ingestion sources)
+   - **Impact:** Allows concurrent reads/writes
+
+3. **Third bottleneck:** Search relevance degrades with more data
+   - **Solution:** Hybrid search (vector + keyword) + re-ranking
+   - **When:** User feedback indicates poor results
+   - **Impact:** Better precision, slightly slower queries (100ms → 300ms)
+
+## Anti-Patterns
+
+### Anti-Pattern 1: Filtering in Frontend
+
+**What people do:** Fetch all results, filter client-side with `.filter()`
+
+**Why it's wrong:**
+- Transfers unnecessary data (bandwidth waste)
+- Breaks pagination (offset/limit meaningless)
+- Doesn't scale beyond first page
+
+**Do this instead:** Pass filters to backend as query parameters
+
+```typescript
+// ❌ BAD
+const { data } = useSearch({ query: "hello", limit: 1000 });
+const filtered = data?.results.filter(r => r.meta.source === 'claude');
+
+// ✅ GOOD
+const { data } = useSearch({ query: "hello", platform: "claude", limit: 50 });
+```
+
+### Anti-Pattern 2: Re-fetching Entire Query on Filter Change
+
+**What people do:** Invalidate all pages when filter changes
+
+**Why it's wrong:**
+- Loses scroll position
+- Wastes network fetching pages user may not scroll to
+- Poor UX (flash of empty state)
+
+**Do this instead:** Use different queryKey for each filter combination
+
+```typescript
+// ❌ BAD
+const { data } = useInfiniteQuery({ queryKey: ['search'] });
+useEffect(() => {
+  queryClient.invalidateQueries({ queryKey: ['search'] });
+}, [filters]);
+
+// ✅ GOOD
+const { data } = useInfiniteQuery({
+  queryKey: ['search', query, filters],  // Filter changes = new cache entry
+});
+```
+
+### Anti-Pattern 3: Rendering 10K+ Items Without Virtualization
+
+**What people do:** Map over all loaded items in DOM
+
+**Why it's wrong:**
+- Browser struggles with >1000 DOM nodes (scroll jank)
+- Memory usage grows unbounded
+- Slow initial render
+
+**Do this instead:** Use virtual scrolling for large lists
+
+```typescript
+// ❌ BAD
+{data?.pages.flatMap(p => p.results).map(item => <ResultCard key={item.id} result={item} />)}
+
+// ✅ GOOD (for >1000 items)
+const virtualizer = useVirtualizer({
+  count: allItems.length,
+  getScrollElement: () => parentRef.current,
+  estimateSize: () => 150,
+});
+{virtualizer.getVirtualItems().map(virtualRow => <ResultCard result={allItems[virtualRow.index]} />)}
+```
+
+### Anti-Pattern 4: Copying with execCommand
+
+**What people do:** Use deprecated `document.execCommand('copy')`
+
+**Why it's wrong:**
+- Deprecated API (may break in future browsers)
+- Requires creating temporary DOM elements
+- Doesn't work in all contexts (e.g., async functions)
+
+**Do this instead:** Use Clipboard API with fallback
+
+```typescript
+// ❌ BAD
+const textarea = document.createElement('textarea');
+textarea.value = text;
+document.body.appendChild(textarea);
+textarea.select();
+document.execCommand('copy');
+document.body.removeChild(textarea);
+
+// ✅ GOOD
+try {
+  await navigator.clipboard.writeText(text);
+} catch (err) {
+  // Fallback for older browsers
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand('copy');
+  document.body.removeChild(textarea);
+}
+```
+
+## Recommended Project Structure
+
+### Backend Structure (FastAPI)
+
+```
+src/app/
+├── api/
+│   └── v1/
+│       ├── router.py              # API router registration
+│       └── endpoints/
+│           ├── search.py          # MODIFY: Add platform filter, /browse endpoint
+│           ├── ingest.py          # UNCHANGED
+│           └── health.py          # UNCHANGED
+├── core/
+│   ├── config.py                  # UNCHANGED
+│   ├── auth.py                    # UNCHANGED
+│   └── logging.py                 # UNCHANGED
+├── db/
+│   └── client.py                  # UNCHANGED
+├── schemas/
+│   └── message.py                 # MODIFY: Add BrowseRequest, BrowseResponse
+├── services/
+│   ├── embedding.py               # UNCHANGED
+│   └── reranker.py                # NEW: Re-ranking service (optional)
+└── main.py                        # UNCHANGED
+```
+
+### Frontend Structure (React)
+
+```
+ui/src/
+├── components/
+│   ├── SearchBar.tsx              # UNCHANGED
+│   ├── ResultCard.tsx             # MODIFY: Add path display with copy button
+│   ├── SourceFilter.tsx           # NEW: Multi-select source filter
+│   ├── DateRangePicker.tsx        # NEW: Date range selector (for browse)
+│   └── Navigation.tsx             # NEW: Navigation between search/browse
+├── pages/
+│   ├── SearchPage.tsx             # EXTRACT from App.tsx
+│   └── BrowsePage.tsx             # NEW: Chronological browse view
+├── lib/
+│   ├── api.ts                     # MODIFY: Add platform param, browse(), useBrowse()
+│   └── utils.ts                   # UNCHANGED
+├── hooks/
+│   └── useCopyToClipboard.ts      # NEW: Copy functionality hook
+├── App.tsx                        # MODIFY: Add routing, extract SearchPage
+└── main.tsx                       # UNCHANGED
+```
+
+### Structure Rationale
+
+- **components/:** Reusable UI components (SourceFilter, DateRangePicker) used by multiple pages
+- **pages/:** Full page components with routing (SearchPage, BrowsePage)
+- **lib/:** API client and utilities (keeps components clean)
+- **hooks/:** Reusable stateful logic (useCopyToClipboard can be used in multiple components)
+
+**Why extract SearchPage from App.tsx?**
+- App.tsx becomes routing container
+- SearchPage and BrowsePage are sibling routes
+- Easier to share layout (Navigation component)
+
+**Why NEW services/reranker.py optional?**
+- Start simple (metadata boosting)
+- Add re-ranking only if relevance is insufficient
+- Follows progressive enhancement principle
+
+## Build Order and Dependencies
+
+### Recommended Build Order
+
+**Phase 1: Source Filtering (Foundation)**
+- Backend: Modify `/search` to use existing `platform` parameter
+- Frontend: Add `SourceFilter` component
+- Frontend: Pass platform to `useSearch` hook
+- **Estimated effort:** 4 hours
+- **Dependencies:** None
+- **Blockers:** None
+
+**Phase 2: Path Display with Copy (Standalone)**
+- Frontend: Add `useCopyToClipboard` hook
+- Frontend: Modify `ResultCard` to show path with copy button
+- **Estimated effort:** 2 hours
+- **Dependencies:** None
+- **Blockers:** None
+
+**Phase 3: Search Relevance (Algorithm)**
+- Backend: Implement metadata boosting in `/search` endpoint
+- (Optional) Add re-ranking service if boosting insufficient
+- **Estimated effort:** 3-6 hours
+- **Dependencies:** None (transparent to frontend)
+- **Blockers:** None
+
+**Phase 4: Browse Page (Combines All)**
+- Backend: Add `/browse` endpoint
+- Frontend: Extract `SearchPage` from `App.tsx`
+- Frontend: Add routing with react-router-dom
+- Frontend: Create `BrowsePage` component
+- Frontend: Add `DateRangePicker` component
+- Frontend: Add `Navigation` component
+- Frontend: Implement `useBrowse` hook
+- (Optional) Add virtual scrolling if dataset > 10K
+- **Estimated effort:** 8 hours
+- **Dependencies:** Reuses `SourceFilter` from Phase 1
+- **Blockers:** Routing requires restructuring App.tsx
+
+### Parallel vs Sequential
+
+**Can be built in parallel:**
+- Phase 1 (Source Filtering) + Phase 2 (Path Display)
+- Phase 3 (Relevance) independent of all others
+
+**Must be sequential:**
+- Phase 4 (Browse) should come after Phase 1 (reuses SourceFilter)
+- All phases can be deployed independently (no breaking changes)
+
+### Deployment Strategy
+
+Each phase can be deployed incrementally:
+
+1. **Source Filtering:** Backend change is backward compatible (platform already in schema), frontend adds new UI
+2. **Path Display:** Frontend-only change, no backend impact
+3. **Relevance:** Backend change is transparent (same API contract)
+4. **Browse Page:** New endpoint + new route (existing search unchanged)
+
+**Recommended:** Deploy features as ready, don't wait for all four
 
 ## Integration Points Summary
 
-### New Components (v1.3)
-
-| Component | Location | Purpose | Dependencies |
-|-----------|----------|---------|--------------|
-| **playwright.config.ts** | `ui/` | Test runner configuration | None (native) |
-| **custom-test.ts** | `ui/playwright/fixtures/` | Custom fixtures (auth, DB) | @playwright/test |
-| **database.ts** | `ui/playwright/setup/` | Seeding/cleanup utilities | httpx (via FastAPI) |
-| **server.ts** | `ui/playwright/setup/` | Health check utilities | None |
-| **conversations.json** | `ui/playwright/fixtures/` | Test data samples | None |
-| **queries.json** | `ui/playwright/fixtures/` | Expected query results | None |
-| **health check endpoint** | `src/app/api/v1/endpoints/health.py` | Server readiness probe | FastAPI |
-
-### Modified Components
-
-| Component | Modification Required | Why |
-|-----------|----------------------|-----|
-| **FastAPI app** | Add `/health` endpoint if not exists | Playwright startup detection |
-| **API router** | Include health router if not exists | Expose health check |
-| **Environment config** | Support `WIMS_DB_PATH`, `PLAYWRIGHT_TEST` env vars | Test mode detection |
-
-### Build Order for v1.3
-
-1. **Add test infrastructure** (no code changes yet):
-   - Create `ui/playwright.config.ts`
-   - Install `@playwright/test`: `npm install -D @playwright/test`
-   - Create directory structure under `ui/playwright/`
-
-2. **Add health check endpoint**:
-   - Implement `/health` endpoint (if missing)
-   - Verify returns 200 OK: `curl http://localhost:8000/health`
-
-3. **Create test fixtures**:
-   - Create `ui/playwright/fixtures/conversations.json`
-   - Create `ui/playwright/setup/database.ts` (if seeding via API needed)
-
-4. **Configure server startup**:
-   - Configure `webServer` command in `playwright.config.ts`
-   - Test server starts manually: `uv run uvicorn src.app.main:app`
-
-5. **Write first integration test**:
-   - Create `ui/playwright/api/search.spec.ts`
-   - Test basic search with known query
-   - Run: `npm run test:integration`
-
-6. **Add more scenarios**:
-   - Auth tests (`api-key.spec.ts`)
-   - Error tests (`errors.spec.ts`)
-   - UI tests (`search-render.spec.ts`)
+| Feature | Backend Change | Frontend Change | Data Model Change | Complexity |
+|---------|---------------|-----------------|-------------------|------------|
+| Source Filtering | Modify `/search` to use `platform` param | Add `SourceFilter` component, modify `useSearch` hook | None (field exists) | Low |
+| Path Display + Copy | None | Modify `ResultCard`, add `useCopyToClipboard` hook | None | Low |
+| Search Relevance | Add boosting/re-ranking in `/search` logic | None (transparent) | None | Medium |
+| Browse Page | Add `/browse` endpoint | Add routing, `BrowsePage`, `Navigation`, `useBrowse` | None | Medium-High |
 
 ## Sources
 
-**Primary (HIGH confidence):**
-- [Playwright webServer Documentation](https://playwright.dev/docs/test-webserver) - HIGH confidence (official docs, verified 2025)
-- [Playwright Test Fixtures Guide](https://playwright.dev/docs/test-fixtures) - HIGH confidence (official docs, verified 2025)
-- [Playwright API Testing Documentation](https://playwright.dev/docs/api-testing) - HIGH confidence (official docs, verified 2025)
-- [Playwright Best Practices](https://playwright.dev/docs/best-practices) - HIGH confidence (official docs, verified 2025)
+**FastAPI Query Parameters:**
+- [FastAPI Query Parameters Documentation](https://fastapi.tiangolo.com/tutorial/query-params/)
+- [How to Use FastAPI Query Parameters Effectively](https://oneuptime.com/blog/post/2026-02-03-fastapi-query-parameters/view)
 
-**Secondary (MEDIUM confidence):**
-- [FastAPI Testing Documentation](https://fastapi.tiangolo.com/tutorial/testing/) - MEDIUM confidence (official FastAPI docs)
-- [Integration Testing Patterns](https://martinfowler.com/bliki/IntegrationTest.html) - MEDIUM confidence (architecture patterns)
+**LanceDB Filtering:**
+- [LanceDB SQL Filtering Documentation](https://lancedb.github.io/lancedb/sql/)
+- [LanceDB Metadata Filtering Guide](https://lancedb.com/docs/search/filtering/)
 
-**Project Context:**
-- Existing project structure analysis (`src/`, `ui/`, `tests/`)
-- Current test setup (Pytest for backend, Vitest for frontend)
-- LanceDB file-based database behavior
-- FastAPI module structure (`src/app/main.py`)
+**React Infinite Scroll with TanStack Query:**
+- [TanStack Query Infinite Queries Documentation](https://tanstack.com/query/latest/docs/framework/react/guides/infinite-queries)
+- [Seamless infinite scrolling: TanStack Query and Intersection Observer](https://medium.com/@sanjivjangid/seamless-infinite-scrolling-tanstack-query-and-intersection-observer-c7ec8a544c83)
 
-**Confidence Assessment:**
-- Test directory location: HIGH - follows established frontend test conventions
-- Backend startup orchestration: HIGH - Playwright webServer is well-documented
-- Fixture organization: HIGH - custom fixtures pattern is standard practice
-- Test data placement: HIGH - JSON fixtures widely used in industry
-- Dev server lifecycle: HIGH - Playwright handles process lifecycle automatically
+**Search Relevance and Re-ranking:**
+- [Optimizing RAG with Hybrid Search & Reranking - Superlinked](https://superlinked.com/vectorhub/articles/optimizing-rag-with-hybrid-search-reranking)
+- [Azure AI Search: Hybrid Retrieval and Reranking](https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/azure-ai-search-outperforming-vector-search-with-hybrid-retrieval-and-reranking/3929167)
 
-**Overall confidence:** HIGH
+**Copy to Clipboard:**
+- [Implementing copy-to-clipboard in React with Clipboard API](https://blog.logrocket.com/implementing-copy-clipboard-react-clipboard-api/)
+- [useCopyToClipboard Hook](https://usehooks-ts.com/react-hook/use-copy-to-clipboard)
+
+**Virtual Scrolling:**
+- [Handling Large Data With Infinite Scrolling in React](https://www.ignek.com/blog/handling-large-data-with-infinite-scrolling-in-react)
+- [How To Render Large Datasets In React](https://www.syncfusion.com/blogs/post/render-large-datasets-in-react)
+
+---
+*Architecture research for: AI Conversation Search & Browse UX Enhancements*
+*Researched: 2026-02-12*

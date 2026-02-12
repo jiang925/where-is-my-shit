@@ -1,478 +1,477 @@
 # Domain Pitfalls
 
-**Domain:** UI/API Integration Testing (React/FastAPI/Playwright)
+**Domain:** Adding Search & Browse UX Features to Existing Search Application
 **Researched:** 2026-02-12
+**Confidence:** MEDIUM-HIGH
 
 ## Critical Pitfalls
 
-Mistakes that cause rewrites or major issues.
+### Pitfall 1: Filter State Management Cascade Failures
 
-### Pitfall 1: Post-Development Test Integration (The "TDD Debt" Problem)
-
-**What goes wrong:** Adding integration tests after components are built without test hooks leads to fragile, hard-to-maintain tests that fail for unrelated reasons. Tests become "checking" rather than "driving" code quality.
+**What goes wrong:** Multiple filter combinations (source + date range + relevance threshold) create exponential state complexity. Filters conflict, produce zero results, or break URL sharing. Users apply filters that contradict each other without realizing, get confused by empty results, and abandon the feature.
 
 **Why it happens:**
-- Components were designed with user functionality in mind, not testability
-- Missing test IDs, stable selectors, and data-test attributes
-- Tight coupling between UI components and API contracts
-- Assumptions hardcoded throughout the codebase (API URLs, timeouts, retry logic)
+- Filter state stored in multiple disconnected places (React state, URL params, localStorage)
+- No filter state validation when combining filters
+- Cascading `useEffect` hooks trigger infinite re-render loops
+- URL state and component state drift out of sync
+- Filter combinations never tested (only individual filters work)
 
-**Consequences:**
-- Tests break when UI styling changes unrelated to functionality
-- False positives require constant maintenance
-- Team loses trust in tests, starts ignoring failures
-- Every refactoring becomes a test rewrite exercise
-
-**Prevention:**
-1. **Add before you fix:** Create test IDs/selectors as the first step in v1.3 debugging phase
-2. **Stable selectors only:** Use `data-testid` attributes instead of CSS selectors or class names
-3. **Test boundaries, not implementation:** Test API contracts and user flows, not internal React component rendering
-4. **Page Object Model:** Abstract selectors into Page Objects to centralize test maintenance
-
-**Detection:**
-- Tests fail after UI changes that don't affect functionality
-- Frequent selector update commits in test files
-- Test suite takes longer than 10 seconds per test (too brittle)
-
-**Sources:**
-- MEDIUM CONFIDENCE: Based on common integration testing patterns, requires validation for Playwright/React specifics
-
-### Pitfall 2: CORS + Auth Token Pass-Through Failure Cascade
-
-**What goes wrong:** CORS (Cross-Origin Resource Sharing) misconfiguration combined with incorrect authentication token passing causes complete UI/API communication failure. Symptoms include 401/403 responses, OPTIONS preflight failures, and confusing error messages.
-
-**Why it happens:**
-- FastAPI CORS misconfiguration: `allow_origins="*"` with credentials, or missing preflight handling
-- React fetch API not sending credentials: missing `credentials: 'include'` or Authorization header
-- Extension/content script security restrictions (if testing browser extension)
-- Development/production environment mismatch
-
-**FastAPI CORS Anti-Patterns:**
-
-```python
-# WRONG - Wildcard with credentials (forbidden by browser)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,  # Browser will reject this
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# WRONG - Missing preflight methods
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
-    allow_credentials=True,
-    allow_methods=["GET", "POST"],  # Missing OPTIONS
-    allow_headers=["*"],
-)
-```
-
-**Correct CORS Configuration:**
-
-```python
-from fastapi.middleware.cors import CORSMiddleware
-
-# For test environment - include all needed origins
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",  # React dev server
-        "http://localhost:3000",  # Alternative dev port
-        "http://127.0.0.1:5173",
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],  # Include OPTIONS, GET, POST, PUT, DELETE
-    allow_headers=["*"],  # Include Authorization, Content-Type
-)
-```
-
-**React Fetch/Auth Pitfalls:**
-
+**Real-World Example (2026):**
 ```typescript
-// WRONG - Token stored, but not sent to API
-const token = localStorage.getItem('api_key');
-fetch('http://localhost:8000/api/search', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  // Missing Authorization header!
-  body: JSON.stringify({ query })
-});
+// WRONG - State synchronization hell
+const [sourceFilter, setSourceFilter] = useState('claude');
+const [dateRange, setDateRange] = useState({ start: null, end: null });
+const [threshold, setThreshold] = useState(0.7);
 
-// WRONG - Token format incorrect
-fetch('http://localhost:8000/api/search', {
-  headers: {
-    'Authorization': token,  // Should be: `Bearer ${token}` or `Api-Key ${token}`
-  }
-});
+useEffect(() => {
+  // Triggers another useEffect
+  updateURL({ source: sourceFilter });
+}, [sourceFilter]);
 
-// CORRECT - Check what FastAPI expects (from FastAPI docs)
-fetch('http://localhost:8000/api/search', {
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Api-Key ${token}`,  // Match FastAPI security scheme
-  }
-});
+useEffect(() => {
+  // Triggers search, which updates URL, which triggers sourceFilter useEffect
+  performSearch({ source: sourceFilter, date: dateRange });
+}, [sourceFilter, dateRange]);
+
+// Result: Infinite loop, performance degradation, unpredictable behavior
 ```
 
 **Consequences:**
-- OPTIONS preflight returns 404/405 (browser blocks the request)
-- POST/GET requests never reach FastAPI with authorization headers
-- CORS errors in browser console mask the real auth failure
-- Testing locally works but fails in CI (different origins)
+- Browser freezes from infinite re-render loops
+- URL becomes source of truth but React state contradicts it
+- Filter combinations produce zero results (user thinks system is broken)
+- Back button doesn't work as expected (state not properly restored)
+- Shared URLs don't preserve filter state correctly
 
-**Prevention:**
-1. **CORS First:** Configure CORS before writing any tests. Use explicit origins during development
-2. **Auth Last:** Test authentication in isolation with FastAPI `TestClient` before Playwright
-3. **Browser DevTools:** Check Network tab for OPTIONS requests and verify headers are sent
-4. **Test Environment Variables:** Use `.env.test` with explicit CORS origins for test runs
+**How to avoid:**
+1. **Single source of truth:** Use URL as primary state, React state as derived state
+2. **URL state library:** Use nuqs (type-safe URL state management for React) instead of manual URL manipulation
+3. **Filter validation:** Detect and warn on contradictory filter combinations before sending query
+4. **Progressive disclosure:** Show filters one at a time based on user intent, not all at once
+5. **Debounce filter changes:** 300ms debounce on input-based filters to prevent cascading updates
+6. **Use `useTransition`:** Mark filter updates as non-urgent in React 19 to prevent UI freezing
 
-**Detection:**
-- Browser console: "CORS policy: No 'Access-Control-Allow-Origin' header"
-- Network tab: OPTIONS request fails with 404/405
-- FastAPI logs: Shows OPTIONS was received but CORS preflight denied
-- Test passes with FastAPI `TestClient` but fails in Playwright
+**Warning signs:**
+- Browser console shows "Maximum update depth exceeded" errors
+- URL changes but results don't update (or vice versa)
+- Filter UI shows different state than what's in URL query params
+- Zero results when filters are applied, but removing filters shows results
+- Test coverage reveals filter A + filter B combination never tested
+
+**Phase to address:** Phase 16 (Source Filtering Implementation)
 
 **Sources:**
-- HIGH CONFIDENCE: [FastAPI CORS Documentation](https://fastapi.tiangolo.com/tutorial/cors/) - Authority on FastAPI CORS configuration
+- [URL State Management in React (nuqs)](https://nuqs.dev/) - Type-safe search params state management
+- [State Management Pitfalls in Modern UI](https://logicloom.in/state-management-gone-wrong-avoiding-common-pitfalls-in-modern-ui-development/)
+- [Filter UX Best Practices](https://www.pencilandpaper.io/articles/ux-pattern-analysis-enterprise-filtering)
 
-### Pitfall 3: Flaky Tests Due to Race Conditions (Timing Hell)
+---
 
-**What goes wrong:** Tests rely on implicit timing (`page.waitForTimeout()`, thread sleeps, fixed delays) instead of explicit wait conditions. Tests pass locally (fast machine) but fail in CI (slower machine).
+### Pitfall 2: Path Display XSS Vulnerabilities via Unsanitized File Paths
+
+**What goes wrong:** Displaying file paths directly in HTML without sanitization creates XSS vulnerabilities. Malicious file paths like `</script><script>alert('xss')</script>` or SVG files with embedded JavaScript execute in user's browser when path is rendered.
 
 **Why it happens:**
-- Network latency varies between localhost and CI environments
-- React rendering has asynchronous phases (hydration, data loading)
-- FastAPI database operations have variable execution time
-- Playwright doesn't know when the UI is "ready" without explicit signals
+- File paths seem "safe" because they're from local filesystem
+- Developers assume path strings don't contain executable code
+- React's `dangerouslySetInnerHTML` used for syntax highlighting
+- SVG preview functionality renders attacker-controlled content
+- Cross-platform path handling exposes Windows path separators (`\`) vs Unix (`/`)
 
-**Common Anti-Patterns:**
+**Real-World CVEs (2026):**
+- **CVE-2026-1866:** Salvo framework `list_html` generates file view without sanitizing filenames, leading to XSS
+- **Frappe LMS:** Stored XSS via malicious image filenames executed when rendered on course pages
+- **Termix File Manager:** SVG file content not sanitized before preview, allowing arbitrary JavaScript execution
 
+**Attack Vectors:**
 ```typescript
-// WRONG - Magic number timeout
-await page.goto('http://localhost:5173');
-await page.waitForTimeout(1000);  // Will fail on slow CI
-await page.click('#search-button');
+// DANGEROUS - Direct path rendering
+<div>Path: {message.metadata.file_path}</div>
+// If file_path = "</div><script>alert('XSS')</script><div>", executes script
 
-// WRONG - Promise.all without proper ordering
-await Promise.all([
-  page.fill('#search-input', 'query'),
-  page.click('#search-button'),
-  page.waitForResponse('**/search')  // Might not be included in the list
-]);
+// DANGEROUS - Using dangerouslySetInnerHTML for paths
+<div dangerouslySetInnerHTML={{ __html: filePath }} />
 
-// WRONG - Checking existence without waiting
-const button = await page.locator('#search-button');
-if (await button.isVisible()) {  // Might be stale
-  await button.click();
-}
-```
-
-**Correct Explicit Wait Patterns:**
-
-```typescript
-// CORRECT - Wait for specific element/action
-await page.goto('http://localhost:5173');
-await page.waitForSelector('#search-input', { state: 'visible' });
-await page.fill('#search-input', 'query');
-await page.click('#search-button');
-
-// CORRECT - Wait for API response
-const responsePromise = page.waitForResponse('**/search');
-await page.click('#search-button');
-const response = await responsePromise;
-expect(response.status()).toBe(200);
-
-// CORRECT - Wait for UI state change
-await page.click('#search-button');
-await page.waitForSelector('#results-loading', { state: 'hidden' });
-await page.waitForSelector('#results-container', { state: 'visible' });
-expect(await page.locator('.result-item').count()).toBeGreaterThan(0);
-```
-
-**FastAPI Async Handling for Tests:**
-
-```python
-# WRONG - Sync operations in async test
-def test_search_sync(client):
-    response = client.post("/search", json={"query": "test"})
-    assert response.status_code == 200
-    # No waiting for database operations
-
-# CORRECT - Explicit test fixtures with cleanup
-@pytest_asyncio.fixture
-async def test_db(async_session):
-    # Set up test state
-    yield async_session
-    # Clean up (runs after test)
-    await async_session.execute(delete(SearchResult))
-
-@pytest.mark.asyncio
-async def test_search_async(client, test_db):
-    # Use test fixture, guaranteed clean state
-    response = await client.post("/search", json={"query": "test"})
-    assert response.status_code == 200
+// DANGEROUS - SVG preview without sanitization
+<img src={`data:image/svg+xml,${metadata.svg_content}`} />
 ```
 
 **Consequences:**
-- Test suite fails randomly (10% failure rate feels like "just flakiness")
-- Team ignores test failures as "false positives"
-- Development slows down due to constant test reruns
-- Hard to debug because failures don't reproduce locally
+- Stored XSS: Malicious paths in database execute when displayed
+- Session hijacking: Attacker steals API keys from localStorage
+- Data exfiltration: Script sends conversation data to external server
+- UI defacement: Injected HTML breaks layout and confuses users
 
-**Prevention:**
-1. **Zero timeout() in tests:** Ban `waitForTimeout()` from test files entirely
-2. **Wait for conditions:** Use `waitForSelector`, `waitForResponse`, `waitForFunction`
-3. **FastAPI TestClient:** Use `TestClient` for API tests to avoid network timing
-4. **Parallel testing:** Run tests with `pytest-xdist` and handle race conditions with per-test test databases
-5. **Retries with limits:** Configure Playwright retries (max 3) but investigate every flaky test
+**How to avoid:**
+1. **Always escape paths:** Use React's default escaping (`{path}` not `dangerouslySetInnerHTML`)
+2. **Sanitize on ingest:** Validate and sanitize file paths before storing in database
+3. **Content Security Policy:** Set strict CSP headers to block inline scripts
+4. **Path validation:** Reject paths containing HTML tags, `<script>`, or suspicious characters
+5. **Use text nodes:** Display paths in `<pre>` or `<code>` tags, never as HTML
+6. **DOMPurify library:** If HTML rendering needed, sanitize with DOMPurify before display
 
-**Detection:**
-- Test passes on run 1, fails on run 2 without code changes
-- Browser shows element exists but Playwright says it's not visible (hydration race)
-- Network tab shows request sent but response not received yet when click happens
-- Test logs show "Timeout after 30000ms waiting for selector"
+**Warning signs:**
+- File paths containing `<`, `>`, or `script` tags stored in database
+- Browser DevTools shows unexpected script tags in DOM
+- Content Security Policy violations in console
+- Path display breaks UI layout unexpectedly
+- User reports seeing JavaScript alerts on search results page
 
-**Sources:**
-- MEDIUM CONFIDENCE: Race condition management is well-documented in testing literature. Playwright documentation provides explicit guidance [Playwright Best Practices](https://playwright.dev/docs/test-best-practices)
-
-### Pitfall 4: Browser Security Policy Violations (Extension + Local Storage)
-
-**What goes wrong:** Chrome extension + local HTTP server violates browser security policies, causing tests to fail or behave differently than production.
-
-**Why it happens:**
-- Chrome extension can access `chrome://` URLs but Playwright typically can't
-- Local HTTP server (localhost:8000) vs localhost:5173 causes origin mismatches
-- Content Security Policy (CSP) blocks inline scripts or certain headers
-- Extension manifest permissions not loaded in headless Playwright mode
-- `localStorage` and `sessionStorage` isolation between contexts
-
-**Common Issues:**
-
-```typescript
-// Extension script (background/content)
-// These won't work in Playwright without extension loading
-chrome.storage.local.get(['api_key'], (result) => { /* ... */ });
-
-// Playwright test (without extension context)
-// localStorage is isolated per page context
-await page.goto('chrome-extension://<id>/popup.html');  // FAILS in default context
-```
-
-**Prevention:**
-1. **Test the web app, not the extension:** Use Playwright to test the React web UI directly (localhost:5173)
-2. **Test extension separately:** If extension testing is needed, use `chromium.launchPersistentContext` with extension loaded
-3. **Mock extension storage:** In Playwright tests, manually set localStorage/sessionStorage for auth tokens
-4. **Environment flag:** Add `IS_EXTENSION` check in React code to handle both contexts
-
-```typescript
-// In React app - handle both extension and web testing
-const apiKey = localStorage.getItem('api_key');
-// Playwright tests set this directly
-await page.addInitScript(() => {
-  localStorage.setItem('api_key', 'test-api-key');
-});
-```
+**Phase to address:** Phase 17 (Claude Code Path Display)
 
 **Sources:**
-- HIGH CONFIDENCE: Browser security policies are fundamental to Chrome extensions and well-documented in [Chrome Extension Development](https://developer.chrome.com/docs/extensions/)
+- [CVE-2026-1866: Salvo Framework XSS](https://www.redpacketsecurity.com/cve-alert-cve-2026-1866-jeroenpeters1986-name-directory/)
+- [Cross-Site Scripting Prevention (OWASP)](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
+- [File Path XSS Vulnerabilities](https://cvedetails.com/vulnerability-list/opxss-1/xss.html)
 
-## Moderate Pitfalls
+---
 
-### Pitfall 1: Test Environment Data Contamination
+### Pitfall 3: Search Relevance Over-Optimization Diminishing Returns
 
-**What goes wrong:** Tests share database or localStorage state, causing test execution order to matter. Passes when run individually, fails when run together.
+**What goes wrong:** Obsessive tweaking of search scoring weights, boosting factors, and ranking algorithms yields minimal improvement while consuming weeks of engineering time. Team keeps "tuning" parameters with no measurable user benefit.
 
 **Why it happens:**
-- Tests don't clean up after themselves
-- Database operations aren't wrapped in transactions
-- localStorage not cleared between tests
-- Unique seed data conflicts between concurrent tests
+- No baseline metrics established before optimization (no A/B testing)
+- Optimizing for outlier queries instead of common patterns
+- Tweaking parameters based on gut feeling, not data
+- Testing with toy datasets (10 conversations) instead of realistic scale (1000+)
+- Ignoring the 80/20 rule: 80% of value from first 20% of effort
 
-**Prevention:**
+**Real-World Example (2026):**
 ```python
-# pytest conftest.py - Automatic cleanup
-@pytest_asyncio.fixture(autouse=True)
-async def cleanup_database(async_session):
-    yield
-    # Clean up created records
-    await async_session.execute(delete(SearchResult))
-    await async_session.commit()
-
-# Isolate test users
-@pytest.fixture
-def test_user_factory(async_session):
-    created_users = []
-    def create_user(email):
-        user = User(email=email)
-        async_session.add(user)
-        created_users.append(user)
-        return user
-    yield create_user
-    # Cleanup all created users
-    for user in created_users:
-        async_session.delete(user)
-    async_session.commit()
+# WRONG - Over-optimized scoring with diminishing returns
+def search(query, boost_title=2.5, boost_recent=1.8, boost_claude=1.3,
+           decay_factor=0.95, min_score=0.68, fuzzy_threshold=0.82,
+           ngram_weight=1.15, semantic_weight=2.1, ...):
+    # 15+ tunable parameters, each requiring extensive testing
+    # Reality: Switching from 2.5 to 2.6 title boost makes 0.1% difference
 ```
+
+**Consequences:**
+- Weeks spent tuning parameters for marginal gains (0.7 → 0.72 average precision)
+- Re-indexing costs: Every scoring change requires full database re-index
+- Increased query latency: Complex scoring algorithms slow down searches
+- Breaking existing working queries: "Improvements" make common searches worse
+- Technical debt: Complex scoring logic becomes unmaintainable
+
+**How to avoid:**
+1. **Establish baseline:** Measure current relevance with test queries before optimization
+2. **Quick wins first:** Fix obvious issues (title matching, exact phrase matching) before exotic tuning
+3. **A/B testing framework:** Compare old vs new scoring with real queries, not gut feeling
+4. **Relevance metrics:** Track nDCG (normalized discounted cumulative gain) or MRR (mean reciprocal rank)
+5. **User feedback:** Add "Was this helpful?" button to results, optimize for clicks not theory
+6. **Hybrid search strategy:** Combine keyword search (fast, predictable) with semantic search (better recall)
+7. **Stop at "good enough":** If users find what they need in top 5 results, stop optimizing
+
+**Warning signs:**
+- Pull requests with titles like "Adjust boost factor from 1.7 to 1.8"
+- No measurable improvement in user-defined relevance metrics
+- Team discussing "semantic density coefficients" without user validation
+- Re-indexing takes hours, making iteration impossible
+- Search latency increased from 50ms to 300ms after "improvements"
+
+**Phase to address:** Phase 18 (Search Relevance Research & Implementation)
 
 **Sources:**
-- HIGH CONFIDENCE: Database test isolation is a well-understood pattern in [pytest documentation](https://docs.pytest.org/)
+- [Search Relevance Tuning for E-commerce](https://rbmsoft.com/blogs/search-relevance-tuning-for-ecommerce/)
+- [SEO Mistakes That Hurt Rankings (2026)](https://webdesignerindia.medium.com/seo-mistakes-that-kill-rankings-2026-6f4fd03b2a6f)
+- [State of AI Search Optimization 2026](https://www.growth-memo.com/p/state-of-ai-search-optimization-2026)
 
-### Pitfall 2: Hardcoded API URLs and Ports
+---
 
-**What goes wrong:** Tests hardcode `http://localhost:8000` which conflicts with environment variables, CI setup, or multiple services.
+### Pitfall 4: Pagination Cursor Stability Failures with Float Scores
 
-**Prevention:**
-```typescript
-// Playwright config
-// playwright.config.ts
-import { defineConfig } from '@playwright/test';
+**What goes wrong:** Browse page implements offset-based pagination or cursor pagination with float relevance scores. Cursors become invalid when new results are added, float comparisons fail due to precision issues, and users see duplicate or missing results across pages.
 
-export default defineConfig({
-  use: {
-    baseURL: process.env.API_BASE_URL || 'http://localhost:8000',
-    extraHTTPHeaders: {
-      'Authorization': `Api-Key ${process.env.TEST_API_KEY}`,
-    }
-  }
-});
+**Why it happens:**
+- Offset pagination assumes static result set (breaks when data changes)
+- Cursors based on float scores (`score=0.75678`) instead of stable identifiers
+- No `ORDER BY id` secondary sort for stability
+- Concurrent inserts/updates shift pagination windows
+- Float precision differences between database and application layer
 
-// .env.test
-API_BASE_URL=http://localhost:8000
-TEST_API_KEY=test-key-12345
+**Real-World Example (2026 Issues):**
+```sql
+-- WRONG - Offset pagination breaks with inserts
+SELECT * FROM conversations ORDER BY created_at DESC LIMIT 20 OFFSET 40;
+-- New conversation inserted between pages → page 3 shows duplicate from page 2
 
-// Test
-test('search works', async ({ request }) => {
-  // Uses baseURL from config + request context
-  const response = await request.post('/search', {
-    json: { query: 'test' }
-  });
-});
+-- WRONG - Float score cursor unstable
+SELECT * FROM results WHERE score < 0.7567 ORDER BY score DESC LIMIT 20;
+-- Float comparison issues: 0.7567 vs 0.756700001 cause gaps
+-- Ranking function returns floats → cursors not stable
 ```
+
+**Consequences:**
+- Users see same conversation on page 2 and page 3 (duplicate results)
+- Infinite scroll skips results (missing conversations between loads)
+- "Load more" button stops working after data updates
+- SEO crawlers can't index all content (pagination broken for bots)
+- Cursor forgery: Users manipulate cursors like `9998:4523` to scrape entire dataset
+
+**How to avoid:**
+1. **Cursor-based pagination:** Use `(timestamp, id)` composite cursor instead of offset
+2. **Stable secondary sort:** Always include unique ID in ORDER BY for deterministic ordering
+3. **Integer scores:** Convert float scores to integers (multiply by 1000) for cursor stability
+4. **Keyset pagination:** Use `WHERE (created_at, id) > (cursor_timestamp, cursor_id)` pattern
+5. **Snapshot isolation:** Use database transactions with consistent snapshot reads
+6. **Cursor signing:** HMAC-sign cursors to prevent forgery and scraping
+
+**Warning signs:**
+- Bug reports: "I saw the same conversation twice when browsing"
+- Pagination stops working after scrolling 5-10 pages
+- Database logs show float comparison warnings
+- Users share URLs with cursor parameters like `cursor=9998:4523`
+- Test suite reveals different results when running pagination tests twice
+
+**Phase to address:** Phase 19 (Browse Page with Pagination)
 
 **Sources:**
-- MEDIUM CONFIDENCE: Environment-based configuration is standard practice. Playwright configuration specifics need verification from [Playwright Configuration Documentation](https://playwright.dev/docs/test-configuration)
+- [Offset Pagination Is Lying to You](https://www.the-main-thread.com/p/quarkus-cursor-pagination-infinite-scroll)
+- [When Infinite Scroll Meets Search](https://www.the-main-thread.com/p/quarkus-cursor-pagination-full-text-search-infinite-scroll)
+- [Pagination & Infinite Scroll Performance](https://github.com/pola-rs/polars/issues/25663)
 
-### Pitfall 3: Missing Error Boundary Testing
+---
 
-**What goes wrong:** Tests only test happy paths. When API returns 500, or network fails, or missing auth token, UI doesn't display error message properly.
+### Pitfall 5: Date Range Filter Timezone Bugs and DST Edge Cases
 
-**Prevention:**
-```typescript
-// Test error states
-test('handles 401 unauthorized', async ({ page }) => {
-  await page.addInitScript(() => localStorage.removeItem('api_key'));
-  await page.goto('/');
-  await page.click('#search-button');
-  await expect(page.locator('.error-message')).toHaveText(
-    'Authentication required'
-  );
-});
+**What goes wrong:** Date range filters use local timezone without proper conversion, causing "missing results" bugs. Daylight Saving Time transitions create 1-hour gaps or duplicates. Mixing timezone-aware and timezone-naive timestamps leads to incorrect filtering.
 
-test('handles API 500 error', async ({ page, context }) => {
-  // Mock API failure
-  await context.route('**/search', route => {
-    route.fulfill({ status: 500, body: '{"error": "Internal error"}' });
-  });
-  await page.goto('/');
-  await page.fill('#search-input', 'query');
-  await page.click('#search-button');
-  await expect(page.locator('.error-message')).toBeVisible();
-});
+**Why it happens:**
+- Frontend sends local time, backend interprets as UTC (or vice versa)
+- Database stores timestamps without timezone information
+- DST transition creates "gap" (2am → 3am spring forward) or "fold" (2am ← 1am fall back)
+- Python's datetime `+/-` operators don't account for DST
+- Date picker UI shows local time but API expects UTC
+
+**Real-World Bugs (2026):**
+```python
+# BUG - Polars date_range converts timezone-aware to UTC unexpectedly
+pl.date_range(start_tz_aware, end_tz_aware)  # Uses UTC instead of original timezone
+
+# BUG - Pandas date_range inconsistent with mixed tz-aware/naive
+pd.date_range(start=tz_aware, end=tz_naive)  # Raises TypeError
+
+# BUG - DST gap creates non-existent times
+datetime(2026, 3, 8, 2, 30, tzinfo=US_Eastern)  # 2:30am doesn't exist (DST spring forward)
 ```
+
+**Consequences:**
+- Filter shows "no results" for valid date range
+- Search results missing conversations from DST transition days
+- User searches "yesterday" but gets results from 2 days ago (timezone confusion)
+- Exported data has 1-hour offset from displayed times
+- Different results in Chrome (local timezone) vs API (UTC)
+
+**How to avoid:**
+1. **Always store UTC:** Database timestamps always in UTC, convert to local only for display
+2. **ISO 8601 format:** Use `YYYY-MM-DDTHH:mm:ss.sssZ` for all timestamp transmission
+3. **Timezone-aware libraries:** Use Luxon (JS) or pendulum (Python), not built-in datetime
+4. **Explicit conversions:** Always specify timezone when converting, never rely on defaults
+5. **Test DST boundaries:** Add tests for March/November DST transitions
+6. **Know your precision:** Milliseconds vs seconds vs days (avoid precision loss in filters)
+7. **Validate inputs:** Reject invalid times created by DST gaps
+
+**Warning signs:**
+- Bug reports: "Date filter doesn't show conversations from yesterday"
+- Off-by-one-hour errors in production logs
+- Test failures only on specific dates (March 8, November 1)
+- Browser console shows different timestamps than API response
+- Users in different timezones report inconsistent search results
+
+**Phase to address:** Phase 19 (Browse Page with Date Range Filtering)
 
 **Sources:**
-- LOW CONFIDENCE: Error testing patterns are standard, but specific Playwright mocking syntax requires verification from [API Testing Documentation](https://playwright.dev/docs/api-testing)
+- [Ten Python datetime Pitfalls](https://dev.arie.bovenberg.net/blog/python-datetime-pitfalls/)
+- [Common Timestamp Pitfalls](https://www.datetimeapp.com/learn/common-timestamp-pitfalls)
+- [Metabase Timezone Troubleshooting](https://www.metabase.com/docs/latest/troubleshooting-guide/timezones)
+- [Database Timestamps and Timezones](https://www.tinybird.co/blog/database-timestamps-timezones)
 
-## Minor Pitfalls
+---
 
-### Pitfall 1: Test Naming Clarity
+## Technical Debt Patterns
 
-**What goes wrong:** Test names like `test_search()` don't describe what scenario is being tested, making failures hard to interpret.
+Shortcuts that seem reasonable but create long-term problems.
+
+| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
+|----------|-------------------|----------------|-----------------|
+| Store filters in localStorage only | Fast prototyping, no URL complexity | Users can't share filtered searches, bookmarks don't work | Never (URL state is table stakes for search UX) |
+| Client-side filtering only (no API changes) | Ship feature in 1 day | Performance degrades with >1000 results, pagination impossible | Only if dataset guaranteed <100 items forever |
+| Skip clipboard API fallback | Works on modern Chrome | Breaks on Firefox, Safari, HTTP (non-HTTPS) contexts | Never (clipboard requires HTTPS + permissions) |
+| Hardcode source names in filter UI | Simple implementation | Adding new source requires UI code change + deployment | Acceptable for MVP if sources are stable |
+| Use offset pagination instead of cursor | Simpler SQL queries | Breaks with concurrent inserts, duplicate/missing results | Acceptable if data never changes (archive view) |
+| Skip date range validation | Users can pick any dates | Queries like "start=2030, end=2020" crash backend | Never (always validate date ranges) |
+| Re-index on every search parameter change | Always fresh results | 5+ second query latency, database overload | Never (use incremental updates) |
+| Store relevance scores as floats | Matches embedding library output | Cursor pagination breaks, precision loss in comparisons | Acceptable if never used for pagination keys |
+
+## Integration Gotchas
+
+Common mistakes when adding features to existing search system.
+
+| Integration Point | Common Mistake | Correct Approach |
+|-------------------|---------------|------------------|
+| Existing search API | Add new `/search/v2` endpoint instead of extending current | Extend existing `/api/v1/search` with optional query params (`?source=claude&date_from=...`) |
+| Filter state in React | Create new context for filters, duplicates existing search state | Extend existing search context with filter fields |
+| Database schema | Add new `filtered_results` table to store pre-filtered data | Add indexes on filter columns (`source`, `created_at`) to existing table |
+| URL query params | Invent new param names (`src`, `df`, `dt`) without checking existing | Follow existing conventions (check what params already exist) |
+| Clipboard API | Use `document.execCommand('copy')` (deprecated) | Use modern Clipboard API with permissions fallback |
+| Date storage | Add new `local_timestamp` column with timezone | Use existing UTC timestamps, convert in application layer |
+
+## Performance Traps
+
+Patterns that work at small scale but fail as usage grows.
+
+| Trap | Symptoms | Prevention | When It Breaks |
+|------|----------|------------|----------------|
+| Client-side filtering 1000+ results | Page freezes on filter change, 100% CPU usage | Server-side filtering with indexed columns | >1000 results (10k+ results = browser crash) |
+| Fetching all results then paginating | 5+ second initial load, memory leak | Database-level pagination with LIMIT/OFFSET or cursors | >500 conversations in database |
+| Re-embedding on every search | 300ms+ query latency, high CPU | Pre-compute embeddings on ingest, cache results | >100 searches/hour |
+| No filter result caching | Same filter query hits database every time | Cache filter results for 60 seconds (Redis or in-memory) | >50 concurrent users |
+| Elasticsearch terms filter >16 values | 15-20x performance degradation | Use `bool` query with `should` clauses instead of `terms` | >16 filter values selected |
+| Full table scan for date ranges | 10+ second queries on large tables | Add composite index on (source, created_at, id) | >10,000 rows in table |
+
+## Security Mistakes
+
+Domain-specific security issues beyond general web security.
+
+| Mistake | Risk | Prevention |
+|---------|------|------------|
+| Path traversal in file path display | User crafts path like `../../etc/passwd`, system exposes sensitive files | Validate paths against allowed directories, use basename only for display |
+| No Clipboard API permission handling | Feature breaks silently on permission denial, confuses users | Always check `navigator.permissions.query` before clipboard write |
+| Unsanitized SVG in preview | Stored XSS via SVG `<script>` tags in file metadata | Use DOMPurify to sanitize SVG content, set strict CSP headers |
+| Filter injection in SQL | User enters `'; DROP TABLE conversations--` in source filter | Use parameterized queries, never string concatenation for filters |
+| Exposing internal IDs in cursors | Cursor like `id=9998` reveals database sequence, enables scraping | HMAC-sign cursors or use opaque tokens (UUIDs) |
+| No rate limiting on browse page | Attacker scrapes entire database via pagination | Rate limit pagination requests (10 pages/minute per IP) |
+
+## UX Pitfalls
+
+Common user experience mistakes in this domain.
+
+| Pitfall | User Impact | Better Approach |
+|---------|-------------|-----------------|
+| Hiding active filters after selection | User forgets filters applied, confused by "no results" | Show active filters prominently above results (chips/badges) |
+| No filter feedback (result count) | User selects filter, doesn't know if it worked | Show "23 results with filter 'Claude Code'" immediately |
+| Freezing UI during filter application | User thinks app crashed during 300ms filter query | Show loading skeleton, disable UI elements (don't freeze) |
+| Complex filter combinations without guidance | User overwhelmed by 10+ filter options | Progressive disclosure: Show relevant filters based on context |
+| No "Clear all filters" button | User manually unchecks 5 filters one by one | Single "Clear filters" button resets to default state |
+| Clipboard copy with no visual feedback | User unsure if path copied successfully | Toast notification: "Path copied to clipboard!" |
+| Date picker allows invalid ranges | User selects end date before start date, gets error | Disable invalid date selections in picker UI |
+| Pagination shows page numbers without context | "Page 5 of ?" → user doesn't know how much content exists | Show "Page 5 of 23 (460 results)" for context |
+
+## "Looks Done But Isn't" Checklist
+
+Things that appear complete but are missing critical pieces.
+
+- [ ] **Source Filtering:** Often missing "All Sources" default option — verify filter can be cleared
+- [ ] **Source Filtering:** Often missing URL state persistence — verify shared URL preserves filter
+- [ ] **Path Display:** Often missing Windows path handling — verify `C:\Users\...` renders correctly
+- [ ] **Path Display:** Often missing clipboard permission error handling — verify fallback for denied permission
+- [ ] **Clipboard API:** Often missing HTTPS requirement — verify works in production (not just localhost)
+- [ ] **Search Relevance:** Often missing baseline metrics — verify improvement measured, not assumed
+- [ ] **Browse Pagination:** Often missing "no more results" state — verify last page shows appropriate message
+- [ ] **Date Range:** Often missing timezone conversion — verify UTC storage with local display
+- [ ] **Date Range:** Often missing DST edge case handling — verify March/November dates work correctly
+- [ ] **Filter Combinations:** Often missing zero-results handling — verify clear error message when no matches
+- [ ] **URL State:** Often missing browser back button support — verify back/forward restores filter state
+- [ ] **Performance:** Often missing database indexes — verify filter queries use indexes (EXPLAIN query)
+
+## Recovery Strategies
+
+When pitfalls occur despite prevention, how to recover.
+
+| Pitfall | Recovery Cost | Recovery Steps |
+|---------|---------------|----------------|
+| XSS via unsanitized paths | HIGH | 1. Immediate: Deploy CSP headers to block inline scripts<br>2. Audit: Search database for paths containing `<script>`<br>3. Sanitize: Retroactively sanitize existing paths<br>4. Fix: Add DOMPurify to all path rendering code |
+| Broken pagination from offsets | MEDIUM | 1. Hotfix: Add secondary ORDER BY id for stability<br>2. Migrate: Switch to cursor-based pagination incrementally<br>3. Test: Add pagination tests for concurrent updates |
+| Filter state management loops | MEDIUM | 1. Debug: Add React DevTools Profiler to identify loop source<br>2. Fix: Consolidate to single URL-based state with nuqs<br>3. Test: Add integration tests for filter combinations |
+| Timezone bugs in date filters | LOW | 1. Fix: Convert all database operations to UTC<br>2. Update: Change UI to show timezone explicitly<br>3. Migrate: Add `updated_at_utc` column, backfill data |
+| Clipboard API permission denial | LOW | 1. Hotfix: Add fallback to `document.execCommand('copy')`<br>2. Improve: Show permission prompt with explanation<br>3. Test: Test on HTTP localhost (permission denied) |
+| Search relevance regression | MEDIUM | 1. Rollback: Revert scoring changes immediately<br>2. Measure: Establish baseline metrics before next attempt<br>3. A/B test: Deploy new scoring to 10% of users, measure impact |
+
+## Pitfall-to-Phase Mapping
+
+How roadmap phases should address these pitfalls.
+
+| Pitfall | Prevention Phase | Verification |
+|---------|------------------|--------------|
+| Filter State Management Loops | Phase 16 (Source Filtering) | URL updates correctly, no infinite loops in React DevTools Profiler |
+| Path Display XSS | Phase 17 (Path Display) | CSP headers block inline scripts, DOMPurify sanitizes all paths |
+| Search Relevance Over-Optimization | Phase 18 (Search Relevance) | Baseline metrics established, A/B test shows measurable improvement |
+| Pagination Cursor Stability | Phase 19 (Browse Page) | Concurrent insert test doesn't create duplicate results |
+| Timezone Bugs in Date Filters | Phase 19 (Browse Page) | DST transition dates (March 8, Nov 1) return correct results |
+| Clipboard API Permission Handling | Phase 17 (Path Display) | HTTP localhost shows fallback UI when permission denied |
+| Filter Combination Validation | Phase 16 (Source Filtering) | Zero-results state shows helpful message, suggests removing filters |
+| Database Index Performance | Phase 16-19 (All phases) | EXPLAIN shows index usage for all filter queries |
+
+## Backward Compatibility Risks
+
+Specific to adding features to existing working system.
+
+### Risk 1: Breaking Existing Search Results with Relevance Changes
+
+**What breaks:** Users have bookmarked search URLs that return specific results. New relevance algorithm changes result ordering, breaking their workflows.
 
 **Prevention:**
-```typescript
-// BAD
-test('search', async ({ page }) => { /* ... */ });
+- Add `v=2` version parameter to search API for new relevance
+- Keep default behavior unchanged, new relevance opt-in only
+- Log old vs new ranking differences, verify no major disruptions
 
-// GOOD
-test('search displays results when API returns data', async ({ page }) => { /* ... */ });
-test('search shows loading state', async ({ page }) => { /* ... */ });
-test('search shows error when API fails', async ({ page }) => { /* ... */ });
-test('search requires authentication', async ({ page }) => { /* ... */ });
-```
+### Risk 2: URL State Migration Breaking Shared Links
 
-### Pitfall 2: Screenshot Failure Debugging
-
-**What goes wrong:** Tests fail with no context, hard to debug in CI where you can't see the browser.
+**What breaks:** Existing shared search URLs use different query param names. New filter system uses different param names, old links return 404 or incorrect results.
 
 **Prevention:**
-```typescript
-// playwright.config.ts
-export default defineConfig({
-  use: {
-    screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
-    trace: 'on-first-retry',
-  }
-});
+- Support both old and new param names during transition period
+- Add redirect logic: old params → new params transparently
+- Document deprecated params, show migration timeline
 
-// Failure automatically produces:
-// - screenshot.png
-// - video.webm
-// - trace.zip (can be opened in trace viewer)
-```
+### Risk 3: Database Schema Changes Requiring Re-Indexing
+
+**What breaks:** Adding indexes for filter performance requires locking table, causing downtime.
+
+**Prevention:**
+- Use `CREATE INDEX CONCURRENTLY` in PostgreSQL (no table lock)
+- Schedule index creation during low-traffic periods
+- Use online schema migration tools (gh-ost, pt-online-schema-change)
 
 **Sources:**
-- HIGH CONFIDENCE: [Playwright Debugging Documentation](https://playwright.dev/docs/debug) confirms this approach
-
-## Phase-Specific Warnings
-
-| Phase Topic | Likely Pitfall | Mitigation |
-|-------------|---------------|------------|
-| **Phase 12-01: Debug UI/API Connection** | Pitfall 2: CORS + Auth failures | Start with browser Network tab inspection. Use FastAPI logs to confirm request received. Test with `curl` first to isolate CORS. |
-| **Phase 12-02: Add Stable Test Selectors** | Pitfall 1: Post-development test debt | Add `data-testid` attributes to React components before writing tests. Document selector conventions. |
-| **Phase 12-03: Configure Test Environment** | Pitfall 2: CORS config mismatches | Create `.env.test` with explicit settings. Use `pyproject.toml` pytest configuration for test-specific behavior. |
-| **Phase 12-04: Write Integration Tests** | Pitfall 3: Race conditions / flaky tests | Ban `waitForTimeout()`. Use `waitForSelector`, `waitForResponse`. Add test timeouts with reasonable limits (30s default). |
-| **Phase 12-05: Debug Flaky Tests** | Pitfall 3: Timing issues in CI | Use Playwright retries (max 3). Compare local vs CI logs. Check database cleanup fixtures. |
-| **Phase 12-06: Verify Complete Flow** | Pitfall 2: Full flow CORS/auth issues | Test end-to-end from API key entry to search results. Verify token storage and transmission. |
+- [Backward Compatibility Database Patterns](https://www.pingcap.com/article/database-design-patterns-for-ensuring-backward-compatibility/)
+- [Schema Evolution in Kafka](https://oneuptime.com/blog/post/2026-01-21-kafka-schema-evolution/view)
 
 ## Sources
 
-### High Confidence
-- **FastAPI CORS Documentation:** https://fastapi.tiangolo.com/tutorial/cors/ - Authority on FastAPI CORS configuration
-- **FastAPI Testing Documentation:** https://fastapi.tiangolo.com/tutorial/testing/ - Standard patterns for FastAPI testing
-- **Pytest Documentation:** https://docs.pytest.org/ - Comprehensive testing patterns and fixture strategies
-- **Chrome Extension Security:** https://developer.chrome.com/docs/extensions/ - Fundamental browser security model
-- **Playwright Debugging:** https://playwright.dev/docs/debug - Screenshot/video/trace configuration
+### High Confidence (Official Documentation & 2026 CVEs)
 
-### Medium Confidence
-- **Playwright Best Practices:** https://playwright.dev/docs/test-best-practices - Patterns for explicit waits and avoiding flaky tests (requires verification of specific syntax)
-- **Playwright Configuration:** https://playwright.dev/docs/test-configuration - Environment variable handling and baseURL setup
-- **Playwright API Testing:** https://playwright.dev/docs/api-testing - Network mocking and intercepting requests
+- **nuqs - Type-safe URL State Management:** https://nuqs.dev/ — React URL state library preventing filter state synchronization issues
+- **CVE-2026-1866 (Path XSS):** https://www.redpacketsecurity.com/cve-alert-cve-2026-1866-jeroenpeters1986-name-directory/ — Real-world file path XSS vulnerability
+- **OWASP XSS Prevention:** https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html — Authoritative XSS prevention guidance
+- **Clipboard API (MDN):** https://developer.mozilla.org/en-US/docs/Web/API/Clipboard_API — Browser compatibility and security requirements
+- **Pagination Performance Issues (2026):** https://www.the-main-thread.com/p/quarkus-cursor-pagination-infinite-scroll — Real-world offset pagination failures
 
-### Low Confidence (Requires Validation)
-- **Playwright + Chrome Extension Testing:** Loading extensions in headless mode and testing content scripts (needs specific research for v1.3 if extension testing is required)
-- **Playwright + FastAPI CI Setup:** How to run FastAPI server in CI before Playwright tests start (pytest-xdist? pytest-docker? [needs investigation](https://playwright.dev/docs/ci))
-- **LanceDB Testing Patterns:** Testing vector search functionality without requiring a running LanceDB instance in CI (needs Phase 12-01 specific research)
-- **Local Storage in Playwright:** Performance and isolation implications for auth token mocking (needs hands-on testing in v1.3)
+### Medium Confidence (Industry Analysis & Best Practices)
 
-## Additional Research Recommended for v1.3
+- **Filter UX Best Practices:** https://www.pencilandpaper.io/articles/ux-pattern-analysis-enterprise-filtering — Filter UI/UX patterns from enterprise analysis
+- **State Management Pitfalls:** https://logicloom.in/state-management-gone-wrong-avoiding-common-pitfalls-in-modern-ui-development/ — Modern UI state management anti-patterns
+- **Search Relevance Tuning:** https://rbmsoft.com/blogs/search-relevance-tuning-for-ecommerce/ — E-commerce search optimization patterns
+- **Python Datetime Pitfalls:** https://dev.arie.bovenberg.net/blog/python-datetime-pitfalls/ — Comprehensive timezone and DST issue catalog
+- **Timestamp Best Practices:** https://www.datetimeapp.com/learn/common-timestamp-pitfalls — Common timestamp handling mistakes
 
-1. **Playwright + FastAPI CI Setup:** How to run FastAPI server in CI before Playwright tests start (pytest-xdist? pytest-docker?) - Research in Phase 12-03
-2. **Extension vs Web App Testing:** If testing the chrome extension is required beyond the web UI, research `chromium.launchPersistentContext` with extension loading - Phase 12-06 if needed
-3. **LanceDB Testing Patterns:** Testing vector search functionality without requiring a running LanceDB instance in CI - Requires specific database research in Phase 12-01
-4. **Token Storage Security:** localStorage vs sessionStorage vs http-only cookies for API key storage in test vs production - Security considerations (might be Phase 14-01 scope)
+### Low Confidence (Requires Validation for WIMS Context)
 
-## Quick Checklist for v1.3 Phase Kickoff
+- **LanceDB Filter Performance:** No specific documentation found on LanceDB filter performance with multiple predicates — needs empirical testing
+- **FastAPI + React URL State Patterns:** General patterns found but WIMS-specific integration needs validation
+- **Embedding Re-Indexing Costs:** FastEmbed re-indexing performance with 1000+ conversations needs benchmarking
 
-Before writing tests, verify:
-- [ ] FastAPI CORS middleware configured with explicit origins (not `"*"`)
-- [ ] React fetch/send includes proper Authorization header format
-- [ ] `data-testid` attributes added to all interactive React components
-- [ ] `.env.test` file with test-specific environment variables
-- [ ] FastAPI test fixtures for database cleanup
-- [ ] Playwright test timeout configured (default 30s, adjust as needed)
-- [ ] Screenshots/video on failure enabled in Playwright config
-- [ ] Test script in `package.json` for running tests locally (`"test:e2e": "playwright test"`)
+## Additional Research Recommended for v1.4
+
+1. **LanceDB Multi-Column Filtering Performance:** Test filter performance with compound predicates (`source='claude' AND created_at > '2026-01-01'`) — Phase 16 kickoff
+2. **Clipboard API Browser Support Matrix:** Verify fallback behavior on Safari, Firefox, and HTTP contexts — Phase 17 implementation
+3. **FastEmbed Re-Ranking Strategies:** Research semantic search re-ranking approaches without full re-indexing — Phase 18 research
+4. **React 19 `useTransition` for Filter Updates:** Validate that marking filter state updates as non-urgent prevents UI freezing — Phase 16 implementation
+5. **LanceDB Date Range Query Optimization:** Test if date range filters benefit from specific indexing strategies — Phase 19 implementation
+
+---
+*Pitfalls research for: Adding Search & Browse UX Features to Existing Search Application*
+*Researched: 2026-02-12*
+*Confidence: MEDIUM-HIGH (High confidence on web security, medium on WIMS-specific performance)*
