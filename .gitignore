@@ -47,6 +47,8 @@ data/
 .env.test
 data/test-*.lance
 data/test-embeddings/
+data/test-server-config.json
+data/test-auth.db
 
 # IDEs
 .idea/

@@ -14,6 +14,9 @@ export default defineConfig({
     url: 'http://localhost:8000',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,  // 120 seconds for first run (uv venv init, model loading)
+    env: {
+      WIMS_CONFIG_FILE: process.env.WIMS_CONFIG_FILE || '',  // Use test config from globalSetup
+    },
   },
 
   use: {
