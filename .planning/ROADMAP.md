@@ -98,13 +98,17 @@ This milestone resolves UI/API connectivity issues, establishes comprehensive te
 
 | Phase | Name | Status | Plans | Last Updated |
 |-------|------|--------|-------|--------------|
-| 12 | Debug UI/API Connection | Not Started | 0 | - |
+| 12 | Debug UI/API Connection | In Progress | 1 | 2026-02-12 |
 | 13 | Test Infrastructure Setup | Not Started | 0 | - |
 | 14 | Core Integration Tests | Not Started | 0 | - |
 
-**Overall v1.3 Progress:** 0/3 phases (0%)
+**Overall v1.3 Progress:** 1/3 phases (33%)
 
-**Total v1.3 Plans:** 0
+**Total v1.3 Plans:** 1
+
+### Phase 12 Plans
+
+- [x] [12-debug-ui-api-connection-01-PLAN.md](.planning/phases/12-debug-ui-api-connection/12-debug-ui-api-connection-01-PLAN.md) — Add CORS/auth regression tests and Vite proxy configuration
 
 **Previous Milestones:**
 - v1.2: 11 phases (Complete)
