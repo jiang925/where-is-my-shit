@@ -65,7 +65,8 @@ async def search_documents(request: SearchRequest):
             timestamp_value = r.get("timestamp")
             if isinstance(timestamp_value, str):
                 from datetime import datetime
-                timestamp_value = datetime.fromisoformat(timestamp_value.replace('Z', '+00:00'))
+
+                timestamp_value = datetime.fromisoformat(timestamp_value.replace("Z", "+00:00"))
             created_at = int(timestamp_value.timestamp()) if timestamp_value else 0
 
             meta = SearchResultMeta(

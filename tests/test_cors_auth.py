@@ -23,11 +23,7 @@ def mock_settings(monkeypatch, test_api_key):
 
 def test_cors_headers_on_search_request(mock_settings, test_api_key):
     """Test that search requests work with valid API key (TestClient bypasses CORS middleware)."""
-    response = client.post(
-        "/api/v1/search",
-        json={"query": "test", "limit": 5},
-        headers={"X-API-Key": test_api_key}
-    )
+    response = client.post("/api/v1/search", json={"query": "test", "limit": 5}, headers={"X-API-Key": test_api_key})
 
     # 200 means auth succeeded (may return empty results if no data)
     # 403 means auth rejected due to invalid key
@@ -42,7 +38,7 @@ def test_preflight_options_request():
             "Origin": "http://localhost:5173",
             "Access-Control-Request-Method": "POST",
             "Access-Control-Request-Headers": "content-type, x-api-key",
-        }
+        },
     )
 
     assert response.status_code == 200
@@ -65,9 +61,7 @@ def test_api_key_required():
 def test_api_key_invalid(mock_settings):
     """Test that requests with invalid X-API-Key header are rejected."""
     response = client.post(
-        "/api/v1/search",
-        json={"query": "test", "limit": 5},
-        headers={"X-API-Key": "invalid-api-key"}
+        "/api/v1/search", json={"query": "test", "limit": 5}, headers={"X-API-Key": "invalid-api-key"}
     )
 
     assert response.status_code == 403
