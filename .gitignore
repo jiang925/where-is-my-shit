@@ -43,6 +43,11 @@ ENV/
 *.lance/
 data/
 
+# Test environment
+.env.test
+data/test-*.lance
+data/test-embeddings/
+
 # IDEs
 .idea/
 .vscode/
