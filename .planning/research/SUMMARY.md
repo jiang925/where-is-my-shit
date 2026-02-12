@@ -1,128 +1,166 @@
-# Project Research Summary
+# Research Summary: v1.3 UI/API Integration & Verification
 
 **Project:** Where Is My Shit (WIMS)
-**Domain:** Local-First Personal Search / Knowledge Management
-**Researched:** 2026-02-07
+**Milestone:** v1.3 - UI/API Integration & Verification
+**Researched:** 2026-02-12
 **Confidence:** HIGH
 
 ## Executive Summary
 
-Where Is My Shit (WIMS) is a local-first personal search engine designed to capture and index user browsing history securely. Experts build this type of tool using a "Sidecar" architecture, where a local Python server acts as the persistent "brain" (storage, vector processing) and a browser extension acts as the transient "sensor" (capturing content, displaying results). This approach ensures data privacy by keeping all indexing and retrieval on the user's machine, avoiding cloud dependencies.
+v1.3 focuses on making the system actually work by fixing UI/API connectivity and adding automated verification. Research recommends **Playwright 1.58.2** as the integration testing framework, **real backend testing** (not mocking) for reliability, and a **single-server architecture** (FastAPI serves both API and UI to match production).
 
-The recommended approach creates a robust foundation using Python/FastAPI for the backend and React/Vite for the extension. Critical to success is a "Local-First" security model that avoids complex cloud identity providers (like Auth0) in favor of self-hosted JWT authentication. The architecture relies on SQLite for metadata and LanceDB for vector storage, leveraging an asynchronous ingestion queue to keep the browser extension responsive while heavy processing happens in the background.
-
-Key risks include "Cloud Auth Complexity" (over-engineering security), "Works on My Machine" CI failures, and accidental network exposure. Mitigation strategies include strict `127.0.0.1` binding, a dedicated CI/CD pipeline ensuring environment consistency, and a simple token-based authentication handshake between the extension and the local server.
+The research identified critical pitfalls: **CORS + Auth failures** as the most likely cause of the broken UI connection, **flaky tests** from timing issues, and **post-development test debt** from components designed without testability in mind.
 
 ## Key Findings
 
-### Recommended Stack
+### Stack Additions
 
-**Core technologies:**
-- **Python 3.12+ / FastAPI:** Backend runtime and web server; chosen for async support and rich AI ecosystem.
-- **LanceDB / SQLite:** Data layer; LanceDB for serverless vector storage, SQLite for robust metadata management.
-- **React 19 / Vite:** Frontend extension; enables component-based UI with fast build times.
-- **Pytest / Vitest:** Testing; industry standards for Python and JS respectively.
+| Component | Version | Notes |
+|-----------|---------|-------|
+| Playwright | 1.58.2 (2026-02-06 release) | Latest stable, excellent TypeScript support |
+| Test Runner | Playwright built-in | Orchestration, fixtures, API testing |
+| Dev Server | FastAPI only | Serve both `/api/v1/*` and `/` to avoid dual-server complexity |
 
-### Expected Features
+**Architecture Choice:** Single-server approach (FastAPI serves everything) is optimal for integration tests. Avoids Vite dev server complexity while matching production deployment.
 
-**Must have (table stakes):**
-- **API Authentication:** Simple JWT Bearer auth to protect `/search` and `/ingest` endpoints.
-- **Secrets Management:** Secure handling of configuration via `.env` files (never committed).
-- **CI/CD Pipeline:** Automated linting (Ruff/ESLint) and testing on push/PR.
-- **CORS Configuration:** Strict allow-list to enable Extension-to-Server communication.
+**Coexistence:** Vitest (unit tests) and Playwright (integration tests) coexist seamlessly with separate commands: `npm run test` vs `npm run test:integration`.
 
-**Should have (competitive):**
-- **Queued Ingestion:** Background processing to prevent UI blocking.
-- **Audit Logging:** Tracking search/delete actions for security.
+### Feature Categories
 
-**Defer (v2+):**
-- **Cloud Sync:** Complexity and privacy risk not needed for MVP.
-- **User Management UI:** CLI management is sufficient for single-user MVP.
+**Table Stakes (Must Have):**
+- Basic search endpoint test with API auth (`X-API-Key` header)
+- UI receives and displays search results
+- Auth flow verification (API key transmission)
 
-### Architecture Approach
+**Differentiators (Nice to Have):**
+- Multiple search scenarios (empty results, long queries, special characters)
+- CORS validation tests
+- Error handling tests (401 response, 500 error display)
 
-The system follows a **Sidecar Pattern** decoupling the interface from the intelligence.
+**Anti-Features (Avoid):**
+- Full E2E test suite (keep it minimal)
+- Tests that require external services
+- Heavy mocking that defeats integration value
+- Complex test setup requiring containers
 
-**Major components:**
-1. **Browser Extension:** Captures page content and provides the search UI.
-2. **Local Server:** API Gateway that manages auth, ingestion queues, and embedding generation.
-3. **Storage Layer:** LanceDB (vectors) and SQLite (metadata) residing on the local filesystem.
+### Architecture Integration
+
+**Test Location:** `ui/e2e/` or `tests/integration/` at project root (team preference)
+
+**Fixtures:** Custom Playwright fixtures using project dependencies pattern for full database seeding
+- Database initialization fixture
+- Test data cleanup fixture
+- API client fixture for precondition seeding
+
+**Dev Server Orchestration:** Playwright `webServer` config launches FastAPI automatically
+```typescript
+webServer: {
+  command: 'uv run uvicorn src.app.main:app --host 127.0.0.1 --port 8000',
+  url: 'http://localhost:8000',
+  reuseExistingServer: !process.env.CI,
+  timeout: 120000
+}
+```
+
+**Build Order:**
+1. Playwright Setup (install + config)
+2. Test Fixtures (database seeding)
+3. Basic Integration Test (auth + search)
+4. Additional Scenarios (error handling, edge cases)
 
 ### Critical Pitfalls
 
-1. **The "Cloud Auth" Trap:** Using SaaS auth (Auth0) for a local app introduces unnecessary dependency. **Fix:** Use self-hosted JWT.
-2. **"Works on My Machine":** CI fails due to environmental differences. **Fix:** Containerized tests and strict dependency locking (Poetry/Lockfiles).
-3. **Network Exposure:** Defaulting to `0.0.0.0` exposes data to the LAN. **Fix:** Force `127.0.0.1` binding by default.
+**Pitfall 1: CORS + Auth Token Failure Cascade (Most Likely Cause)**
 
-## Implications for Roadmap
+The UI/API connection failure is almost certainly a CORS + auth issue:
+- **CORS misconfig:** `allow_origins=["*"]` with `allow_credentials=True` is forbidden by browsers
+- **Auth token passing:** React may not be sending `Authorization: Api-Key <token>` header
+- **Preflight failures:** Missing OPTIONS method handling blocks requests before they reach FastAPI
 
-Based on research, suggested phase structure prioritizes a secure, testable foundation before feature expansion.
+**Fix Priority 1:** Configure CORS correctly before writing tests
+```python
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # Explicit, not "*"
+    allow_credentials=True,
+    allow_methods=["*"],  # Include OPTIONS
+    allow_headers=["*"],  # Include Authorization
+)
+```
 
-### Phase 1: Foundation & CI/CD
-**Rationale:** Establishing quality gates and secrets management first prevents "security debt" and CI friction later.
-**Delivers:** Repo setup, Secrets management (pydantic-settings), Linting/Formatting (Ruff), GitHub Actions pipeline.
-**Addresses:** Secrets Management, Automated Linting, CI Workflow.
-**Avoids:** "Works on My Machine" Syndrome.
+**Fix Priority 2:** Verify React auth header format matches FastAPI security scheme
+```typescript
+headers: { 'Authorization': `Api-Key ${apiKey}` }
+```
 
-### Phase 2: Core Server & Storage
-**Rationale:** The "brain" (Server) must exist and define the schema before the "sensor" (Extension) can be built.
-**Delivers:** FastAPI app structure, SQLite/LanceDB integration, Ingest/Search API shells.
-**Uses:** Python 3.12, FastAPI, LanceDB, SQLite.
-**Implements:** Local Server, Metadata DB, Vector DB.
+**Pitfall 2: Flaky Tests from Implicit Timing**
 
-### Phase 3: Security & Authentication
-**Rationale:** Auth must be implemented before the extension integration to ensure the handshake is built correctly from the start.
-**Delivers:** JWT implementation, CORS configuration, Rate limiting basics.
-**Addresses:** API Authentication, CORS Configuration.
-**Avoids:** The "Cloud Auth" Complexity Trap, "Forever Local" Network Exposure.
+Tests that use `waitForTimeout()` or fixed delays fail randomly in CI. Ban timeout entirely:
+- ✅ Use `waitForSelector()`, `waitForResponse()`, `waitForFunction()`
+- ❌ Never use `waitForTimeout()`, `page.waitFor()`, thread sleeps
 
-### Phase 4: Extension & Integration
-**Rationale:** The extension depends on a working, secure API to function.
-**Delivers:** React Extension setup, Auth handshake, Capture logic, Search UI.
-**Uses:** React, Vite, Tailwind.
-**Implements:** Content Script, Popup UI.
+**Pitfall 3: Post-Development Test Debt**
 
-### Phase Ordering Rationale
+Components built without testability in mind cause fragile tests:
+- Add `data-testid` attributes before writing tests
+- Use Page Object Model to centralize selectors
+- Test user flows, not implementation details
 
-- **Security First:** We address secrets and CI immediately to ensure a stable development lifecycle.
-- **Server before Client:** The extension is a client of the server; the server's API contract needs to be established first.
-- **Auth before Integration:** Attempting to retro-fit auth after building the extension integration often leads to major refactors.
+## Phase Structure Recommendations
 
-### Research Flags
+Based on research, here's the suggested v1.3 phase structure:
 
-Phases likely needing deeper research during planning:
-- **Phase 4 (Extension):** Browser extension manifestation (V3) can be tricky; specific messaging passing patterns might need prototyping.
+### Phase 12: Debug UI/API Connection
+**Goal:** Identify and fix the root cause of UI not connecting to backend.
+**Delivers:** Working CORS configuration, verified auth token transmission
+**Addresses:** Likely CORS + auth failure (Pitfall 1)
+**Success Criteria:**
+- UI successfully loads and connects to API
+- Search queries reach FastAPI (visible in logs)
+- Browser console free of CORS errors
 
-Phases with standard patterns (skip research-phase):
-- **Phase 1 (Foundation):** Standard Python/GitHub Actions setup.
-- **Phase 2 (Core Server):** Standard FastAPI/SQL patterns.
+### Phase 13: Test Infrastructure Setup
+**Goal:** Establish Playwright framework with fixtures and dev server orchestration.
+**Delivers:** `@playwright/test@1.58.2`, `playwright.config.ts`, database fixtures
+**Addresses:** Environment setup, test isolation (Pitfall 4)
+**Success Criteria:**
+- Playwright runs and launches FastAPI automatically
+- Database fixtures inject and clean up test data
+- Test passes: "FastAPI responds with 200 OK"
+
+### Phase 14: Core Integration Tests
+**Goal:** Verify the complete search flow works end-to-end.
+**Delivers:** Basic search test, auth flow test, error handling test
+**Addresses:** Core flow verification, flaky test prevention (Pitfall 2, 3)
+**Success Criteria:**
+- User can search and see results displayed
+- Auth failures show user-friendly errors
+- All tests pass reliably in CI
+
+**Note:** Phase numbering starts at 12 (continuing from Phase 11 in v1.2).
 
 ## Confidence Assessment
 
-| Area | Confidence | Notes |
-|------|------------|-------|
-| Stack | HIGH | Specific versions and libraries are well-defined and compatible. |
-| Features | HIGH | Clear separation of table stakes vs. anti-features for a local tool. |
-| Architecture | HIGH | The sidecar pattern is well-suited for this domain. |
-| Pitfalls | HIGH | Pitfalls identified are specific and highly relevant to local-first dev. |
+| Area | Level | Reason |
+|------|-------|--------|
+| Playwright setup | HIGH | Verified from official Playwright docs |
+| CORS fixes | HIGH | FastAPI CORS documentation confirms patterns |
+| Flaky test prevention | HIGH | Playwright best practices validated |
+| Fixtures organization | HIGH | Fixture patterns well-documented |
+| Single-server choice | MEDIUM | Matches production, needs verification |
 
 **Overall confidence:** HIGH
 
-### Gaps to Address
-
-- **Vector Tuning:** Research doesn't specify chunking strategies or specific embedding models. This can be addressed during Phase 2 implementation.
-- **Extension IPC:** Specifics of Chrome Extension V3 message passing (Service Worker vs Content Script) need to be handled during Phase 4 planning.
-
 ## Sources
 
-### Primary (HIGH confidence)
-- **FastAPI Security Docs** — Validated JWT patterns.
-- **Vitest Guide** — Validated frontend testing stack.
-- **Local-First Web** — Architecture patterns.
-
-### Secondary (MEDIUM confidence)
-- **LanceDB Docs** — Embedded vector store capabilities.
+- **Playwright WebServer Docs:** https://playwright.dev/docs/test-webserver
+- **Playwright Test Fixtures:** https://playwright.dev/docs/test-fixtures
+- **Playwright API Testing:** https://playwright.dev/docs/api-testing
+- **Playwright Best Practices:** https://playwright.dev/docs/test-best-practices
+- **FastAPI CORS:** https://fastapi.tiangolo.com/tutorial/cors/
+- **FastAPI Testing:** https://fastapi.tiangolo.com/tutorial/testing/
+- **Pytest Fixtures:** https://docs.pytest.org/
 
 ---
-*Research completed: 2026-02-07*
-*Ready for roadmap: yes*
+*Research completed: 2026-02-12*
+*Ready for requirements: yes*
