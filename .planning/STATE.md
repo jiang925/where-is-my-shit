@@ -8,15 +8,15 @@
 ## Current Position
 
 **Phase:** 2 of 3 (Test Infrastructure Setup)
-**Plan:** 1 of 2 complete
-**Status:** In progress - Plan 13-01 complete (Playwright setup)
-**Last activity:** 2026-02-12 — Completed 13-01-PLAN.md (Playwright E2E setup)
+**Plan:** 2 of 2 complete
+**Status:** Phase complete - All plans finished
+**Last activity:** 2026-02-12 — Completed 13-02-PLAN.md (Database Fixtures)
 
 ```text
-[███░] 50% (v1.3 - UI/API Integration & Verification)
+[████] 100% (v1.3 - UI/API Integration & Verification)
 ```
 
-*Phase 12: ✓ Complete | Phase 13: ◐ In Progress (1/2) | Phase 14: ○ Not Started*
+*Phase 12: ✓ Complete | Phase 13: ✓ Complete (2/2) | Phase 14: ○ Not Started*
 
 ## Performance Metrics
 - **Auth Flow:** API Key (Extension & Watcher Integrated)
@@ -26,6 +26,12 @@
 ## Accumulated Context
 
 ### Decisions
+
+#### From Phase 13 Plan 02 (Database Fixtures)
+- **Test Config Isolation:** Create separate test-server-config.json during globalSetup to ensure tests don't use development config - server reads from WIMS_CONFIG_FILE env var
+- **Auth Fixture Pattern:** apiKey fixture provides key, but APIRequestContext requires explicit headers (page.route doesn't affect API requests)
+- **Worker-Scoped Database:** testDbPath fixture uses worker scope to prevent LanceDB file locking conflicts
+- **Static Config Path:** webServer env uses static path to test config file (process.env values not available at config load time)
 
 #### From Phase 13 Plan 01 (Playwright Setup)
 - **Single Worker Mode:** Set `workers: 1` and `fullyParallel: false` to prevent LanceDB file locking conflicts - LanceDB doesn't support concurrent writes from multiple processes
@@ -51,6 +57,7 @@
 - **Stateless Auth:** Removing session management significantly simplified the codebase.
 - **Extension Store:** `chrome.storage.local` is sufficient for API keys; no need for `chrome.storage.sync` for local-only tools.
 - **TestClient CORS Behavior:** FastAPI TestClient bypasses CORS middleware entirely - headers are not added to responses, requiring different test strategies for CORS verification.
+- **APIRequestContext vs Page Routing:** Playwright's APIRequestContext is separate from Page - page.route interceptors don't affect API requests, requiring explicit header management.
 
 ### Blockers / Risks
 - None.
@@ -63,9 +70,9 @@
 
 ## Session Continuity
 
-**Last session end:** 2026-02-12 - Completed 13-01-PLAN.md
-**Stopped at:** Phase 13 Plan 02 (Database Fixtures)
-**Resume file:** .planning/phases/13-test-infrastructure-setup/13-02-PLAN.md
+**Last session end:** 2026-02-12 - Completed 13-02-PLAN.md
+**Stopped at:** Phase 13 complete (2/2 plans)
+**Resume file:** .planning/ROADMAP.md (next phase planning)
 
 ## Phase 12 Summary
 
@@ -99,9 +106,32 @@
 - 120s webServer timeout for uv venv + model loading
 - Request-based API testing pattern established
 
+## Phase 13 Plan 02 Summary
+
+**Completed:** 2026-02-12
+**Status:** Complete ✓ (6/6 tasks + 4 auto-fixes)
+**Duration:** 4 minutes
+
+**Deliverables:**
+- Test environment configuration (.env.test, .env.test.example)
+- Global test setup (tests/e2e/playwright.setup.ts) loading test config
+- Auth fixture (tests/e2e/fixtures/auth.ts) with API key injection
+- Database fixture (tests/e2e/fixtures/database.ts) with worker-scoped isolation
+- Verification tests confirming all fixtures work (3/3 passing)
+
+**Key Decisions:**
+- Test config uses dedicated test-server-config.json for isolation
+- Auth fixture provides apiKey but request context requires explicit headers
+- Database fixture is worker-scoped to prevent LanceDB locks
+- GlobalSetup creates test server config before webServer starts
+
+**Auto-fixes:**
+- Test server config creation (blocking issue)
+- Expect import error (bug fix)
+- Request context headers (bug fix)
+- WebServer env timing (bug fix)
+
 ## Next Steps
 
-**Phase 13 Plan 02: Database Fixtures**
-- Create test database fixtures for isolated test data
-- Set up `.env.test` configuration
-- Implement fixture cleanup mechanisms
+**Phase 13 Complete** - All test infrastructure in place
+**Next:** Phase 14 (or next roadmap item)
