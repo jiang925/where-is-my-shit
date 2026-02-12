@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
+  globalSetup: require.resolve('./tests/e2e/playwright.setup.ts'),
   testDir: './tests/e2e',
   fullyParallel: false,  // Single worker to avoid LanceDB lock conflicts
   forbidOnly: !!process.env.CI,
