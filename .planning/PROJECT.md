@@ -6,14 +6,16 @@ A centralized indexing and retrieval system for AI interactions across fragmente
 ## Core Value
 Never lose a conversation again: Instantly recall specific AI discussions or dev sessions across any platform and jump straight back into the original context.
 
-## Current Milestone: v1.3 (Planning)
+## Current Milestone: v1.3 UI/API Integration & Verification
 
-**Goal:** Expand capabilities with advanced search and broader ingestion support.
+**Goal:** Make the search system actually work end-to-end with automated verification.
 
-**Potential features:**
-- **Advanced Search:** Date ranges, source filtering, and fuzzy matching controls.
-- **Generic Ingestion:** Drag-and-drop support for PDF/MD files.
-- **Enhanced UI:** improved search results visualization.
+**Target outcomes:**
+- **UI/API Connectivity:** Fix blocking issues preventing UI from connecting to backend
+- **Complete Flow:** Verify ingest → search → display pipeline works end-to-end
+- **Integration Tests:** Add Playwright tests for core search flow to prevent regressions
+
+**Context:** System components were built separately but never verified together. v1.3 establishes working baseline before adding advanced features.
 
 ## Recent Milestone: v1.2 Simplify & Deploy (Shipped)
 
@@ -61,4 +63,4 @@ Shipped v1.2 on 2026-02-11.
 | **uv Package Manager** | Faster, robust venv handling, prevents system breakage. | ✓ Implemented (v1.2) |
 
 ---
-*Last updated: 2026-02-11 (End of v1.2)*
+*Last updated: 2026-02-12 (Start of v1.3)*
