@@ -3,20 +3,14 @@
 ## Project Reference
 
 **Core Value:** Never lose a conversation again: Instantly recall specific AI discussions or dev sessions.
-**Current Focus:** Core Integration Tests (Phase 14)
+**Current Focus:** Defining requirements (v1.4 - Search & Browse UX Polish)
 
 ## Current Position
 
-**Phase:** 3 of 3 (Core Integration Tests)
-**Plan:** 1 of 1 complete
-**Status:** Phase complete - All plans finished
-**Last activity:** 2026-02-12 — Completed 14-01-PLAN.md (Core Integration Tests)
-
-```text
-[████] 100% (v1.3 - UI/API Integration & Verification)
-```
-
-*Phase 12: ✓ Complete | Phase 13: ✓ Complete (2/2) | Phase 14: ✓ Complete (1/1)*
+**Phase:** Not started (defining requirements)
+**Plan:** —
+**Status:** Defining requirements
+**Last activity:** 2026-02-12 — Milestone v1.4 started
 
 ## Performance Metrics
 - **Auth Flow:** API Key (Extension & Watcher Integrated)

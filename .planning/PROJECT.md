@@ -6,16 +6,26 @@ A centralized indexing and retrieval system for AI interactions across fragmente
 ## Core Value
 Never lose a conversation again: Instantly recall specific AI discussions or dev sessions across any platform and jump straight back into the original context.
 
-## Current Milestone: v1.3 UI/API Integration & Verification
+## Current Milestone: v1.4 Search & Browse UX Polish
+
+**Goal:** Transform WIMS from "it works" to "it's actually useful" by improving search quality and adding flexible browsing capabilities.
+
+**Target features:**
+- **Source Filtering:** Filter results by data source (Claude Code, ChatGPT, Gemini, etc.)
+- **Claude Code Path Fix:** Replace broken "Open" link with rendered path + copy button
+- **Search Relevance:** Research and implement better semantic search (embeddings/ranking/hybrid)
+- **Browse Page:** Chronological browsing with flexible filters and date ranges
+
+**Context:** Search works end-to-end but has usability issues: irrelevant results (0.7 score for unrelated content), noisy fragments, broken Claude Code links, no browsing capabilities.
+
+## Recent Milestone: v1.3 UI/API Integration & Verification (Shipped)
 
 **Goal:** Make the search system actually work end-to-end with automated verification.
 
-**Target outcomes:**
-- **UI/API Connectivity:** Fix blocking issues preventing UI from connecting to backend
-- **Complete Flow:** Verify ingest → search → display pipeline works end-to-end
-- **Integration Tests:** Add Playwright tests for core search flow to prevent regressions
-
-**Context:** System components were built separately but never verified together. v1.3 establishes working baseline before adding advanced features.
+**Shipped Features:**
+- **UI/API Connectivity:** Fixed CORS and schema alignment blocking issues
+- **Complete Flow:** Verified ingest → search → display pipeline works end-to-end
+- **Integration Tests:** Added Playwright tests for core search workflows
 
 ## Recent Milestone: v1.2 Simplify & Deploy (Shipped)
 
@@ -63,4 +73,4 @@ Shipped v1.2 on 2026-02-11.
 | **uv Package Manager** | Faster, robust venv handling, prevents system breakage. | ✓ Implemented (v1.2) |
 
 ---
-*Last updated: 2026-02-12 (Start of v1.3)*
+*Last updated: 2026-02-12 (Start of v1.4)*
