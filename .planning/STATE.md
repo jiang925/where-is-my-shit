@@ -3,20 +3,20 @@
 ## Project Reference
 
 **Core Value:** Never lose a conversation again: Instantly recall specific AI discussions or dev sessions.
-**Current Focus:** Test Infrastructure Setup (Phase 13)
+**Current Focus:** Core Integration Tests (Phase 14)
 
 ## Current Position
 
-**Phase:** 2 of 3 (Test Infrastructure Setup)
-**Plan:** 2 of 2 complete
+**Phase:** 3 of 3 (Core Integration Tests)
+**Plan:** 1 of 1 complete
 **Status:** Phase complete - All plans finished
-**Last activity:** 2026-02-12 — Completed 13-02-PLAN.md (Database Fixtures)
+**Last activity:** 2026-02-12 — Completed 14-01-PLAN.md (Core Integration Tests)
 
 ```text
 [████] 100% (v1.3 - UI/API Integration & Verification)
 ```
 
-*Phase 12: ✓ Complete | Phase 13: ✓ Complete (2/2) | Phase 14: ○ Not Started*
+*Phase 12: ✓ Complete | Phase 13: ✓ Complete (2/2) | Phase 14: ✓ Complete (1/1)*
 
 ## Performance Metrics
 - **Auth Flow:** API Key (Extension & Watcher Integrated)
@@ -26,6 +26,12 @@
 ## Accumulated Context
 
 ### Decisions
+
+#### From Phase 14 Plan 01 (Core Integration Tests)
+- **Schema Alignment Fix:** Backend SearchResult now returns nested meta structure matching frontend expectations - enables proper result display in UI
+- **Multi-Element Resilience:** Integration tests use .first() for locators to handle multiple matching elements from persistent test data
+- **Explicit API Headers:** Test ingestion uses request context with explicit X-API-Key headers since page.route doesn't affect APIRequestContext
+- **Debounce Handling:** Search tests set up waitForResponse before typing to catch the 300ms debounced API request
 
 #### From Phase 13 Plan 02 (Database Fixtures)
 - **Test Config Isolation:** Create separate test-server-config.json during globalSetup to ensure tests don't use development config - server reads from WIMS_CONFIG_FILE env var
@@ -58,6 +64,8 @@
 - **Extension Store:** `chrome.storage.local` is sufficient for API keys; no need for `chrome.storage.sync` for local-only tools.
 - **TestClient CORS Behavior:** FastAPI TestClient bypasses CORS middleware entirely - headers are not added to responses, requiring different test strategies for CORS verification.
 - **APIRequestContext vs Page Routing:** Playwright's APIRequestContext is separate from Page - page.route interceptors don't affect API requests, requiring explicit header management.
+- **Schema Alignment Critical:** Backend and frontend must agree on response structure - nested meta object pattern provides better extensibility than flat fields.
+- **SearchBar Debounce:** SearchBar has 300ms debounce with no submit button - tests must waitForResponse before typing to catch auto-triggered search.
 
 ### Blockers / Risks
 - None.
@@ -70,9 +78,9 @@
 
 ## Session Continuity
 
-**Last session end:** 2026-02-12 - Completed 13-02-PLAN.md
-**Stopped at:** Phase 13 complete (2/2 plans)
-**Resume file:** .planning/ROADMAP.md (next phase planning)
+**Last session end:** 2026-02-12 - Completed 14-01-PLAN.md
+**Stopped at:** Phase 14 complete (1/1 plans) - All roadmap phases complete
+**Resume file:** .planning/ROADMAP.md (next phase planning or feature development)
 
 ## Phase 12 Summary
 
@@ -131,7 +139,27 @@
 - Request context headers (bug fix)
 - WebServer env timing (bug fix)
 
+## Phase 14 Plan 01 Summary
+
+**Completed:** 2026-02-12
+**Status:** Complete ✓ (2/2 tasks + 1 auto-fix)
+**Duration:** 3 minutes
+
+**Deliverables:**
+- INTEG-01: Full authenticated search workflow test (tests/e2e/spec/search-flow.spec.ts)
+- INTEG-02: Missing API key error display tests (tests/e2e/spec/auth-error.spec.ts)
+- Schema alignment fix (SearchResult with nested meta structure)
+- 3 passing integration tests with 0 waitForTimeout violations
+
+**Key Decisions:**
+- Fixed backend/frontend schema mismatch with nested meta structure
+- Tests use .first() for multi-element locators to handle persistent data
+- Search tests handle 300ms debounce with waitForResponse pattern
+
+**Auto-fixes:**
+- Schema mismatch between backend flat fields and frontend nested meta (blocking bug)
+
 ## Next Steps
 
-**Phase 13 Complete** - All test infrastructure in place
-**Next:** Phase 14 (or next roadmap item)
+**All Roadmap Phases Complete** - Phase 14 finished
+**Next:** Feature development, additional test coverage, or new roadmap items
