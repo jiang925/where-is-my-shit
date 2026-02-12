@@ -100,9 +100,9 @@ This milestone resolves UI/API connectivity issues, establishes comprehensive te
 |-------|------|--------|-------|--------------|
 | 12 | Debug UI/API Connection | Complete | 1/1 | 2026-02-12 |
 | 13 | Test Infrastructure Setup | Complete | 2/2 | 2026-02-12 |
-| 14 | Core Integration Tests | Planned | 1 | 2026-02-12 |
+| 14 | Core Integration Tests | Complete | 1/1 | 2026-02-12 |
 
-**Overall v1.3 Progress:** 2/3 phases (67%)
+**Overall v1.3 Progress:** 3/3 phases (100%)
 
 **Total v1.3 Plans:** 4
 
@@ -117,14 +117,14 @@ This milestone resolves UI/API connectivity issues, establishes comprehensive te
 
 ### Phase 14 Plans
 
-- [ ] [14-01-PLAN.md](.planning/phases/14-core-integration-tests/14-01-PLAN.md) — Implement core integration tests for authenticated search flow and missing API key error
+- [x] [14-01-PLAN.md](.planning/phases/14-core-integration-tests/14-01-PLAN.md) — Implement core integration tests for authenticated search flow and missing API key error
 
 **Previous Milestones:**
 - v1.2: 11 phases (Complete)
 - v1.1: 3 phases (Complete)
 - v1.0: 8 phases (Complete)
 
-**Total Completed Phases:** 23
+**Total Completed Phases:** 26
 
 ---
 
