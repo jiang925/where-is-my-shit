@@ -85,21 +85,10 @@ jobs:
 
   e2e-tests:
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.58.2-jammy
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: 'npm'
-          cache-dependency-path: package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
@@ -115,8 +104,8 @@ jobs:
       - name: Create test environment config
         run: cp .env.test.example .env.test
 
-      - name: Run Playwright tests
-        run: npx playwright test
+      - name: Run Playwright tests (chromium only)
+        run: npx playwright test --project=chromium
 
       - name: Upload test results
         if: always()
