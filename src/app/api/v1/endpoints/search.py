@@ -52,16 +52,39 @@ async def search_documents(request: SearchRequest):
             # LanceDB returns _distance (lower is better) for euclidean/cosine?
             # Actually for cosine similarity default, it might be distance.
             # Let's just use it as score for now.
-            if "_distance" in r:
-                r["score"] = r.pop("_distance")
-            else:
-                r["score"] = 0.0
+            score = r.pop("_distance", 0.0)
 
             # Ensure vector is removed if it's returned (we don't want it in response payload usually)
             if "vector" in r:
                 del r["vector"]
 
-            results.append(SearchResult(**r))
+            # Transform flat database structure to nested frontend structure
+            from src.app.schemas.message import SearchResultMeta
+
+            # Convert timestamp to unix timestamp
+            timestamp_value = r.get("timestamp")
+            if isinstance(timestamp_value, str):
+                from datetime import datetime
+                timestamp_value = datetime.fromisoformat(timestamp_value.replace('Z', '+00:00'))
+            created_at = int(timestamp_value.timestamp()) if timestamp_value else 0
+
+            meta = SearchResultMeta(
+                source=r.get("platform", ""),
+                adapter=r.get("platform", ""),
+                created_at=created_at,
+                title=r.get("title", ""),
+                url=r.get("url", ""),
+                conversation_id=r.get("conversation_id", ""),
+            )
+
+            results.append(
+                SearchResult(
+                    id=r.get("id", ""),
+                    score=score,
+                    content=r.get("content", ""),
+                    meta=meta,
+                )
+            )
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Search execution failed: {str(e)}")
@@ -71,9 +94,10 @@ async def search_documents(request: SearchRequest):
 
     for res in results:
         # TODO: Add score threshold check here if needed
-        if res.conversation_id not in grouped_map:
-            grouped_map[res.conversation_id] = []
-        grouped_map[res.conversation_id].append(res)
+        conv_id = res.meta.conversation_id
+        if conv_id not in grouped_map:
+            grouped_map[conv_id] = []
+        grouped_map[conv_id].append(res)
 
     # 4. Construct response
     groups: list[SearchResultGroup] = []

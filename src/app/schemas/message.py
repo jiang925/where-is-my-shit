@@ -52,20 +52,29 @@ class SearchRequest(BaseModel):
     platform: str | None = None
 
 
+class SearchResultMeta(BaseModel):
+    """
+    Metadata for a search result (nested structure for frontend compatibility).
+    """
+
+    source: str  # Maps to platform
+    adapter: str  # Maps to platform (for backwards compatibility)
+    created_at: int  # Unix timestamp (maps to timestamp)
+    title: str = ""
+    url: str = ""
+    conversation_id: str = ""
+
+
 class SearchResult(BaseModel):
     """
     Single result from a search query.
+    Frontend-compatible structure with nested meta.
     """
 
     id: str
-    conversation_id: str
-    platform: str
-    title: str
-    content: str
-    role: str
-    timestamp: datetime
-    url: str
     score: float
+    content: str
+    meta: SearchResultMeta
 
 
 class SearchResultGroup(BaseModel):
