@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import * as path from 'path';
 
 export default defineConfig({
   globalSetup: require.resolve('./tests/e2e/playwright.setup.ts'),
@@ -15,7 +16,8 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,  // 120 seconds for first run (uv venv init, model loading)
     env: {
-      WIMS_CONFIG_FILE: process.env.WIMS_CONFIG_FILE || '',  // Use test config from globalSetup
+      // Use test config file (created by globalSetup before webServer starts)
+      WIMS_CONFIG_FILE: path.join(__dirname, 'data/test-server-config.json'),
     },
   },
 
