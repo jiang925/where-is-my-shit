@@ -20,4 +20,12 @@ export default defineConfig({
     emptyOutDir: true,
   },
   base: '/',
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+    },
+  },
 })
