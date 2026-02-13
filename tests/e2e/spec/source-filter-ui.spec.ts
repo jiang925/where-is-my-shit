@@ -1,59 +1,59 @@
 import { expect } from '@playwright/test';
 import { test } from '../fixtures/auth';
 
-test('source filter UI: platform filtering works correctly on search page', async ({ page, apiKey, request, baseURL }) => {
+test('source filter UI: platform filtering works correctly on search page', async ({ page, apiKey, request }) => {
   console.log('Starting source filter UI test on search page...');
 
-  // Step 1 - Ingest test documents from different platforms
+  // Step 1 - Ingest test documents from different platforms (using backend-valid platform names)
   console.log('Ingesting test documents from different platforms...');
 
-  // Ingest Claude document
-  const claudeResponse = await request.post(`${baseURL}/api/v1/ingest`, {
+  // Ingest ChatGPT document
+  const chatgptResponse = await request.post('/api/v1/ingest', {
     headers: { 'X-API-Key': apiKey },
     data: {
-      conversation_id: 'filter-test-claude',
-      platform: 'claude',
-      content: 'Claude conversation about React hooks and state management patterns',
+      conversation_id: 'filter-test-chatgpt',
+      platform: 'chatgpt',
+      content: 'ChatGPT conversation about React hooks and state management patterns',
       role: 'assistant',
       timestamp: new Date().toISOString(),
       title: 'React Hooks Discussion',
-      adapter: 'claude-api',
+      adapter: 'chatgpt-api',
     },
   });
-  expect(claudeResponse.status()).toBe(201);
-  console.log('Claude document ingested');
+  expect(chatgptResponse.status()).toBe(201);
+  console.log('ChatGPT document ingested');
 
-  // Ingest Chrome document
-  const chromeResponse = await request.post(`${baseURL}/api/v1/ingest`, {
+  // Ingest Claude Code document
+  const claudeCodeResponse = await request.post(`/api/v1/ingest`, {
     headers: { 'X-API-Key': apiKey },
     data: {
-      conversation_id: 'filter-test-chrome',
-      platform: 'chrome',
-      content: 'Chrome web page documentation about CSS grid layouts',
+      conversation_id: 'filter-test-claude-code',
+      platform: 'claude-code',
+      content: 'Claude Code session about debugging TypeScript type errors',
+      role: 'assistant',
+      timestamp: new Date().toISOString(),
+      title: 'TypeScript Debugging',
+      adapter: 'wims-watcher',
+    },
+  });
+  expect(claudeCodeResponse.status()).toBe(201);
+  console.log('Claude Code document ingested');
+
+  // Ingest Gemini document
+  const geminiResponse = await request.post(`/api/v1/ingest`, {
+    headers: { 'X-API-Key': apiKey },
+    data: {
+      conversation_id: 'filter-test-gemini',
+      platform: 'gemini',
+      content: 'Gemini conversation about CSS grid layouts and flexbox',
       role: 'user',
       timestamp: new Date().toISOString(),
       title: 'CSS Grid Guide',
-      adapter: 'chrome-extension',
+      adapter: 'gemini-extension',
     },
   });
-  expect(chromeResponse.status()).toBe(201);
-  console.log('Chrome document ingested');
-
-  // Ingest Terminal document
-  const terminalResponse = await request.post(`${baseURL}/api/v1/ingest`, {
-    headers: { 'X-API-Key': apiKey },
-    data: {
-      conversation_id: 'filter-test-terminal',
-      platform: 'terminal',
-      content: 'Terminal命令行操作：git commit push pull merge branch',
-      role: 'user',
-      timestamp: new Date().toISOString(),
-      title: 'Git Command Reference',
-      adapter: 'shell-history',
-    },
-  });
-  expect(terminalResponse.status()).toBe(201);
-  console.log('Terminal document ingested');
+  expect(geminiResponse.status()).toBe(201);
+  console.log('Gemini document ingested');
 
   // Step 2 - Navigate and authenticate
   await page.goto('/');
@@ -64,68 +64,85 @@ test('source filter UI: platform filtering works correctly on search page', asyn
   await expect(page.getByPlaceholder('Search your history...')).toBeVisible();
   console.log('Authenticated successfully');
 
-  // Step 3 - Verify SourceFilterUI is visible
+  // Step 3 - Verify SourceFilterUI is visible with correct platform names
   await expect(page.getByText('Filter by Source')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Claude' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Chrome' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Terminal' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Files' })).toBeVisible();
-  console.log('Source filter UI visible');
+  await expect(page.getByRole('button', { name: 'ChatGPT' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Claude Code' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Gemini' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Cursor' })).toBeVisible();
+  console.log('Source filter UI visible with correct platform names');
 
   // Step 4 - Perform search without filter, verify all results
   const searchResponse1 = page.waitForResponse(
     res => res.url().includes('/api/v1/search') && res.status() === 200
   );
-  await page.getByPlaceholder('Search your history...').fill('React');
+  await page.getByPlaceholder('Search your history...').fill('conversation');
   const response1 = await searchResponse1;
   const data1 = await response1.json();
   console.log(`Search without filter returned ${data1.count} results`);
-  expect(data1.count).toBeGreaterThan(0);
+  expect(data1.count).toBeGreaterThanOrEqual(3); // At least our 3 ingested docs
 
-  // Step 5 - Click platform chip (Claude), verify URL updates and search executes
-  const claudeButton = page.getByRole('button', { name: 'Claude' });
+  // Step 5 - Click platform chip (ChatGPT), verify URL updates and ACTUAL FILTERING
+  const chatgptButton = page.getByRole('button', { name: 'ChatGPT' });
   const searchResponse2 = page.waitForResponse(
     res => res.url().includes('/api/v1/search') && res.status() === 200
   );
-  await claudeButton.click();
-  await searchResponse2;
+  await chatgptButton.click();
+  const response2 = await searchResponse2;
+  const data2 = await response2.json();
 
   // Verify URL has platform parameter
-  expect(page.url()).toContain('platforms=claude');
+  expect(page.url()).toContain('platforms=chatgpt');
   console.log('URL updated with platform parameter');
 
   // Verify active badge showing selected count
   await expect(page.getByText('1 selected')).toBeVisible();
   console.log('Active filter badge visible');
 
-  // Verify results are filtered (should show Claude only)
-  // Wait for results to update
-  await page.waitForTimeout(300);
-  const claudeButtons = page.getByRole('button', { name: 'Claude' });
-  await expect(claudeButtons.getByText('Claude')).toBeVisible();
-  console.log('Claude filter applied');
+  // CRITICAL: Verify actual filtering - only ChatGPT results returned
+  console.log(`Filtered search returned ${data2.count} results`);
+  expect(data2.count).toBeGreaterThan(0); // Should have at least our chatgpt doc
+
+  // Verify all returned results are from ChatGPT platform
+  for (const group of data2.groups) {
+    for (const result of group.results) {
+      expect(result.meta.source).toBe('chatgpt');
+    }
+  }
+  console.log('VERIFIED: All results are from ChatGPT platform only');
 
   // Step 6 - Test multiple platform selections
-  const chromeButton = page.getByRole('button', { name: 'Chrome' });
+  const geminiButton = page.getByRole('button', { name: 'Gemini' });
   const searchResponse3 = page.waitForResponse(
     res => res.url().includes('/api/v1/search') && res.status() === 200
   );
-  await chromeButton.click();
-  await searchResponse3;
+  await geminiButton.click();
+  const response3 = await searchResponse3;
+  const data3 = await response3.json();
 
   // Verify URL has both platforms
   const currentUrl = page.url();
   expect(currentUrl).toContain('platforms=');
   const platforms = new URLSearchParams(currentUrl.split('?')[1]).get('platforms');
-  expect(platforms).toContain('claude');
-  expect(platforms).toContain('chrome');
+  expect(platforms).toContain('chatgpt');
+  expect(platforms).toContain('gemini');
   console.log('Multiple platforms selected:', platforms);
 
   // Verify badge shows correct count
   await expect(page.getByText('2 selected')).toBeVisible();
   console.log('Badge shows 2 selected');
 
-  // Step 7 - Click Clear button, verify URL clears (search may not trigger if query unchanged)
+  // CRITICAL: Verify actual multi-platform filtering
+  console.log(`Multi-platform search returned ${data3.count} results`);
+  const allowedPlatforms = ['chatgpt', 'gemini'];
+  for (const group of data3.groups) {
+    for (const result of group.results) {
+      expect(allowedPlatforms).toContain(result.meta.source);
+    }
+  }
+  console.log('VERIFIED: All results are from ChatGPT or Gemini platforms only');
+
+  // Step 7 - Click Clear button, verify URL clears
   const clearButton = page.getByRole('button', { name: /Clear/i });
   await clearButton.click();
 
@@ -139,56 +156,114 @@ test('source filter UI: platform filtering works correctly on search page', asyn
   console.log('Active badges removed');
 
   // Step 8 - Test shareable links with filter parameters
-  // Navigate directly with filter URL (no query, so no search execution expected)
-  await page.goto('/?platforms=terminal');
+  await page.goto('/?platforms=claude-code');
 
   // Verify filter is applied from URL
   await expect(page.getByText('1 selected')).toBeVisible();
   await expect(page.getByRole('button', { name: /Clear/i })).toBeVisible();
   console.log('Filter applied from shareable URL');
 
-  // Verify Terminal chip is selected
-  const terminalButton = page.getByRole('button', { name: 'Terminal' });
-  await expect(terminalButton).toBeVisible();
-  console.log('Terminal chip shows selected state');
+  // Verify Claude Code chip is selected
+  const claudeCodeButton = page.getByRole('button', { name: 'Claude Code' });
+  await expect(claudeCodeButton).toBeVisible();
+  console.log('Claude Code chip shows selected state');
 
   // Now type a search query to trigger search with the filter active
   const searchResponse5 = page.waitForResponse(
     res => res.url().includes('/api/v1/search') && res.status() === 200
   );
-  await page.getByPlaceholder('Search your history...').fill('conversation');
-  await searchResponse5;
+  await page.getByPlaceholder('Search your history...').fill('TypeScript');
+  const response5 = await searchResponse5;
+  const data5 = await response5.json();
 
-  // Step 9-10 - Test visual feedback and navigation
-  // Wait for state to settle
+  // Verify filtering is actually applied from URL
+  for (const group of data5.groups) {
+    for (const result of group.results) {
+      expect(result.meta.source).toBe('claude-code');
+    }
+  }
+  console.log('VERIFIED: Shareable link filtering works correctly');
+
+  // Step 9 - Test preset buttons
+  console.log('Testing preset buttons...');
+
+  // Navigate back to clean state
+  await page.goto('/');
+  await expect(page.getByPlaceholder('Search your history...')).toBeVisible();
+
+  // Verify preset buttons exist
+  await expect(page.getByText('Quick filters:')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Web Chats Only/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Dev Sessions Only/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /All Sources/i })).toBeVisible();
+  console.log('Preset buttons visible');
+
+  // Click "Web Chats Only" preset
+  const webChatsPreset = page.getByRole('button', { name: /Web Chats Only/i });
+  await webChatsPreset.click();
+
+  // Verify URL contains chatgpt, claude, gemini
+  await page.waitForTimeout(300);
+  const webChatsUrl = page.url();
+  const webChatsPlatforms = new URLSearchParams(webChatsUrl.split('?')[1]).get('platforms');
+  expect(webChatsPlatforms).toContain('chatgpt');
+  expect(webChatsPlatforms).toContain('claude');
+  expect(webChatsPlatforms).toContain('gemini');
+  await expect(page.getByText('3 selected')).toBeVisible();
+  console.log('VERIFIED: Web Chats Only preset selects chatgpt, claude, gemini');
+
+  // Click "Dev Sessions Only" preset
+  const devSessionsPreset = page.getByRole('button', { name: /Dev Sessions Only/i });
+  await devSessionsPreset.click();
+
+  // Verify URL contains claude-code, cursor
+  await page.waitForTimeout(300);
+  const devSessionsUrl = page.url();
+  const devSessionsPlatforms = new URLSearchParams(devSessionsUrl.split('?')[1]).get('platforms');
+  expect(devSessionsPlatforms).toContain('claude-code');
+  expect(devSessionsPlatforms).toContain('cursor');
+  await expect(page.getByText('2 selected')).toBeVisible();
+  console.log('VERIFIED: Dev Sessions Only preset selects claude-code, cursor');
+
+  // Click "All Sources" preset
+  const allSourcesPreset = page.getByRole('button', { name: /All Sources/i });
+  await allSourcesPreset.click();
+
+  // Verify URL has no platform parameter
+  await page.waitForTimeout(300);
+  expect(page.url()).not.toContain('platforms');
+  await expect(page.getByText('1 selected')).not.toBeVisible();
+  await expect(page.getByText('2 selected')).not.toBeVisible();
+  console.log('VERIFIED: All Sources preset clears all filters');
+
+  // Step 10 - Test visual feedback and navigation
   await page.waitForTimeout(300);
 
-  // Verify filter state persistence across navigation
   // Navigate to Browse page
   await page.getByRole('button', { name: 'Browse' }).click();
   await expect(page.getByText('Browse History')).toBeVisible();
 
-  // Check if filters persist on Browse page (expected: filters reset or cleared on navigate)
+  // Check if filters persist on Browse page
   const browsePageUrl = page.url();
   console.log('Browse page URL:', browsePageUrl);
 
   console.log('Source filter UI test completed successfully');
 });
 
-test('source filter UI: browse page filtering works correctly', async ({ page, apiKey, request, baseURL }) => {
+test('source filter UI: browse page filtering works correctly', async ({ page, apiKey, request }) => {
   console.log('Testing source filter on browse page...');
 
-  // Ingest some documents for browse page testing
-  const ingestResponse = await request.post(`${baseURL}/api/v1/ingest`, {
+  // Ingest document for browse page testing
+  const ingestResponse = await request.post(`/api/v1/ingest`, {
     headers: { 'X-API-Key': apiKey },
     data: {
-      conversation_id: 'browse-test-claude',
-      platform: 'claude',
+      conversation_id: 'browse-test-chatgpt',
+      platform: 'chatgpt',
       content: 'Test content for browse page filtering',
       role: 'assistant',
       timestamp: new Date().toISOString(),
       title: 'Browse Test Conversation',
-      adapter: 'claude-api',
+      adapter: 'chatgpt-api',
     },
   });
   expect(ingestResponse.status()).toBe(201);
@@ -205,20 +280,30 @@ test('source filter UI: browse page filtering works correctly', async ({ page, a
   await expect(page.getByText('Browse History')).toBeVisible();
   console.log('Navigated to Browse page');
 
-  // Verify filter UI is visible on Browse page
+  // Verify filter UI is visible on Browse page with correct platform names
   await expect(page.getByText('Filter by Source')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Claude' })).toBeVisible();
-  console.log('Filter UI visible on Browse page');
+  await expect(page.getByRole('button', { name: 'ChatGPT' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Claude Code' })).toBeVisible();
+  console.log('Filter UI visible on Browse page with correct platform names');
 
   // Verify instructions are displayed when no filter selected
   await expect(page.getByText('Select sources to browse')).toBeVisible();
   console.log('Browse instructions displayed');
 
+  // Verify hardcoded example chips have correct names
+  await expect(page.getByText('ChatGPT').nth(1)).toBeVisible(); // nth(1) for the example chip
+  await expect(page.getByText('Cursor').nth(0)).toBeVisible();
+  console.log('Example chips show correct platform names');
+
   // Select a platform and verify instructions disappear
-  await page.getByRole('button', { name: 'Claude' }).click();
+  await page.getByRole('button', { name: 'ChatGPT' }).click();
   await expect(page.getByText('1 selected')).toBeVisible();
   console.log('Filter selected on Browse page');
 
-  // NOTE: Empty query may not return results, but test verifies UI behavior
+  // Verify preset buttons are also on Browse page
+  await expect(page.getByText('Quick filters:')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Web Chats Only/i })).toBeVisible();
+  console.log('Preset buttons visible on Browse page');
+
   console.log('Browse page filter test completed');
 });
