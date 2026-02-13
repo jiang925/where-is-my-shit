@@ -50,26 +50,32 @@ class DBClient:
             # Creating indices on empty table works in recent LanceDB versions.
             try:
                 table.create_fts_index("content")
-                # Vector index is typically created after data insertion for better performance (IVF),
-                # but we can try to define it or leave it for later.
-                # Creating a vector index on an empty table usually fails or is a no-op
-                # because it needs to train centroids.
-                # We will skip vector index creation on init for now,
-                # as it should be managed when enough data is present or incrementally.
-                # However, the requirement says "Creates Vector index on vector".
-                # Let's try it, catch error if it complains about not enough data.
-
-                # For small datasets, FLAT index is used automatically if no index created.
-                # Explicit index creation (IVF-PQ) needs data.
-                pass
+                print(f"Created FTS index on 'content' field for new table '{table_name}'")
             except Exception as e:
-                print(f"Warning during index creation: {e}")
+                print(f"Warning: Failed to create FTS index on new table: {e}")
+                print(f"  FTS index will be created when data is present")
         else:
             # If table exists, open it
             table = db.open_table(table_name)
 
-            # Check indices if needed?
-            pass
+            # Ensure FTS index exists for existing tables
+            try:
+                # Check existing indices
+                indices = table.list_indices()
+                has_fts_index = any(
+                    idx.get("index_type") == "FTS" and "content" in str(idx.get("columns", []))
+                    for idx in indices
+                )
+
+                if not has_fts_index:
+                    print(f"FTS index missing on existing table '{table_name}', creating...")
+                    table.create_fts_index("content", replace=True)
+                    print(f"Created FTS index on 'content' field for existing table")
+                else:
+                    print(f"FTS index already exists on 'content' field")
+            except Exception as e:
+                print(f"Warning: Failed to verify/create FTS index on existing table: {e}")
+                print(f"  Hybrid search may fall back to vector-only mode")
 
     def get_table(self, table_name: str = "messages") -> lancedb.table.Table:
         db = self.connect()

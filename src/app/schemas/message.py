@@ -22,6 +22,9 @@ class Message(LanceModel):
     # Vector field for semantic search (384 dimensions for all-MiniLM-L6-v2)
     vector: Vector(384)
 
+    # Embedding model tracking for migration
+    embedding_model: str = "BAAI/bge-small-en-v1.5"
+
 
 class IngestRequest(BaseModel):
     """
@@ -72,9 +75,12 @@ class SearchResult(BaseModel):
     """
 
     id: str
-    score: float
+    score: float  # Raw distance/similarity score from search (backward compat)
     content: str
     meta: SearchResultMeta
+    relevance_score: float = 0.0  # Unified reranker's final score
+    quality_score: float = 1.0  # Content quality signal
+    exact_match: bool = False  # Whether query was found as exact text match
 
 
 class SearchResultGroup(BaseModel):
@@ -88,8 +94,13 @@ class SearchResultGroup(BaseModel):
 
 class SearchResponse(BaseModel):
     """
-    Grouped search results.
+    Grouped search results with two-tier structure.
+    - groups: primary results (above primary threshold) - backward compatible
+    - secondary_groups: results between primary and secondary thresholds
     """
 
-    groups: list[SearchResultGroup]
-    count: int
+    groups: list[SearchResultGroup]  # Primary results (backward compat)
+    count: int  # Total primary results count
+    secondary_groups: list[SearchResultGroup] = []  # Secondary results
+    secondary_count: int = 0  # Total secondary results count
+    total_considered: int = 0  # Total results before threshold filtering
