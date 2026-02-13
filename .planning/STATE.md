@@ -8,9 +8,9 @@
 ## Current Position
 
 **Phase:** 17 of 18 (Search Relevance Improvements)
-**Plan:** 01 of 5
-**Status:** Plan 01 complete (configurable embedding provider abstraction)
-**Last activity:** 2026-02-13 — Completed 17-01-PLAN.md (embedding provider abstraction with fastembed/ollama/openai support)
+**Plan:** 02 of 5
+**Status:** Plan 02 complete (content quality scorer and unified reranker)
+**Last activity:** 2026-02-13 — Completed 17-02-PLAN.md (TDD implementation of content quality and reranker with signal fusion)
 
 Progress: [████████████████░░░░] 88.9% (16/18 phases complete)
 
@@ -29,9 +29,10 @@ Progress: [████████████████░░░░] 88.9% (
 **v1.4 Progress:**
 - Phase 15: Source Filtering (4/4 plans complete) - Backend multi-platform filtering, React Router URL state, Source filtering UI, gap closure complete - ALL SUCCESS CRITERIA MET
 - Phase 16: Claude Code Path Display (1/1 plans complete) - File path display with copy-to-clipboard for Claude Code conversations - PHASE COMPLETE
-- Phase 17: Search Relevance Improvements (1/5 plans complete) - Configurable embedding provider abstraction complete
+- Phase 17: Search Relevance Improvements (2/5 plans complete) - Embedding provider abstraction, content quality scorer and unified reranker complete
 - Phase 18: Browse Page with Timeline (0/TBD plans) - Not started
 | Phase 17 P01 | 311 | 2 tasks | 10 files |
+| Phase 17 P02 | 286 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -57,6 +58,10 @@ Recent decisions affecting v1.4:
 - **e5 Model Prefix Support**: FastEmbedProvider auto-prefixes queries ("query: ") and documents ("passage: ") for e5 models (v1.4 - Phase 17)
 - **Ollama Provider for OpenAI-Compatible Endpoints**: Single provider class supports local Ollama, remote GPU servers, and OpenAI API (v1.4 - Phase 17)
 - **Default Config Backward Compatibility**: ServerConfig.embedding defaults to fastembed + bge-small-en-v1.5 (v1.4 - Phase 17)
+- **Exact Full-Query Match Override**: Searching "continue" boosts "continue" fragment to quality=1.0, preventing deprioritization of intentionally searched terms (v1.4 - Phase 17)
+- **Unified Reranker Architecture**: ALL ranking in one place - vector, text, quality, exact match signals fused via weighted combination, not multiple passes (v1.4 - Phase 17)
+- **Min-Max Score Normalization**: Ensures vector and text scores comparable before fusion, preventing signal dominance (v1.4 - Phase 17)
+- **Two-Tier Result Partitioning**: Primary (>= 0.75) and secondary (>= 0.65) thresholds for staged UI presentation (v1.4 - Phase 17)
 - **Hybrid Architecture**: Local DB for privacy/control, Cloud APIs for quality/speed (v1.0)
 - **API Key Auth**: Simpler for local tools, persistent, no refresh token complexity (v1.2)
 - **uv Package Manager**: Faster, robust venv handling, prevents system breakage (v1.2)
@@ -85,5 +90,5 @@ None yet (new milestone).
 ## Session Continuity
 
 **Last session end:** 2026-02-13
-**Stopped at:** Phase 17 Plan 01 complete - Configurable embedding provider abstraction implemented - Ready for Phase 17 Plans 02-05 (multi-field search, hybrid search, query enhancement, ranking)
-**Resume file:** .planning/phases/17-search-relevance/17-01-SUMMARY.md
+**Stopped at:** Phase 17 Plan 02 complete - Content quality scorer and unified reranker implemented with TDD methodology - Ready for Phase 17 Plans 03-05 (multi-field search, hybrid search, endpoint integration)
+**Resume file:** .planning/phases/17-search-relevance/17-02-SUMMARY.md
