@@ -8,9 +8,9 @@
 ## Current Position
 
 **Phase:** 17 of 18 (Search Relevance Improvements)
-**Plan:** 04 of 5
-**Status:** Plan 04 complete (database schema evolution and CLI re-embedding)
-**Last activity:** 2026-02-13 — Completed 17-04-PLAN.md (migration module with vector_v2 column approach and CLI management)
+**Plan:** 05 of 5
+**Status:** Phase 17 complete (all search relevance improvements delivered)
+**Last activity:** 2026-02-13 — Completed 17-05-PLAN.md (frontend two-tier search results with collapsible secondary section)
 
 Progress: [████████████████░░░░] 88.9% (16/18 phases complete)
 
@@ -29,12 +29,13 @@ Progress: [████████████████░░░░] 88.9% (
 **v1.4 Progress:**
 - Phase 15: Source Filtering (4/4 plans complete) - Backend multi-platform filtering, React Router URL state, Source filtering UI, gap closure complete - ALL SUCCESS CRITERIA MET
 - Phase 16: Claude Code Path Display (1/1 plans complete) - File path display with copy-to-clipboard for Claude Code conversations - PHASE COMPLETE
-- Phase 17: Search Relevance Improvements (4/5 plans complete) - Embedding provider abstraction, content quality scorer and unified reranker, hybrid search and reranker integration, database migration with CLI complete
+- Phase 17: Search Relevance Improvements (5/5 plans complete) - Embedding provider abstraction, content quality scorer and unified reranker, hybrid search and reranker integration, database migration with CLI, frontend two-tier display - PHASE COMPLETE
 - Phase 18: Browse Page with Timeline (0/TBD plans) - Not started
 | Phase 17 P01 | 311 | 2 tasks | 10 files |
 | Phase 17 P02 | 286 | 2 tasks | 4 files |
 | Phase 17 P03 | 157 | 2 tasks | 3 files |
 | Phase 17 P04 | 223 | 2 tasks | 4 files |
+| Phase 17 P05 | 419 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -71,6 +72,9 @@ Recent decisions affecting v1.4:
 - **Vector_v2 Column Migration Approach**: Use second vector column for zero-downtime embedding model migration, not schema replacement (v1.4 - Phase 17)
 - **CLI-Driven Lazy Migration**: Users trigger re-embedding via CLI command instead of automatic background process - simpler architecture (v1.4 - Phase 17)
 - **Batch Re-embedding with Delay**: Configurable batch size and inter-batch delay prevents overwhelming CPU/GPU during migration (v1.4 - Phase 17)
+- **Relevance Score as Percentage**: Display relevance_score * 100 formatted as "85%" for user-friendly presentation vs raw 0.0-1.0 scores (v1.4 - Phase 17)
+- **Auto-Expand Secondary Results**: When primary count is 0 but secondary results exist, auto-expand the secondary section for better UX (v1.4 - Phase 17)
+- **Secondary Results Visual Differentiation**: Render secondary results with opacity-80 to indicate lower relevance without making unreadable (v1.4 - Phase 17)
 - **Hybrid Architecture**: Local DB for privacy/control, Cloud APIs for quality/speed (v1.0)
 - **API Key Auth**: Simpler for local tools, persistent, no refresh token complexity (v1.2)
 - **uv Package Manager**: Faster, robust venv handling, prevents system breakage (v1.2)
@@ -99,5 +103,5 @@ None yet (new milestone).
 ## Session Continuity
 
 **Last session end:** 2026-02-13
-**Stopped at:** Phase 17 Plan 04 complete - Database schema evolution and CLI re-embedding with vector_v2 column approach - Ready for Phase 17 Plan 05 (final endpoint integration)
-**Resume file:** .planning/phases/17-search-relevance/17-04-SUMMARY.md
+**Stopped at:** Phase 17 complete - All search relevance improvements delivered: embedding providers, quality scorer, hybrid search, migration, two-tier UI - Ready for Phase 18 (Browse Page with Timeline)
+**Resume file:** .planning/phases/17-search-relevance/17-05-SUMMARY.md
