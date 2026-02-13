@@ -189,10 +189,14 @@ Plans:
   2. Short fragments (e.g., "proceed", "continue") are deprioritized in search results
   3. Irrelevant results below minimum relevance threshold (0.5-0.6) are filtered out
   4. User can find content using both semantic concepts and exact keywords (hybrid search)
-**Plans**: TBD
+**Plans**: 5 plans
 
 Plans:
-- [ ] 17-01: [TBD during planning]
+- [ ] 17-01-PLAN.md — Configurable embedding provider (FastEmbed + Ollama + config)
+- [ ] 17-02-PLAN.md — Content quality scorer and unified reranker (TDD)
+- [ ] 17-03-PLAN.md — Hybrid search integration and two-tier API response
+- [ ] 17-04-PLAN.md — Schema evolution and CLI re-embedding migration
+- [ ] 17-05-PLAN.md — Frontend two-tier results with collapsible secondary section
 
 #### Phase 18: Browse Page with Timeline
 **Goal**: Users can browse all conversations chronologically with flexible filters
