@@ -3,14 +3,14 @@
 ## Project Reference
 
 **Core Value:** Never lose a conversation again: Instantly recall specific AI discussions or dev sessions across any platform and jump straight back into the original context.
-**Current Focus:** v1.4 Search & Browse UX Polish - Phase 16 (Claude Code Path Display)
+**Current Focus:** v1.4 Search & Browse UX Polish - Phase 17 (Search Relevance Improvements)
 
 ## Current Position
 
-**Phase:** 16 of 18 (Claude Code Path Display)
-**Plan:** 01 of 1
-**Status:** Phase complete - Plan 01 complete (file path display implemented and tested)
-**Last activity:** 2026-02-13 — Completed 16-01-PLAN.md (file path display with copy functionality)
+**Phase:** 17 of 18 (Search Relevance Improvements)
+**Plan:** 01 of 5
+**Status:** Plan 01 complete (configurable embedding provider abstraction)
+**Last activity:** 2026-02-13 — Completed 17-01-PLAN.md (embedding provider abstraction with fastembed/ollama/openai support)
 
 Progress: [████████████████░░░░] 88.9% (16/18 phases complete)
 
@@ -29,8 +29,9 @@ Progress: [████████████████░░░░] 88.9% (
 **v1.4 Progress:**
 - Phase 15: Source Filtering (4/4 plans complete) - Backend multi-platform filtering, React Router URL state, Source filtering UI, gap closure complete - ALL SUCCESS CRITERIA MET
 - Phase 16: Claude Code Path Display (1/1 plans complete) - File path display with copy-to-clipboard for Claude Code conversations - PHASE COMPLETE
-- Phase 17: Search Relevance Improvements (0/TBD plans) - Not started
+- Phase 17: Search Relevance Improvements (1/5 plans complete) - Configurable embedding provider abstraction complete
 - Phase 18: Browse Page with Timeline (0/TBD plans) - Not started
+| Phase 17 P01 | 311 | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -52,6 +53,10 @@ Recent decisions affecting v1.4:
 - **Orange Theme for Copy Path Button**: Match claude-code platform badge colors for visual consistency (v1.4 - Phase 16)
 - **Middle-Ellipsis Truncation 60/40 Split**: More weight to filename (end) than directory structure (start) for better path readability (v1.4 - Phase 16)
 - **File Path Detection Logic**: Windows (C:\...), Unix (/...), and anything without :// treated as path (v1.4 - Phase 16)
+- **Probe Dimensions on Init**: Both fastembed and ollama providers probe dimensions by embedding test string - flexible for any model (v1.4 - Phase 17)
+- **e5 Model Prefix Support**: FastEmbedProvider auto-prefixes queries ("query: ") and documents ("passage: ") for e5 models (v1.4 - Phase 17)
+- **Ollama Provider for OpenAI-Compatible Endpoints**: Single provider class supports local Ollama, remote GPU servers, and OpenAI API (v1.4 - Phase 17)
+- **Default Config Backward Compatibility**: ServerConfig.embedding defaults to fastembed + bge-small-en-v1.5 (v1.4 - Phase 17)
 - **Hybrid Architecture**: Local DB for privacy/control, Cloud APIs for quality/speed (v1.0)
 - **API Key Auth**: Simpler for local tools, persistent, no refresh token complexity (v1.2)
 - **uv Package Manager**: Faster, robust venv handling, prevents system breakage (v1.2)
@@ -80,5 +85,5 @@ None yet (new milestone).
 ## Session Continuity
 
 **Last session end:** 2026-02-13
-**Stopped at:** Phase 16 complete - File path display implemented and tested - Ready for Phase 17 or 18 planning (both independent)
-**Resume file:** .planning/phases/16-claude-code-path-display/16-01-SUMMARY.md
+**Stopped at:** Phase 17 Plan 01 complete - Configurable embedding provider abstraction implemented - Ready for Phase 17 Plans 02-05 (multi-field search, hybrid search, query enhancement, ranking)
+**Resume file:** .planning/phases/17-search-relevance/17-01-SUMMARY.md
