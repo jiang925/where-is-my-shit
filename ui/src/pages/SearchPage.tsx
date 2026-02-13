@@ -5,7 +5,7 @@ import { ResultCard } from '../components/ResultCard';
 import { SourceFilterUI, AVAILABLE_PLATFORMS, type PlatformId } from '../components/SourceFilterUI';
 import { PresetButtons } from '../components/PresetButtons';
 import { useSearch } from '../lib/api';
-import { Loader2, LogOut } from 'lucide-react';
+import { Loader2, LogOut, ChevronDown, ChevronRight } from 'lucide-react';
 
 interface SearchPageProps {
   onLogout: () => void;
@@ -18,6 +18,9 @@ export function SearchPage({ onLogout }: SearchPageProps) {
 
   // Get platforms from URL on mount, sync to state
   const [selectedPlatforms, setSelectedPlatforms] = useState<PlatformId[]>([]);
+
+  // State for collapsible secondary results
+  const [showSecondary, setShowSecondary] = useState(false);
 
   useEffect(() => {
     const platformsFromUrl = searchParams.get('platforms');
@@ -63,6 +66,26 @@ export function SearchPage({ onLogout }: SearchPageProps) {
     status,
     error
   } = useSearch(query, selectedPlatforms);
+
+  // Collect all secondary results from all pages
+  const secondaryResults = data?.pages.flatMap(p => p.secondary_results || []) || [];
+  const secondaryCount = data?.pages[0]?.secondary_total || 0;
+
+  // Auto-expand secondary results when no primary results but secondary exist
+  useEffect(() => {
+    if (!data?.pages || data.pages.length === 0) return;
+
+    const primaryCount = data.pages[0].total;
+    const hasSecondary = secondaryCount > 0;
+
+    // Auto-expand if no primary results but secondary results exist
+    if (primaryCount === 0 && hasSecondary) {
+      setShowSecondary(true);
+    } else if (primaryCount > 0) {
+      // Reset when primary results appear
+      setShowSecondary(false);
+    }
+  }, [data?.pages, secondaryCount]);
 
   // Intersection Observer for infinite scroll
   const observer = useRef<IntersectionObserver | null>(null);
@@ -210,6 +233,34 @@ export function SearchPage({ onLogout }: SearchPageProps) {
             </div>
           ))}
         </div>
+
+        {/* Collapsible Secondary Results Section */}
+        {secondaryResults.length > 0 && (
+          <div className="mt-6 border-t border-gray-200 pt-4">
+            <button
+              onClick={() => setShowSecondary(!showSecondary)}
+              className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+              aria-expanded={showSecondary}
+              aria-controls="secondary-results"
+            >
+              {showSecondary ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              )}
+              <span>
+                Show {secondaryCount} less relevant result{secondaryCount !== 1 ? 's' : ''}
+              </span>
+            </button>
+            {showSecondary && (
+              <div id="secondary-results" className="space-y-4 mt-4">
+                {secondaryResults.map((result) => (
+                  <ResultCard key={result.id} result={result} className="opacity-80" />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Loading Indicator for Infinite Scroll */}
         {(isFetchingNextPage || hasNextPage) && showEmptyState === false && (
