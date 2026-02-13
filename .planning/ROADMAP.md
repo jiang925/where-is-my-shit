@@ -178,7 +178,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 16-01-PLAN.md — CopyablePath component, ResultCard update, and E2E tests
+- [x] 16-01-PLAN.md — CopyablePath component, ResultCard update, and E2E tests
 
 #### Phase 17: Search Relevance Improvements
 **Goal**: Search returns more relevant results with better ranking
@@ -230,6 +230,6 @@ Phases 15-16-17 can be built in parallel (independent), then Phase 18 (depends o
 | 13. Test Infrastructure Setup | v1.3 | 2/2 | Complete | 2026-02-12 |
 | 14. Core Integration Tests | v1.3 | 1/1 | Complete | 2026-02-12 |
 | 15. Source Filtering | v1.4 | 4/4 | Complete | 2026-02-13 |
-| 16. Claude Code Path Display | v1.4 | 0/1 | Not started | - |
+| 16. Claude Code Path Display | v1.4 | 1/1 | Complete | 2026-02-13 |
 | 17. Search Relevance Improvements | v1.4 | 0/TBD | Not started | - |
 | 18. Browse Page with Timeline | v1.4 | 0/TBD | Not started | - |
