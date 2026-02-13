@@ -119,7 +119,7 @@ export const useSearch = (query: string, platforms: string[] = []) => {
   return useInfiniteQuery({
     queryKey: ['search', query, platforms.sort() /* sort for consistency */],
     queryFn: async ({ pageParam = 0 }) => {
-      return search({ query, offset: pageParam as number });
+      return search({ query, offset: pageParam as number, platforms });
     },
     getNextPageParam: (lastPage) => {
       return lastPage.has_more ? lastPage.next_offset : undefined;

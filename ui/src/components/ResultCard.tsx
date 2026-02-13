@@ -15,37 +15,44 @@ const PLATFORM_CONFIG: Record<string, {
   bgClass: string;
   borderClass: string;
 }> = {
+  chatgpt: {
+    icon: MessageSquare,
+    label: 'ChatGPT',
+    colorClass: 'text-green-700',
+    bgClass: 'bg-green-50',
+    borderClass: 'border-green-200',
+  },
   claude: {
     icon: MessageSquare,
     label: 'Claude',
+    colorClass: 'text-amber-700',
+    bgClass: 'bg-amber-50',
+    borderClass: 'border-amber-200',
+  },
+  'claude-code': {
+    icon: Terminal,
+    label: 'Claude Code',
     colorClass: 'text-orange-700',
     bgClass: 'bg-orange-50',
     borderClass: 'border-orange-200',
   },
-  chrome: {
-    icon: Chrome,
-    label: 'Chrome',
+  gemini: {
+    icon: MessageSquare,
+    label: 'Gemini',
     colorClass: 'text-blue-700',
     bgClass: 'bg-blue-50',
     borderClass: 'border-blue-200',
   },
-  terminal: {
-    icon: Terminal,
-    label: 'Terminal',
-    colorClass: 'text-gray-700',
-    bgClass: 'bg-gray-50',
-    borderClass: 'border-gray-200',
+  perplexity: {
+    icon: MessageSquare,
+    label: 'Perplexity',
+    colorClass: 'text-teal-700',
+    bgClass: 'bg-teal-50',
+    borderClass: 'border-teal-200',
   },
-  files: {
+  cursor: {
     icon: FileCode,
-    label: 'Files',
-    colorClass: 'text-purple-700',
-    bgClass: 'bg-purple-50',
-    borderClass: 'border-purple-200',
-  },
-  file: {
-    icon: FileCode,
-    label: 'Files',
+    label: 'Cursor',
     colorClass: 'text-purple-700',
     bgClass: 'bg-purple-50',
     borderClass: 'border-purple-200',
@@ -71,14 +78,11 @@ function timeAgo(timestamp: number) {
 function getPlatformConfig(source?: string) {
   if (!source) return null;
 
-  const s = source.toLowerCase();
+  // Direct lookup by platform ID
+  const config = PLATFORM_CONFIG[source.toLowerCase()];
+  if (config) return config;
 
-  if (s.includes('claude') || s.includes('ai')) return PLATFORM_CONFIG.claude;
-  if (s.includes('chrome') || s.includes('web')) return PLATFORM_CONFIG.chrome;
-  if (s.includes('terminal') || s.includes('shell')) return PLATFORM_CONFIG.terminal;
-  if (s.includes('file') || s.includes('code')) return PLATFORM_CONFIG.file || PLATFORM_CONFIG.files;
-
-  // Default config for unknown sources
+  // Fallback for unknown platforms
   return {
     icon: MessageSquare,
     label: source,

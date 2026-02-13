@@ -1,12 +1,14 @@
 import { X, Filter } from 'lucide-react';
 import { cn } from '../lib/utils';
 
-// Define available platforms
+// Define available platforms - matching backend ALLOWED_PLATFORMS
 export const AVAILABLE_PLATFORMS = [
-  { id: 'claude', label: 'Claude', color: 'bg-orange-100 text-orange-700 border-orange-300' },
-  { id: 'chrome', label: 'Chrome', color: 'bg-blue-100 text-blue-700 border-blue-300' },
-  { id: 'terminal', label: 'Terminal', color: 'bg-gray-100 text-gray-700 border-gray-300' },
-  { id: 'files', label: 'Files', color: 'bg-purple-100 text-purple-700 border-purple-300' },
+  { id: 'chatgpt', label: 'ChatGPT', color: 'bg-green-100 text-green-700 border-green-300' },
+  { id: 'claude', label: 'Claude', color: 'bg-amber-100 text-amber-700 border-amber-300' },
+  { id: 'claude-code', label: 'Claude Code', color: 'bg-orange-100 text-orange-700 border-orange-300' },
+  { id: 'gemini', label: 'Gemini', color: 'bg-blue-100 text-blue-700 border-blue-300' },
+  { id: 'perplexity', label: 'Perplexity', color: 'bg-teal-100 text-teal-700 border-teal-300' },
+  { id: 'cursor', label: 'Cursor', color: 'bg-purple-100 text-purple-700 border-purple-300' },
 ] as const;
 
 export type PlatformId = typeof AVAILABLE_PLATFORMS[number]['id'];
