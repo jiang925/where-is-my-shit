@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { SearchBar } from '../components/SearchBar';
 import { ResultCard } from '../components/ResultCard';
 import { SourceFilterUI, AVAILABLE_PLATFORMS, type PlatformId } from '../components/SourceFilterUI';
+import { PresetButtons } from '../components/PresetButtons';
 import { useSearch } from '../lib/api';
 import { Loader2, LogOut } from 'lucide-react';
 
@@ -118,6 +119,22 @@ export function SearchPage({ onLogout }: SearchPageProps) {
               selectedPlatforms={selectedPlatforms}
               onPlatformToggle={handlePlatformToggle}
               onClear={handleClearFilters}
+            />
+          </div>
+
+          {/* Preset Filter Buttons */}
+          <div className="mt-3">
+            <PresetButtons
+              selectedPlatforms={selectedPlatforms}
+              onPresetSelect={(platforms) => {
+                setSelectedPlatforms(platforms);
+                if (platforms.length === 0) {
+                  searchParams.delete('platforms');
+                } else {
+                  searchParams.set('platforms', platforms.join(','));
+                }
+                setSearchParams(searchParams);
+              }}
             />
           </div>
         </div>

@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ResultCard } from '../components/ResultCard';
 import { SourceFilterUI, AVAILABLE_PLATFORMS, type PlatformId } from '../components/SourceFilterUI';
+import { PresetButtons } from '../components/PresetButtons';
 import { useSearch } from '../lib/api';
 import { Loader2, LogOut } from 'lucide-react';
 
@@ -113,6 +114,22 @@ export function BrowsePage({ onLogout }: BrowsePageProps) {
               onClear={handleClearFilters}
             />
           </div>
+
+          {/* Preset Filter Buttons */}
+          <div className="mt-3">
+            <PresetButtons
+              selectedPlatforms={selectedPlatforms}
+              onPresetSelect={(platforms) => {
+                setSelectedPlatforms(platforms);
+                if (platforms.length === 0) {
+                  searchParams.delete('platforms');
+                } else {
+                  searchParams.set('platforms', platforms.join(','));
+                }
+                setSearchParams(searchParams);
+              }}
+            />
+          </div>
         </div>
       </div>
 
@@ -130,17 +147,17 @@ export function BrowsePage({ onLogout }: BrowsePageProps) {
               Choose one or more platform filters above to view conversations from those sources.
             </p>
             <div className="mt-6 flex flex-wrap gap-2 justify-center max-w-md">
+              <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-green-100 text-green-700 border border-green-300">
+                ChatGPT
+              </span>
               <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-orange-100 text-orange-700 border border-orange-300">
-                Claude
+                Claude Code
               </span>
               <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-blue-100 text-blue-700 border border-blue-300">
-                Chrome
-              </span>
-              <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-700 border border-gray-300">
-                Terminal
+                Gemini
               </span>
               <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-purple-100 text-purple-700 border border-purple-300">
-                Files
+                Cursor
               </span>
             </div>
           </div>
