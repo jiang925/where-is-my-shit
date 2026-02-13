@@ -10,6 +10,7 @@ from src.app.schemas.message import (
     SearchResultGroup,
 )
 from src.app.services.embedding import EmbeddingService
+from src.app.services.reranker import UnifiedReranker
 
 # Whitelist of allowed platforms for security validation
 ALLOWED_PLATFORMS = ['chatgpt', 'claude', 'claude-code', 'gemini', 'perplexity', 'cursor']
@@ -20,10 +21,11 @@ router = APIRouter(dependencies=[Depends(verify_api_key)])
 @router.post("/search", response_model=SearchResponse)
 async def search_documents(request: SearchRequest):
     """
-    Search for documents using hybrid search (vector + keyword).
-    Results are grouped by conversation.
+    Search for documents using hybrid search (vector + FTS).
+    Results are processed through unified reranker and grouped by conversation.
     """
     embedding_service = EmbeddingService()
+    reranker = UnifiedReranker()
 
     # 1. Embed query (CPU intensive)
     try:
@@ -31,32 +33,23 @@ async def search_documents(request: SearchRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Embedding generation failed: {str(e)}")
 
-    # 2. Execute LanceDB Search
+    # 2. Execute Hybrid Search (vector + FTS)
     try:
         table = db_client.get_table("messages")
 
-        # Use vector search primarily
-        search_builder = table.search(query_vector)
-
-        # Apply limit and offset
-        search_builder = search_builder.limit(request.limit).offset(request.offset)
-
-        # Apply filters if any
+        # Build filters
         filters = []
 
         # Conversation filter (existing)
         if request.conversation_id:
             filters.append(f"conversation_id = '{request.conversation_id}'")
 
-        # Platform filter (NEW - supports multiple values with OR logic)
+        # Platform filter (supports multiple values with OR logic)
         if request.platform:
             if isinstance(request.platform, str):
-                # Single platform: convert to list for uniform handling
                 platforms_to_filter = [request.platform]
             else:
-                # Already a list: validate each platform
                 platforms_to_filter = []
-
                 for p in request.platform:
                     if p in ALLOWED_PLATFORMS:
                         platforms_to_filter.append(p)
@@ -65,81 +58,130 @@ async def search_documents(request: SearchRequest):
                 platform_list = "', '".join(platforms_to_filter)
                 filters.append(f"platform IN ('{platform_list}')")
 
-        # Combine all filters with AND logic
-        if filters:
-            where_clause = " AND ".join(filters)
-            search_builder = search_builder.where(where_clause)
+        where_clause = " AND ".join(filters) if filters else None
 
-        # Execute
-        # Use to_list() to avoid pandas dependency and handle score mapping manually
-        results_list = await run_in_threadpool(search_builder.to_list)
+        # Request more candidates than the limit to give reranker enough options
+        candidate_limit = max(request.limit * 3, 100)
 
-        results: list[SearchResult] = []
-        for r in results_list:
-            # map _distance to score if present
-            # LanceDB returns _distance (lower is better) for euclidean/cosine?
-            # Actually for cosine similarity default, it might be distance.
-            # Let's just use it as score for now.
-            score = r.pop("_distance", 0.0)
+        # Execute vector search
+        vector_search = table.search(query_vector, query_type="vector")
+        if where_clause:
+            vector_search = vector_search.where(where_clause)
+        vector_results_list = await run_in_threadpool(
+            vector_search.limit(candidate_limit).to_list
+        )
 
-            # Ensure vector is removed if it's returned (we don't want it in response payload usually)
-            if "vector" in r:
-                del r["vector"]
-
-            # Transform flat database structure to nested frontend structure
-            from src.app.schemas.message import SearchResultMeta
-
-            # Convert timestamp to unix timestamp
-            timestamp_value = r.get("timestamp")
-            if isinstance(timestamp_value, str):
-                from datetime import datetime
-
-                timestamp_value = datetime.fromisoformat(timestamp_value.replace("Z", "+00:00"))
-            created_at = int(timestamp_value.timestamp()) if timestamp_value else 0
-
-            meta = SearchResultMeta(
-                source=r.get("platform", ""),
-                adapter=r.get("platform", ""),
-                created_at=created_at,
-                title=r.get("title", ""),
-                url=r.get("url", ""),
-                conversation_id=r.get("conversation_id", ""),
-            )
-
-            results.append(
-                SearchResult(
-                    id=r.get("id", ""),
-                    score=score,
-                    content=r.get("content", ""),
-                    meta=meta,
-                )
-            )
+        # Execute FTS search
+        fts_search = table.search(request.query, query_type="fts")
+        if where_clause:
+            fts_search = fts_search.where(where_clause)
+        fts_results_list = await run_in_threadpool(
+            fts_search.limit(candidate_limit).to_list
+        )
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Search execution failed: {str(e)}")
 
-    # 3. Group by conversation
-    grouped_map: dict[str, list[SearchResult]] = {}
+    # 3. Prepare results for reranker
+    # Vector results: map _distance to vector_score (invert for cosine: 1 - distance)
+    vector_results = []
+    for r in vector_results_list:
+        distance = r.pop("_distance", 0.0)
+        # For cosine distance, closer is better, so invert: similarity = 1 - distance
+        vector_score = 1.0 - distance if distance < 1.0 else 0.0
 
-    for res in results:
-        # TODO: Add score threshold check here if needed
-        conv_id = res.meta.conversation_id
-        if conv_id not in grouped_map:
-            grouped_map[conv_id] = []
-        grouped_map[conv_id].append(res)
+        # Remove vector field to reduce payload size
+        if "vector" in r:
+            del r["vector"]
 
-    # 4. Construct response
-    groups: list[SearchResultGroup] = []
-    total_count = 0
+        r["vector_score"] = vector_score
+        r["id"] = r.get("id", "")
+        r["content"] = r.get("content", "")
+        vector_results.append(r)
 
-    for conv_id, items in grouped_map.items():
-        # Sort items by timestamp or score? Usually score is already sorted by search.
-        # But within a conversation, chronological might be better for reading?
-        # Search returns relevance. Let's keep relevance for now.
-        groups.append(SearchResultGroup(conversation_id=conv_id, results=items))
-        total_count += len(items)
+    # FTS results: _score field (higher = better)
+    text_results = []
+    for r in fts_results_list:
+        text_score = r.pop("_score", 0.0)
 
-    # If we want to strictly limit the number of ITEMS returned to request.limit:
-    # We might need to trim. But let's return what we found for now.
+        # Remove vector field
+        if "vector" in r:
+            del r["vector"]
 
-    return SearchResponse(groups=groups, count=total_count)
+        r["text_score"] = text_score
+        r["id"] = r.get("id", "")
+        r["content"] = r.get("content", "")
+        text_results.append(r)
+
+    # 4. Run unified reranker
+    ranked = reranker.rerank(vector_results, text_results, request.query)
+
+    # 5. Build two-tier response
+    def build_search_result(result_dict: dict) -> SearchResult:
+        """Convert reranker result dict to SearchResult."""
+        from src.app.schemas.message import SearchResultMeta
+        from datetime import datetime
+
+        # Convert timestamp to unix timestamp
+        timestamp_value = result_dict.get("timestamp")
+        if isinstance(timestamp_value, str):
+            timestamp_value = datetime.fromisoformat(timestamp_value.replace("Z", "+00:00"))
+        created_at = int(timestamp_value.timestamp()) if timestamp_value else 0
+
+        meta = SearchResultMeta(
+            source=result_dict.get("platform", ""),
+            adapter=result_dict.get("platform", ""),
+            created_at=created_at,
+            title=result_dict.get("title", ""),
+            url=result_dict.get("url", ""),
+            conversation_id=result_dict.get("conversation_id", ""),
+        )
+
+        return SearchResult(
+            id=result_dict.get("id", ""),
+            score=result_dict.get("vector_score", 0.0),  # Keep raw score for backward compat
+            content=result_dict.get("content", ""),
+            meta=meta,
+            relevance_score=result_dict.get("final_score", 0.0),
+            quality_score=result_dict.get("quality_score", 1.0),
+            exact_match=result_dict.get("exact_match", False),
+        )
+
+    # Group primary results by conversation
+    primary_grouped_map: dict[str, list[SearchResult]] = {}
+    for res_dict in ranked.primary:
+        search_result = build_search_result(res_dict)
+        conv_id = search_result.meta.conversation_id
+        if conv_id not in primary_grouped_map:
+            primary_grouped_map[conv_id] = []
+        primary_grouped_map[conv_id].append(search_result)
+
+    # Group secondary results by conversation
+    secondary_grouped_map: dict[str, list[SearchResult]] = {}
+    for res_dict in ranked.secondary:
+        search_result = build_search_result(res_dict)
+        conv_id = search_result.meta.conversation_id
+        if conv_id not in secondary_grouped_map:
+            secondary_grouped_map[conv_id] = []
+        secondary_grouped_map[conv_id].append(search_result)
+
+    # Build response groups
+    primary_groups: list[SearchResultGroup] = []
+    primary_count = 0
+    for conv_id, items in primary_grouped_map.items():
+        primary_groups.append(SearchResultGroup(conversation_id=conv_id, results=items))
+        primary_count += len(items)
+
+    secondary_groups: list[SearchResultGroup] = []
+    secondary_count = 0
+    for conv_id, items in secondary_grouped_map.items():
+        secondary_groups.append(SearchResultGroup(conversation_id=conv_id, results=items))
+        secondary_count += len(items)
+
+    return SearchResponse(
+        groups=primary_groups,
+        count=primary_count,
+        secondary_groups=secondary_groups,
+        secondary_count=secondary_count,
+        total_considered=ranked.total_considered,
+    )
