@@ -65,9 +65,10 @@ class TestCalculateContentQualityScore:
         assert score < 0.5
 
     def test_medium_length_content(self):
-        """Test medium length content (15 chars) gets medium score."""
+        """Test medium length content (14 chars) gets medium score."""
         score = calculate_content_quality_score("This is a test", "query")
-        assert 0.5 <= score <= 1.0
+        # 14 chars -> (14/20)^2 = 0.49
+        assert 0.4 <= score < 0.5
 
     def test_long_content_full_score(self):
         """Test long content gets full score."""
