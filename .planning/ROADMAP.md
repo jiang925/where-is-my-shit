@@ -145,7 +145,7 @@ Plans:
 
 </details>
 
-### 🚧 v1.4 Search & Browse UX Polish (In Progress)
+### v1.4 Search & Browse UX Polish (In Progress)
 
 **Milestone Goal:** Transform WIMS from "it works" to "it's actually useful" by improving search quality and adding flexible browsing capabilities.
 
@@ -175,10 +175,10 @@ Plans:
   2. User can copy file path to clipboard with one click and sees "Copied!" feedback
   3. User sees readable paths even for long file paths (truncated with ellipsis)
   4. System correctly displays both Windows (C:\...) and Unix (/...) path formats
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 16-01: [TBD during planning]
+- [ ] 16-01-PLAN.md — CopyablePath component, ResultCard update, and E2E tests
 
 #### Phase 17: Search Relevance Improvements
 **Goal**: Search returns more relevant results with better ranking
@@ -230,6 +230,6 @@ Phases 15-16-17 can be built in parallel (independent), then Phase 18 (depends o
 | 13. Test Infrastructure Setup | v1.3 | 2/2 | Complete | 2026-02-12 |
 | 14. Core Integration Tests | v1.3 | 1/1 | Complete | 2026-02-12 |
 | 15. Source Filtering | v1.4 | 4/4 | Complete | 2026-02-13 |
-| 16. Claude Code Path Display | v1.4 | 0/TBD | Not started | - |
+| 16. Claude Code Path Display | v1.4 | 0/1 | Not started | - |
 | 17. Search Relevance Improvements | v1.4 | 0/TBD | Not started | - |
 | 18. Browse Page with Timeline | v1.4 | 0/TBD | Not started | - |
