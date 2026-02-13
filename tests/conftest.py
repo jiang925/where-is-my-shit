@@ -38,18 +38,30 @@ def db_client(test_db_path):
 
 
 @pytest.fixture(scope="function")
-def mock_embedding_model():
-    with patch("src.app.services.embedding.TextEmbedding") as mock:
-        # Configure mock to return a generator with a dummy numpy array vector
-        mock_instance = mock.return_value
-        # embed returns a generator that yields numpy arrays
-        mock_instance.embed.return_value = (np.array(x) for x in [[0.1, 0.2, 0.3]])
-        yield mock
+def mock_embedding_provider():
+    """Create a mock embedding provider for testing."""
+    from unittest.mock import MagicMock
+
+    mock_provider = MagicMock()
+    # Configure mock to return dummy vectors
+    mock_provider.embed_text.return_value = [0.1, 0.2, 0.3]
+    mock_provider.embed.return_value = [[0.1, 0.2, 0.3], [0.1, 0.2, 0.3], [0.1, 0.2, 0.3]]
+    mock_provider.get_dimensions.return_value = 3
+    mock_provider.get_model_name.return_value = "mock-model"
+    return mock_provider
 
 
 @pytest.fixture(scope="function")
-def embedding_service(mock_embedding_model):
+def embedding_service(mock_embedding_provider):
+    """Create an EmbeddingService with a mocked provider."""
     # Reset singleton
     EmbeddingService._instance = None
-    service = EmbeddingService()
-    return service
+
+    # Patch the provider creation to return our mock
+    with patch("src.app.services.embedding.create_embedding_provider") as mock_create:
+        mock_create.return_value = mock_embedding_provider
+        service = EmbeddingService()
+        yield service
+
+    # Cleanup
+    EmbeddingService._instance = None

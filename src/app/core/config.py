@@ -11,6 +11,18 @@ from pydantic import BaseModel
 logger = logging.getLogger(__name__)
 
 
+class EmbeddingConfig(BaseModel):
+    """
+    Configuration for embedding generation.
+    Supports multiple providers: fastembed (CPU), ollama (GPU/remote), openai (API).
+    """
+
+    provider: str = "fastembed"  # One of: "fastembed", "ollama", "openai"
+    model: str = "BAAI/bge-small-en-v1.5"  # Model name for the provider
+    base_url: str = "http://localhost:11434/v1"  # Only used for ollama/openai providers
+    dimensions: int | None = None  # Optional override, auto-detected if not set
+
+
 class ServerConfig(BaseModel):
     """
     Persistent server configuration model.
@@ -32,6 +44,9 @@ class ServerConfig(BaseModel):
     # Security
     CORS_ORIGINS: list[str] = ["http://localhost", "http://127.0.0.1"]
     EXTENSION_ID: str = ""  # chrome-extension://<id>
+
+    # Embedding configuration
+    embedding: EmbeddingConfig = EmbeddingConfig()
 
 
 class ConfigManager:
