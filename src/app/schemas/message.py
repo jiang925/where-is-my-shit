@@ -49,7 +49,7 @@ class SearchRequest(BaseModel):
     offset: int = 0
     # Optional filters could be added here in the future
     conversation_id: str | None = None
-    platform: str | None = None
+    platform: list[str] | str | None = None
 
 
 class SearchResultMeta(BaseModel):
