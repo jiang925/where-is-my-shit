@@ -12,7 +12,7 @@
 **Status:** Phase 17 complete (all search relevance improvements delivered)
 **Last activity:** 2026-02-13 — Completed 17-05-PLAN.md (frontend two-tier search results with collapsible secondary section)
 
-Progress: [████████████████░░░░] 88.9% (16/18 phases complete)
+Progress: [██████████████████░░] 94.4% (17/18 phases complete)
 
 ## Performance Metrics
 
@@ -31,11 +31,6 @@ Progress: [████████████████░░░░] 88.9% (
 - Phase 16: Claude Code Path Display (1/1 plans complete) - File path display with copy-to-clipboard for Claude Code conversations - PHASE COMPLETE
 - Phase 17: Search Relevance Improvements (5/5 plans complete) - Embedding provider abstraction, content quality scorer and unified reranker, hybrid search and reranker integration, database migration with CLI, frontend two-tier display - PHASE COMPLETE
 - Phase 18: Browse Page with Timeline (0/TBD plans) - Not started
-| Phase 17 P01 | 311 | 2 tasks | 10 files |
-| Phase 17 P02 | 286 | 2 tasks | 4 files |
-| Phase 17 P03 | 157 | 2 tasks | 3 files |
-| Phase 17 P04 | 223 | 2 tasks | 4 files |
-| Phase 17 P05 | 419 | 2 tasks | 4 files |
 
 ## Accumulated Context
 

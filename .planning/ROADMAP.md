@@ -192,11 +192,11 @@ Plans:
 **Plans**: 5 plans
 
 Plans:
-- [ ] 17-01-PLAN.md — Configurable embedding provider (FastEmbed + Ollama + config)
-- [ ] 17-02-PLAN.md — Content quality scorer and unified reranker (TDD)
-- [ ] 17-03-PLAN.md — Hybrid search integration and two-tier API response
-- [ ] 17-04-PLAN.md — Schema evolution and CLI re-embedding migration
-- [ ] 17-05-PLAN.md — Frontend two-tier results with collapsible secondary section
+- [x] 17-01-PLAN.md — Configurable embedding provider (FastEmbed + Ollama + config)
+- [x] 17-02-PLAN.md — Content quality scorer and unified reranker (TDD)
+- [x] 17-03-PLAN.md — Hybrid search integration and two-tier API response
+- [x] 17-04-PLAN.md — Schema evolution and CLI re-embedding migration
+- [x] 17-05-PLAN.md — Frontend two-tier results with collapsible secondary section
 
 #### Phase 18: Browse Page with Timeline
 **Goal**: Users can browse all conversations chronologically with flexible filters
@@ -235,5 +235,5 @@ Phases 15-16-17 can be built in parallel (independent), then Phase 18 (depends o
 | 14. Core Integration Tests | v1.3 | 1/1 | Complete | 2026-02-12 |
 | 15. Source Filtering | v1.4 | 4/4 | Complete | 2026-02-13 |
 | 16. Claude Code Path Display | v1.4 | 1/1 | Complete | 2026-02-13 |
-| 17. Search Relevance Improvements | v1.4 | 0/TBD | Not started | - |
+| 17. Search Relevance Improvements | v1.4 | 5/5 | Complete | 2026-02-13 |
 | 18. Browse Page with Timeline | v1.4 | 0/TBD | Not started | - |
