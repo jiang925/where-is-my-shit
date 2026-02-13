@@ -1,6 +1,7 @@
-import { ExternalLink, MessageSquare, Chrome, Terminal, FileCode } from 'lucide-react';
+import { ExternalLink, MessageSquare, Terminal, FileCode } from 'lucide-react';
 import type { SearchResult } from '../lib/api';
 import { cn } from '../lib/utils';
+import { CopyablePath, isFilePath } from './CopyablePath';
 
 interface ResultCardProps {
   result: SearchResult;
@@ -158,16 +159,20 @@ export function ResultCard({ result, className }: ResultCardProps) {
         )}
 
         {meta.url && (
-          <a
-            href={meta.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors px-3 py-1.5 rounded-full bg-blue-50 hover:bg-blue-100"
-            onClick={(e) => e.stopPropagation()}
-          >
-            Open
-            <ExternalLink className="h-3 w-3" />
-          </a>
+          isFilePath(meta.url) ? (
+            <CopyablePath path={meta.url} />
+          ) : (
+            <a
+              href={meta.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors px-3 py-1.5 rounded-full bg-blue-50 hover:bg-blue-100"
+              onClick={(e) => e.stopPropagation()}
+            >
+              Open
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          )
         )}
       </div>
     </div>
