@@ -158,10 +158,12 @@ Plans:
   2. User can share a search with filters via URL (filter state persists in query parameters)
   3. User can apply quick filter presets with one click (e.g., "Web Chats Only", "Dev Sessions Only")
   4. User sees result counts update in real-time as filters are applied
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 15-01: [TBD during planning]
+- [ ] 15-01-PLAN.md — Backend platform filtering (schema + endpoint + backend tests)
+- [ ] 15-02-PLAN.md — URL state management (React Router + API integration)
+- [ ] 15-03-PLAN.md — Filter UI components and E2E tests
 
 #### Phase 16: Claude Code Path Display
 **Goal**: Users see file paths for Claude Code conversations instead of broken "Open" links
