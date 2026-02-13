@@ -8,11 +8,11 @@
 ## Current Position
 
 **Phase:** 15 of 18 (Source Filtering)
-**Plan:** 01 of 3
-**Status:** In progress - Plan 01 complete
-**Last activity:** 2026-02-13 — Completed plan 15-01, backend multi-platform filtering with whitelist validation
+**Plan:** 02 of 3
+**Status:** In progress - Plan 02 complete
+**Last activity:** 2026-02-13 — Completed plan 15-02, React Router and URL state infrastructure
 
-Progress: [████████████░░░░░░░░] 79.0% (15/18 phases with 1 plan complete)
+Progress: [████████████░░░░░░░░] 79.0% (15/18 phases with 2 plans complete)
 
 ## Performance Metrics
 
@@ -27,7 +27,7 @@ Progress: [████████████░░░░░░░░] 79.0% (
 | v1.4 Search & Browse UX | 4 | In progress |
 
 **v1.4 Progress:**
-- Phase 15: Source Filtering (1/3 plans complete) - Backend multi-platform filtering done
+- Phase 15: Source Filtering (2/3 plans complete) - Backend multi-platform filtering done, React Router URL state infrastructure ready
 - Phase 16: Claude Code Path Display (0/TBD plans) - Not started
 - Phase 17: Search Relevance Improvements (0/TBD plans) - Not started
 - Phase 18: Browse Page with Timeline (0/TBD plans) - Not started
@@ -39,6 +39,9 @@ Progress: [████████████░░░░░░░░] 79.0% (
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting v1.4:
 
+- **React Router for URL State**: Chosen for shareable filter URLs - industry standard, well-maintained, lightweight (v1.4)
+- **Platforms Sorted in Query Key**: Sort platforms to ensure consistent cache keys regardless of array order (v1.4)
+- **Conditional Platform Spreading**: Only include platforms in API request when non-empty array (v1.4)
 - **Hybrid Architecture**: Local DB for privacy/control, Cloud APIs for quality/speed (v1.0)
 - **API Key Auth**: Simpler for local tools, persistent, no refresh token complexity (v1.2)
 - **uv Package Manager**: Faster, robust venv handling, prevents system breakage (v1.2)
@@ -61,5 +64,5 @@ None yet (new milestone).
 ## Session Continuity
 
 **Last session end:** 2026-02-13
-**Stopped at:** Completed plan 15-01 (backend multi-platform filtering), 3 commits, 5 tests passing
-**Resume file:** .planning/phases/15-source-filtering/15-01-SUMMARY.md
+**Stopped at:** Completed plan 15-02 (React Router and URL state infrastructure), 3 commits, build passing
+**Resume file:** .planning/phases/15-source-filtering/15-02-SUMMARY.md
