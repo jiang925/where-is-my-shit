@@ -6,6 +6,9 @@ export interface SearchResult {
   id: string;
   score: number;
   content: string;
+  relevance_score?: number;
+  quality_score?: number;
+  exact_match?: boolean;
   meta: {
     source: string;
     adapter: string;
@@ -25,12 +28,17 @@ export interface SearchGroup {
 export interface BackendSearchResponse {
   groups: SearchGroup[];
   count: number;
+  secondary_groups: SearchGroup[];
+  secondary_count: number;
+  total_considered: number;
 }
 
 // Frontend friendly response (flattened for now)
 export interface SearchResponse {
   results: SearchResult[];
   total: number;
+  secondary_results: SearchResult[];
+  secondary_total: number;
   has_more: boolean;
   next_offset: number | null;
 }
@@ -75,7 +83,14 @@ export const search = async ({
   platforms?: string[];
 }): Promise<SearchResponse> => {
   if (!query.trim()) {
-    return { results: [], total: 0, has_more: false, next_offset: null };
+    return {
+      results: [],
+      total: 0,
+      secondary_results: [],
+      secondary_total: 0,
+      has_more: false,
+      next_offset: null
+    };
   }
 
   // The backend expects POST /search with JSON body
@@ -89,27 +104,19 @@ export const search = async ({
   // Flatten groups into results for the current UI
   const results = response.data.groups.flatMap(g => g.results);
 
-  // Backend currently returns 'count' but not has_more/next_offset explicitly in the schema I saw earlier.
-  // The schema in src/app/schemas/message.py showed:
-  // class SearchResponse(BaseModel):
-  //    groups: list[SearchResultGroup]
-  //    count: int
-
-  // So we need to calculate has_more manually or check if backend supports it.
-  // The backend implementation I read:
-  // return SearchResponse(groups=groups, count=total_count)
-
-  // It doesn't return has_more or next_offset.
-  // We can infer has_more if results.length >= limit?
-  // But since it's grouped, total_count is accurate.
+  // Flatten secondary groups (backward compat: default to empty if not present)
+  const secondary_results = (response.data.secondary_groups || []).flatMap(g => g.results);
 
   const total = response.data.count;
+  const secondary_total = response.data.secondary_count || 0;
   const next_offset = offset + limit;
   const has_more = next_offset < total;
 
   return {
     results,
     total: total,
+    secondary_results,
+    secondary_total,
     has_more: has_more,
     next_offset: has_more ? next_offset : null,
   };

@@ -136,8 +136,17 @@ export function ResultCard({ result, className }: ResultCardProps) {
           )}
         </div>
 
-        <div className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400">
-          Score: {result.score.toFixed(2)}
+        <div className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 flex items-center gap-2">
+          <span>
+            {result.relevance_score
+              ? `${(result.relevance_score * 100).toFixed(0)}%`
+              : `Score: ${result.score.toFixed(2)}`}
+          </span>
+          {result.exact_match && (
+            <span className="px-1.5 py-0.5 text-xs font-semibold bg-green-100 text-green-700 rounded">
+              Exact
+            </span>
+          )}
         </div>
       </div>
 
