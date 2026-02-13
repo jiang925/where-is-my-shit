@@ -63,7 +63,17 @@ api.interceptors.response.use(
   }
 );
 
-export const search = async ({ query, limit = 20, offset = 0 }: { query: string; limit?: number; offset?: number }): Promise<SearchResponse> => {
+export const search = async ({
+  query,
+  limit = 20,
+  offset = 0,
+  platforms
+}: {
+  query: string;
+  limit?: number;
+  offset?: number;
+  platforms?: string[];
+}): Promise<SearchResponse> => {
   if (!query.trim()) {
     return { results: [], total: 0, has_more: false, next_offset: null };
   }
@@ -73,6 +83,7 @@ export const search = async ({ query, limit = 20, offset = 0 }: { query: string;
     query,
     limit,
     offset,
+    ...(platforms && platforms.length > 0 && { platform: platforms }),
   });
 
   // Flatten groups into results for the current UI
@@ -104,9 +115,9 @@ export const search = async ({ query, limit = 20, offset = 0 }: { query: string;
   };
 };
 
-export const useSearch = (query: string) => {
+export const useSearch = (query: string, platforms: string[] = []) => {
   return useInfiniteQuery({
-    queryKey: ['search', query],
+    queryKey: ['search', query, platforms.sort() /* sort for consistency */],
     queryFn: async ({ pageParam = 0 }) => {
       return search({ query, offset: pageParam as number });
     },
