@@ -1,131 +1,232 @@
 # Roadmap: Where Is My Shit (WIMS)
 
-## Overview
+## Milestones
 
-This milestone resolves UI/API connectivity issues, establishes comprehensive test infrastructure, and implements core integration tests to validate end-to-end functionality after v1.2 deployment.
+- ✅ **v1.0 MVP** - Phases 1-4 (shipped 2026-02-07)
+- ✅ **v1.1 Security & Hardening** - Phases 5-7 (shipped 2026-02-07)
+- ✅ **v1.2 Simplify & Deploy** - Phases 8-11 (shipped 2026-02-11)
+- ✅ **v1.3 UI/API Integration & Verification** - Phases 12-14 (shipped 2026-02-12)
+- 🚧 **v1.4 Search & Browse UX Polish** - Phases 15-18 (in progress)
 
-## Completed Milestones
+## Phases
 
-### v1.2: Simplify & Deploy (Feb 2026)
-**Goal:** Radical simplification of UX and deployment.
-- **Auth:** Moved from JWT to API Key (`X-API-Key`).
-- **Config:** Centralized in `~/.wims/server.json`.
-- **Deploy:** Standardized on `uv` with `setup.sh`/`start.sh`.
-- **Clients:** Stateless extension and watchers.
+<details>
+<summary>✅ v1.0 MVP (Phases 1-4) - SHIPPED 2026-02-07</summary>
 
-### v1.1: Security & Hardening (Feb 2026)
-**Goal:** Security and CI/CD foundations.
-- **Security:** Local binding, password hashing, basic auth.
-- **Quality:** CI pipelines, unit/integration tests.
+### Phase 1: Core Engine
+**Goal**: Build self-contained local vector search engine
+**Plans**: 3 plans
 
-### v1.0: Proof of Concept (Jan 2026)
-**Goal:** MVP.
-- **Core:** Ingestion, Embedding, Vector Search.
-- **UI:** Basic React frontend.
+Plans:
+- [x] 01-01: FastAPI scaffold with embedding service
+- [x] 01-02: LanceDB integration with vector storage
+- [x] 01-03: Search API with deep-link support
 
----
+### Phase 2: Web Intelligence
+**Goal**: Capture web-based AI chats in real-time
+**Plans**: 3 plans
 
-## v1.3: UI/API Integration & Verification (Current)
+Plans:
+- [x] 02-01: Chrome extension scaffold
+- [x] 02-02: ChatGPT/Claude/Gemini DOM scraping
+- [x] 02-03: Real-time ingestion pipeline
 
-**Goal:** Verify platform functionality through automated testing and resolve connectivity issues.
+### Phase 3: Dev Intelligence
+**Goal**: Capture local development AI sessions
+**Plans**: 3 plans
 
-### Phase 12: Debug UI/API Connection
+Plans:
+- [x] 03-01: File watcher service
+- [x] 03-02: Claude Code/Cursor log parsing
+- [x] 03-03: Batch ingestion with deduplication
 
-**Goal:** Resolve network-level and authentication barriers preventing UI from accessing the API
+### Phase 4: Unified Interface
+**Goal**: Ship React-based search UI
+**Plans**: 2 plans
 
-**Dependencies:**
-- v1.2 deployment complete
-- Running API and UI instances accessible locally
+Plans:
+- [x] 04-01: Search UI with result cards
+- [x] 04-02: Deep-link integration and deployment
 
-**Requirements:**
-- CORS-01: Allow localhost UI origin in CORS configuration
-- CORS-02: Permit necessary HTTP methods and headers for API interactions
-- CORS-03: Handle preflight OPTIONS requests correctly
-- AUTH-05: React frontend sends API key in `Authorization: Api-Key <token>` header format
-- AUTH-06: FastAPI validates API key from `Authorization` header using `ApiKeyHeader` security scheme
+</details>
 
-**Success Criteria:**
-1. Developer can load UI in browser without CORS errors in console
-2. Developer can enter API key in UI and search requests include `Authorization: Api-Key <token>` header
-3. Developer can perform search requests that successfully reach the API with authentication
-4. Developer can view API endpoints in browser network tab seeing proper CORS headers and Authorization header
+<details>
+<summary>✅ v1.1 Security & Hardening (Phases 5-7) - SHIPPED 2026-02-07</summary>
 
----
+### Phase 5: Security Core
+**Goal**: Harden API with authentication
+**Plans**: 3 plans
+
+Plans:
+- [x] 05-01: JWT authentication system
+- [x] 05-02: Local binding protections
+- [x] 05-03: Integration testing
+
+### Phase 6: Quality Infrastructure
+**Goal**: Establish CI/CD pipelines
+**Plans**: 2 plans
+
+Plans:
+- [x] 06-01: GitHub Actions workflow
+- [x] 06-02: Unit test suite
+
+### Phase 7: Client Hardening
+**Goal**: Update clients for authenticated flows
+**Plans**: 3 plans
+
+Plans:
+- [x] 07-01: Extension JWT integration
+- [x] 07-02: Watcher authentication
+- [x] 07-03: "Login First" UI
+
+</details>
+
+<details>
+<summary>✅ v1.2 Simplify & Deploy (Phases 8-11) - SHIPPED 2026-02-11</summary>
+
+### Phase 8: API Key Authentication
+**Goal**: Replace JWT with persistent API keys
+**Plans**: 2 plans
+
+Plans:
+- [x] 08-01: API key generation and storage
+- [x] 08-02: X-API-Key header authentication
+
+### Phase 9: Unified Configuration
+**Goal**: Centralize server/watcher config
+**Plans**: 2 plans
+
+Plans:
+- [x] 09-01: ~/.wims/server.json with hot-reload
+- [x] 09-02: Config migration and validation
+
+### Phase 10: Frictionless Setup
+**Goal**: One-command install/start using uv
+**Plans**: 2 plans
+
+Plans:
+- [x] 10-01: setup.sh and start.sh scripts
+- [x] 10-02: uv package manager integration
+
+### Phase 11: Client Updates
+**Goal**: Stateless Extension and Watchers
+**Plans**: 2 plans
+
+Plans:
+- [x] 11-01: Extension API key support
+- [x] 11-02: Watcher API key support
+
+</details>
+
+<details>
+<summary>✅ v1.3 UI/API Integration & Verification (Phases 12-14) - SHIPPED 2026-02-12</summary>
+
+### Phase 12: UI/API Connectivity
+**Goal**: Fix CORS and schema blocking issues
+**Plans**: 1 plan
+
+Plans:
+- [x] 12-01: CORS/auth regression tests and Vite proxy
 
 ### Phase 13: Test Infrastructure Setup
+**Goal**: Playwright integration test framework
+**Plans**: 2 plans
 
-**Goal:** Establish foundational testing framework for automated verification of platform functionality
-
-**Dependencies:**
-- Phase 12 complete (UI/API connection working)
-- GitHub Actions CI/CD workflow exists from v1.2
-
-**Requirements:**
-- TEST-05: Playwright 1.58.2 is installed and configured in the project
-- TEST-06: Playwright config launches FastAPI server automatically via webServer configuration
-- TEST-07: Database fixtures inject and clean up test data to prevent test interference
-- TEST-08: Test environment is configured with `.env.test` file for test-specific settings
-
-**Success Criteria:**
-1. Developer runs `npm run test:integration` and Playwright launches FastAPI automatically
-2. Developer can run integration tests and they pass with database setup/teardown
-3. Developer can add new tests using fixtures without duplicating setup code
-4. Test environment uses separate `.env.test` configuration without affecting development settings
-
----
+Plans:
+- [x] 13-01: Playwright install with auto-launch FastAPI
+- [x] 13-02: Test fixtures for auth and database isolation
 
 ### Phase 14: Core Integration Tests
+**Goal**: Verify ingest → search → display pipeline
+**Plans**: 1 plan
 
-**Goal:** Verify critical platform workflows are working end-to-end from UI through API to search engine
+Plans:
+- [x] 14-01: Authenticated search flow and error handling tests
 
-**Dependencies:**
-- Phase 12 complete (UI/API connection working)
-- Phase 13 complete (test infrastructure operational)
+</details>
 
-**Requirements:**
-- INTEG-01: User can enter an API key, submit a search query, and see search results displayed in the UI
-- INTEG-02: User sees an appropriate error message when searching without an API key
+### 🚧 v1.4 Search & Browse UX Polish (In Progress)
 
-**Success Criteria:**
-1. Developer runs integration test and sees API key authentication succeed
-2. Developer runs integration test and receives search results containing results from test data
-3. Developer runs integration test and sees error message when API key is missing
-4. All integration tests pass reliably with explicit wait conditions (no `waitForTimeout`)
+**Milestone Goal:** Transform WIMS from "it works" to "it's actually useful" by improving search quality and adding flexible browsing capabilities.
 
----
+#### Phase 15: Source Filtering
+**Goal**: Users can filter search results by data source
+**Depends on**: Phase 14
+**Requirements**: FILT-01, FILT-02, FILT-03
+**Success Criteria** (what must be TRUE):
+  1. User can select one or more platforms using checkboxes and see filtered results
+  2. User can share a search with filters via URL (filter state persists in query parameters)
+  3. User can apply quick filter presets with one click (e.g., "Web Chats Only", "Dev Sessions Only")
+  4. User sees result counts update in real-time as filters are applied
+**Plans**: TBD
+
+Plans:
+- [ ] 15-01: [TBD during planning]
+
+#### Phase 16: Claude Code Path Display
+**Goal**: Users see file paths for Claude Code conversations instead of broken "Open" links
+**Depends on**: Phase 14 (independent of Phase 15)
+**Requirements**: PATH-01, PATH-02, PATH-03, PATH-04
+**Success Criteria** (what must be TRUE):
+  1. User sees file path for Claude Code conversations in result cards
+  2. User can copy file path to clipboard with one click and sees "Copied!" feedback
+  3. User sees readable paths even for long file paths (truncated with ellipsis)
+  4. System correctly displays both Windows (C:\...) and Unix (/...) path formats
+**Plans**: TBD
+
+Plans:
+- [ ] 16-01: [TBD during planning]
+
+#### Phase 17: Search Relevance Improvements
+**Goal**: Search returns more relevant results with better ranking
+**Depends on**: Phase 14 (independent of Phases 15-16)
+**Requirements**: REL-01, REL-02, REL-03, REL-04
+**Success Criteria** (what must be TRUE):
+  1. Search results use improved e5-small-v2 embedding model for better semantic matching
+  2. Short fragments (e.g., "proceed", "continue") are deprioritized in search results
+  3. Irrelevant results below minimum relevance threshold (0.5-0.6) are filtered out
+  4. User can find content using both semantic concepts and exact keywords (hybrid search)
+**Plans**: TBD
+
+Plans:
+- [ ] 17-01: [TBD during planning]
+
+#### Phase 18: Browse Page with Timeline
+**Goal**: Users can browse all conversations chronologically with flexible filters
+**Depends on**: Phase 15 (reuses SourceFilter component)
+**Requirements**: BROWSE-01, BROWSE-02, BROWSE-03, BROWSE-04
+**Success Criteria** (what must be TRUE):
+  1. User can browse all conversations in chronological order (newest first) without searching
+  2. User can filter browse results by date range (Today, This Week, Custom Range)
+  3. User sees grouped timeline sections (Today, Yesterday, This Week) for easy scanning
+  4. Pagination works correctly even when new conversations are added (no duplicates or gaps)
+**Plans**: TBD
+
+Plans:
+- [ ] 18-01: [TBD during planning]
 
 ## Progress
 
-| Phase | Name | Status | Plans | Last Updated |
-|-------|------|--------|-------|--------------|
-| 12 | Debug UI/API Connection | Complete | 1/1 | 2026-02-12 |
-| 13 | Test Infrastructure Setup | Complete | 2/2 | 2026-02-12 |
-| 14 | Core Integration Tests | Complete | 1/1 | 2026-02-12 |
+**Execution Order:**
+Phases 15-16-17 can be built in parallel (independent), then Phase 18 (depends on 15).
 
-**Overall v1.3 Progress:** 3/3 phases (100%)
-
-**Total v1.3 Plans:** 4
-
-### Phase 12 Plans
-
-- [x] [12-debug-ui-api-connection-01-PLAN.md](.planning/phases/12-debug-ui-api-connection/12-debug-ui-api-connection-01-PLAN.md) — Add CORS/auth regression tests and Vite proxy configuration
-
-### Phase 13 Plans
-
-- [x] [13-test-infrastructure-setup-01-PLAN.md](.planning/phases/13-test-infrastructure-setup/13-01-PLAN.md) — Install Playwright with auto-launch FastAPI server configuration
-- [x] [13-test-infrastructure-setup-02-PLAN.md](.planning/phases/13-test-infrastructure-setup/13-02-PLAN.md) — Create test fixtures for auth and database isolation
-
-### Phase 14 Plans
-
-- [x] [14-01-PLAN.md](.planning/phases/14-core-integration-tests/14-01-PLAN.md) — Implement core integration tests for authenticated search flow and missing API key error
-
-**Previous Milestones:**
-- v1.2: 11 phases (Complete)
-- v1.1: 3 phases (Complete)
-- v1.0: 8 phases (Complete)
-
-**Total Completed Phases:** 26
-
----
-
-*Last updated: 2026-02-12*
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 1. Core Engine | v1.0 | 3/3 | Complete | 2026-02-07 |
+| 2. Web Intelligence | v1.0 | 3/3 | Complete | 2026-02-07 |
+| 3. Dev Intelligence | v1.0 | 3/3 | Complete | 2026-02-07 |
+| 4. Unified Interface | v1.0 | 2/2 | Complete | 2026-02-07 |
+| 5. Security Core | v1.1 | 3/3 | Complete | 2026-02-07 |
+| 6. Quality Infrastructure | v1.1 | 2/2 | Complete | 2026-02-07 |
+| 7. Client Hardening | v1.1 | 3/3 | Complete | 2026-02-07 |
+| 8. API Key Authentication | v1.2 | 2/2 | Complete | 2026-02-11 |
+| 9. Unified Configuration | v1.2 | 2/2 | Complete | 2026-02-11 |
+| 10. Frictionless Setup | v1.2 | 2/2 | Complete | 2026-02-11 |
+| 11. Client Updates | v1.2 | 2/2 | Complete | 2026-02-11 |
+| 12. UI/API Connectivity | v1.3 | 1/1 | Complete | 2026-02-12 |
+| 13. Test Infrastructure Setup | v1.3 | 2/2 | Complete | 2026-02-12 |
+| 14. Core Integration Tests | v1.3 | 1/1 | Complete | 2026-02-12 |
+| 15. Source Filtering | v1.4 | 0/TBD | Not started | - |
+| 16. Claude Code Path Display | v1.4 | 0/TBD | Not started | - |
+| 17. Search Relevance Improvements | v1.4 | 0/TBD | Not started | - |
+| 18. Browse Page with Timeline | v1.4 | 0/TBD | Not started | - |

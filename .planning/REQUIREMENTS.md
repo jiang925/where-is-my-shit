@@ -75,27 +75,33 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FILT-01 | TBD | Pending |
-| FILT-02 | TBD | Pending |
-| FILT-03 | TBD | Pending |
-| PATH-01 | TBD | Pending |
-| PATH-02 | TBD | Pending |
-| PATH-03 | TBD | Pending |
-| PATH-04 | TBD | Pending |
-| REL-01 | TBD | Pending |
-| REL-02 | TBD | Pending |
-| REL-03 | TBD | Pending |
-| REL-04 | TBD | Pending |
-| BROWSE-01 | TBD | Pending |
-| BROWSE-02 | TBD | Pending |
-| BROWSE-03 | TBD | Pending |
-| BROWSE-04 | TBD | Pending |
+| FILT-01 | Phase 15 | Pending |
+| FILT-02 | Phase 15 | Pending |
+| FILT-03 | Phase 15 | Pending |
+| PATH-01 | Phase 16 | Pending |
+| PATH-02 | Phase 16 | Pending |
+| PATH-03 | Phase 16 | Pending |
+| PATH-04 | Phase 16 | Pending |
+| REL-01 | Phase 17 | Pending |
+| REL-02 | Phase 17 | Pending |
+| REL-03 | Phase 17 | Pending |
+| REL-04 | Phase 17 | Pending |
+| BROWSE-01 | Phase 18 | Pending |
+| BROWSE-02 | Phase 18 | Pending |
+| BROWSE-03 | Phase 18 | Pending |
+| BROWSE-04 | Phase 18 | Pending |
 
 **Coverage:**
 - v1.4 requirements: 15 total
-- Mapped to phases: 0 (pending roadmap creation)
-- Unmapped: 15 ⚠️
+- Mapped to phases: 15 (100% coverage)
+- Unmapped: 0
+
+**Coverage by Phase:**
+- Phase 15 (Source Filtering): 3 requirements (FILT-01, FILT-02, FILT-03)
+- Phase 16 (Claude Code Path Display): 4 requirements (PATH-01, PATH-02, PATH-03, PATH-04)
+- Phase 17 (Search Relevance Improvements): 4 requirements (REL-01, REL-02, REL-03, REL-04)
+- Phase 18 (Browse Page with Timeline): 4 requirements (BROWSE-01, BROWSE-02, BROWSE-03, BROWSE-04)
 
 ---
 *Requirements defined: 2026-02-12*
-*Last updated: 2026-02-12 after initial definition*
+*Last updated: 2026-02-12 after roadmap creation - 100% coverage achieved*
