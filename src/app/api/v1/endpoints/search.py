@@ -11,6 +11,9 @@ from src.app.schemas.message import (
 )
 from src.app.services.embedding import EmbeddingService
 
+# Whitelist of allowed platforms for security validation
+ALLOWED_PLATFORMS = ['chatgpt', 'claude', 'claude-code', 'gemini', 'perplexity', 'cursor']
+
 router = APIRouter(dependencies=[Depends(verify_api_key)])
 
 
@@ -39,8 +42,33 @@ async def search_documents(request: SearchRequest):
         search_builder = search_builder.limit(request.limit).offset(request.offset)
 
         # Apply filters if any
+        filters = []
+
+        # Conversation filter (existing)
         if request.conversation_id:
-            search_builder = search_builder.where(f"conversation_id = '{request.conversation_id}'")
+            filters.append(f"conversation_id = '{request.conversation_id}'")
+
+        # Platform filter (NEW - supports multiple values with OR logic)
+        if request.platform:
+            if isinstance(request.platform, str):
+                # Single platform: convert to list for uniform handling
+                platforms_to_filter = [request.platform]
+            else:
+                # Already a list: validate each platform
+                platforms_to_filter = []
+
+                for p in request.platform:
+                    if p in ALLOWED_PLATFORMS:
+                        platforms_to_filter.append(p)
+
+            if platforms_to_filter:
+                platform_list = "', '".join(platforms_to_filter)
+                filters.append(f"platform IN ('{platform_list}')")
+
+        # Combine all filters with AND logic
+        if filters:
+            where_clause = " AND ".join(filters)
+            search_builder = search_builder.where(where_clause)
 
         # Execute
         # Use to_list() to avoid pandas dependency and handle score mapping manually
