@@ -42,6 +42,61 @@ def start_server(args):
     uvicorn.run("src.app.main:app", host=host, port=port, reload=args.reload, log_level="info")
 
 
+def reembed_command(args):
+    """Re-embed documents with the current embedding model."""
+    from src.app.db.migration import get_migration_status, run_full_migration
+    from src.app.db.client import db_client
+
+    # Get current config
+    settings = config_manager.config
+    embedding_config = settings.embedding.model_dump()
+
+    print(f"Re-embedding Configuration:")
+    print(f"  Provider: {embedding_config['provider']}")
+    print(f"  Model: {embedding_config['model']}")
+    if embedding_config['provider'] in ('ollama', 'openai'):
+        print(f"  Base URL: {embedding_config['base_url']}")
+    print(f"  Config file: {config_manager.path}\n")
+
+    # If --status flag, just show status and exit
+    if args.status:
+        try:
+            table = db_client.get_table("messages")
+            status = get_migration_status(table)
+
+            print("Migration Status:")
+            print(f"  Total documents: {status['total']}")
+            print(f"  Migrated: {status['migrated']}")
+            print(f"  Remaining: {status['remaining']}")
+            print(f"  Progress: {status['percent_complete']:.1f}%")
+
+            if status['has_v2']:
+                print("\n  Note: vector_v2 column exists")
+            else:
+                print("\n  Note: vector_v2 column not yet created (will be created on first run)")
+
+        except Exception as e:
+            print(f"Error checking migration status: {e}")
+            sys.exit(1)
+
+        return
+
+    # Otherwise, run the full migration
+    print("Starting re-embedding process...\n")
+
+    try:
+        run_full_migration(
+            batch_size=args.batch_size,
+            delay_seconds=args.delay
+        )
+    except Exception as e:
+        logger.error(f"Migration failed: {e}")
+        print(f"\nError: Migration failed - {e}")
+        sys.exit(1)
+
+    print("\nRe-embedding completed successfully!")
+
+
 def main():
     parser = argparse.ArgumentParser(description="WIMS Management CLI")
     # Global args
@@ -55,6 +110,12 @@ def main():
     start_parser.add_argument("--port", type=int, help="Bind port (overrides config)")
     start_parser.add_argument("--reload", action="store_true", help="Enable auto-reload")
 
+    # reembed command
+    reembed_parser = subparsers.add_parser("reembed", help="Re-embed documents with current model")
+    reembed_parser.add_argument("--batch-size", type=int, default=100, help="Documents per batch")
+    reembed_parser.add_argument("--delay", type=float, default=0.5, help="Seconds between batches")
+    reembed_parser.add_argument("--status", action="store_true", help="Show migration status only")
+
     args = parser.parse_args()
 
     # Update config path if provided
@@ -63,6 +124,8 @@ def main():
 
     if args.command == "start":
         start_server(args)
+    elif args.command == "reembed":
+        reembed_command(args)
     else:
         # Default to help if no command
         parser.print_help()
