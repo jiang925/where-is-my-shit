@@ -8,11 +8,11 @@
 ## Current Position
 
 **Phase:** 15 of 18 (Source Filtering)
-**Plan:** 02 of 3
-**Status:** In progress - Plan 02 complete
-**Last activity:** 2026-02-13 — Completed plan 15-02, React Router and URL state infrastructure
+**Plan:** 03 of 3
+**Status:** Phase complete - All 3 plans complete
+**Last activity:** 2026-02-13 — Completed plan 15-03, Source Filter UX Implementation
 
-Progress: [████████████░░░░░░░░] 79.0% (15/18 phases with 2 plans complete)
+Progress: [████████████░░░░░░░░] 79.0% (15/18 phases with 3 plans complete)
 
 ## Performance Metrics
 
@@ -27,7 +27,7 @@ Progress: [████████████░░░░░░░░] 79.0% (
 | v1.4 Search & Browse UX | 4 | In progress |
 
 **v1.4 Progress:**
-- Phase 15: Source Filtering (2/3 plans complete) - Backend multi-platform filtering done, React Router URL state infrastructure ready
+- Phase 15: Source Filtering (3/3 plans complete) - Backend multi-platform filtering, React Router URL state, Source filtering UI complete
 - Phase 16: Claude Code Path Display (0/TBD plans) - Not started
 - Phase 17: Search Relevance Improvements (0/TBD plans) - Not started
 - Phase 18: Browse Page with Timeline (0/TBD plans) - Not started
@@ -42,16 +42,22 @@ Recent decisions affecting v1.4:
 - **React Router for URL State**: Chosen for shareable filter URLs - industry standard, well-maintained, lightweight (v1.4)
 - **Platforms Sorted in Query Key**: Sort platforms to ensure consistent cache keys regardless of array order (v1.4)
 - **Conditional Platform Spreading**: Only include platforms in API request when non-empty array (v1.4)
+- **SourceFilterUI Props-Based State**: Controlled components for predictable behavior and debugging (v1.4)
+- **Platform Color Centralization**: AVAILABLE_PLATFORMS constant for consistent styling across filters and results (v1.4)
+- **Search vs Browse Page Separation**: Search is query-driven, Browse is filter-driven for clear UX purpose (v1.4)
+- **Empty Query Handling**: Browse page requires platform selection before showing results (no auto "show all") (v1.4)
 - **Hybrid Architecture**: Local DB for privacy/control, Cloud APIs for quality/speed (v1.0)
 - **API Key Auth**: Simpler for local tools, persistent, no refresh token complexity (v1.2)
 - **uv Package Manager**: Faster, robust venv handling, prevents system breakage (v1.2)
 
-### Key Learnings from v1.3
+### Key Learnings from v1.3 & v1.4
 
 - **Stateless Auth:** Removing session management significantly simplified the codebase
 - **Schema Alignment Critical:** Backend and frontend must agree on response structure - nested meta object pattern provides better extensibility
 - **APIRequestContext vs Page Routing:** Playwright's APIRequestContext is separate from Page - page.route interceptors don't affect API requests
 - **Single Worker Mode:** Set workers: 1 to prevent LanceDB file locking conflicts
+- **E2E Test Synchronization:** Waiting for search responses requires careful timing - only wait when query changes, not just filter changes
+- **Navigation State Tests:** Shareable link tests must account for empty query scenarios (no search execution)
 
 ### Pending Todos
 
@@ -64,5 +70,5 @@ None yet (new milestone).
 ## Session Continuity
 
 **Last session end:** 2026-02-13
-**Stopped at:** Completed plan 15-02 (React Router and URL state infrastructure), 3 commits, build passing
-**Resume file:** .planning/phases/15-source-filtering/15-02-SUMMARY.md
+**Stopped at:** Completed plan 15-03 (Source Filter UX Implementation), 5 commits, build passing, E2E tests passing
+**Resume file:** .planning/phases/15-source-filtering/15-03-SUMMARY.md
