@@ -34,6 +34,10 @@ class FastEmbedProvider(EmbeddingProvider):
         self._model = TextEmbedding(model_name=model_name)
         self._is_e5_model = "e5" in model_name.lower()
 
+        # Probe dimensions by embedding a test string
+        test_embedding = next(self._model.embed(["test"]))
+        self._dimensions = len(test_embedding)
+
     def embed(self, texts: list[str]) -> list[list[float]]:
         """
         Generate embeddings for a batch of texts (document mode).
@@ -102,9 +106,7 @@ class FastEmbedProvider(EmbeddingProvider):
         Returns:
             Dimension count
         """
-        # FastEmbed models expose their dimensions
-        # For BAAI/bge-small-en-v1.5, this is 384
-        return self._model.model.get_model_dim()
+        return self._dimensions
 
     def get_model_name(self) -> str:
         """
