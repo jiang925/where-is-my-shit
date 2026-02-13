@@ -164,7 +164,7 @@ Plans:
 - [x] 15-01-PLAN.md — Backend platform filtering (schema + endpoint + backend tests)
 - [x] 15-02-PLAN.md — URL state management (React Router + API integration)
 - [x] 15-03-PLAN.md — Filter UI components and E2E tests
-- [ ] 15-04-PLAN.md — Gap closure: fix useSearch bug, align platform names, add preset buttons
+- [x] 15-04-PLAN.md — Gap closure: fix useSearch bug, align platform names, add preset buttons
 
 #### Phase 16: Claude Code Path Display
 **Goal**: Users see file paths for Claude Code conversations instead of broken "Open" links
@@ -229,7 +229,7 @@ Phases 15-16-17 can be built in parallel (independent), then Phase 18 (depends o
 | 12. UI/API Connectivity | v1.3 | 1/1 | Complete | 2026-02-12 |
 | 13. Test Infrastructure Setup | v1.3 | 2/2 | Complete | 2026-02-12 |
 | 14. Core Integration Tests | v1.3 | 1/1 | Complete | 2026-02-12 |
-| 15. Source Filtering | v1.4 | 0/TBD | Not started | - |
+| 15. Source Filtering | v1.4 | 4/4 | Complete | 2026-02-13 |
 | 16. Claude Code Path Display | v1.4 | 0/TBD | Not started | - |
 | 17. Search Relevance Improvements | v1.4 | 0/TBD | Not started | - |
 | 18. Browse Page with Timeline | v1.4 | 0/TBD | Not started | - |
