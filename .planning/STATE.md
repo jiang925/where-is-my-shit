@@ -8,9 +8,9 @@
 ## Current Position
 
 **Phase:** 17 of 18 (Search Relevance Improvements)
-**Plan:** 02 of 5
-**Status:** Plan 02 complete (content quality scorer and unified reranker)
-**Last activity:** 2026-02-13 — Completed 17-02-PLAN.md (TDD implementation of content quality and reranker with signal fusion)
+**Plan:** 03 of 5
+**Status:** Plan 03 complete (hybrid search and reranker integration)
+**Last activity:** 2026-02-13 — Completed 17-03-PLAN.md (integrated hybrid search with unified reranker and two-tier response)
 
 Progress: [████████████████░░░░] 88.9% (16/18 phases complete)
 
@@ -29,10 +29,11 @@ Progress: [████████████████░░░░] 88.9% (
 **v1.4 Progress:**
 - Phase 15: Source Filtering (4/4 plans complete) - Backend multi-platform filtering, React Router URL state, Source filtering UI, gap closure complete - ALL SUCCESS CRITERIA MET
 - Phase 16: Claude Code Path Display (1/1 plans complete) - File path display with copy-to-clipboard for Claude Code conversations - PHASE COMPLETE
-- Phase 17: Search Relevance Improvements (2/5 plans complete) - Embedding provider abstraction, content quality scorer and unified reranker complete
+- Phase 17: Search Relevance Improvements (3/5 plans complete) - Embedding provider abstraction, content quality scorer and unified reranker, hybrid search and reranker integration complete
 - Phase 18: Browse Page with Timeline (0/TBD plans) - Not started
 | Phase 17 P01 | 311 | 2 tasks | 10 files |
 | Phase 17 P02 | 286 | 2 tasks | 4 files |
+| Phase 17 P03 | 157 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -62,6 +63,10 @@ Recent decisions affecting v1.4:
 - **Unified Reranker Architecture**: ALL ranking in one place - vector, text, quality, exact match signals fused via weighted combination, not multiple passes (v1.4 - Phase 17)
 - **Min-Max Score Normalization**: Ensures vector and text scores comparable before fusion, preventing signal dominance (v1.4 - Phase 17)
 - **Two-Tier Result Partitioning**: Primary (>= 0.75) and secondary (>= 0.65) thresholds for staged UI presentation (v1.4 - Phase 17)
+- **Separate Vector + FTS Queries**: Execute vector and FTS searches separately then merge in reranker for better control vs native hybrid mode (v1.4 - Phase 17)
+- **Expanded Candidate Limits**: Request limit * 3 or 100 candidates before reranking to give reranker enough options for signal fusion (v1.4 - Phase 17)
+- **Backward Compatible Two-Tier Response**: primary groups maintain existing API, secondary_groups optional for updated frontends (v1.4 - Phase 17)
+- **FTS Index Robustness**: Check and create FTS index on startup for existing tables to ensure hybrid search works (v1.4 - Phase 17)
 - **Hybrid Architecture**: Local DB for privacy/control, Cloud APIs for quality/speed (v1.0)
 - **API Key Auth**: Simpler for local tools, persistent, no refresh token complexity (v1.2)
 - **uv Package Manager**: Faster, robust venv handling, prevents system breakage (v1.2)
@@ -90,5 +95,5 @@ None yet (new milestone).
 ## Session Continuity
 
 **Last session end:** 2026-02-13
-**Stopped at:** Phase 17 Plan 02 complete - Content quality scorer and unified reranker implemented with TDD methodology - Ready for Phase 17 Plans 03-05 (multi-field search, hybrid search, endpoint integration)
-**Resume file:** .planning/phases/17-search-relevance/17-02-SUMMARY.md
+**Stopped at:** Phase 17 Plan 03 complete - Hybrid search (vector + FTS) integrated with unified reranker and two-tier response - Ready for Phase 17 Plans 04-05 (multi-field search weighting, frontend UI updates)
+**Resume file:** .planning/phases/17-search-relevance/17-03-SUMMARY.md
