@@ -1,0 +1,213 @@
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { SearchBar } from '../components/SearchBar';
+import { ResultCard } from '../components/ResultCard';
+import { SourceFilterUI, AVAILABLE_PLATFORMS, type PlatformId } from '../components/SourceFilterUI';
+import { useSearch } from '../lib/api';
+import { Loader2, LogOut } from 'lucide-react';
+
+interface SearchPageProps {
+  onLogout: () => void;
+}
+
+export function SearchPage({ onLogout }: SearchPageProps) {
+  // URL state management
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [query, setQuery] = useState('');
+
+  // Get platforms from URL on mount, sync to state
+  const [selectedPlatforms, setSelectedPlatforms] = useState<PlatformId[]>([]);
+
+  useEffect(() => {
+    const platformsFromUrl = searchParams.get('platforms');
+    if (platformsFromUrl) {
+      const platforms = platformsFromUrl.split(',').filter((p): p is PlatformId =>
+        AVAILABLE_PLATFORMS.some(ap => ap.id === p)
+      );
+      setSelectedPlatforms(platforms);
+    }
+  }, [searchParams]);
+
+  // Update URL when platforms change
+  const handlePlatformToggle = (platform: PlatformId) => {
+    const newPlatforms = selectedPlatforms.includes(platform)
+      ? selectedPlatforms.filter(p => p !== platform)
+      : [...selectedPlatforms, platform];
+
+    setSelectedPlatforms(newPlatforms);
+
+    // Update URL
+    if (newPlatforms.length === 0) {
+      searchParams.delete('platforms');
+    } else {
+      searchParams.set('platforms', newPlatforms.join(','));
+    }
+    setSearchParams(searchParams);
+  };
+
+  // Clear all platform filters
+  const handleClearFilters = () => {
+    setSelectedPlatforms([]);
+    searchParams.delete('platforms');
+    setSearchParams(searchParams);
+  };
+
+  // Search hook with platform filtering
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetching,
+    isFetchingNextPage,
+    status,
+    error
+  } = useSearch(query, selectedPlatforms);
+
+  // Intersection Observer for infinite scroll
+  const observer = useRef<IntersectionObserver | null>(null);
+  const lastElementRef = useCallback((node: HTMLDivElement | null) => {
+    if (isFetchingNextPage) return;
+    if (observer.current) observer.current.disconnect();
+
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasNextPage) {
+        fetchNextPage();
+      }
+    });
+
+    if (node) observer.current.observe(node);
+  }, [isFetchingNextPage, hasNextPage, fetchNextPage]);
+
+  // Handle empty state vs initial state
+  const showInitialState = !query;
+  const showEmptyState = query && status === 'success' && data?.pages[0].results.length === 0;
+  const hasActiveFilter = selectedPlatforms.length > 0;
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center font-sans text-gray-900">
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-10 w-full bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm pt-4 pb-4 px-4">
+        <div className="max-w-3xl mx-auto w-full">
+          {/* Title when filter is active */}
+          {hasActiveFilter && (
+            <h1 className="text-lg font-semibold text-gray-800 mb-3">
+              Search Results
+              {query && ` for "${query}"`}
+            </h1>
+          )}
+
+          <div className="flex items-start gap-4">
+            <div className="flex-1">
+              <SearchBar
+                onSearch={setQuery}
+                isLoading={isFetching && !isFetchingNextPage}
+              />
+            </div>
+            <button
+              onClick={onLogout}
+              className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors mt-1"
+              title="Disconnect / Change API Key"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Source Filter UI */}
+          <div className="mt-4">
+            <SourceFilterUI
+              selectedPlatforms={selectedPlatforms}
+              onPlatformToggle={handlePlatformToggle}
+              onClear={handleClearFilters}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <main className="w-full max-w-3xl px-4 py-6 flex-1 flex flex-col">
+
+        {/* Filter Active Indicator */}
+        {hasActiveFilter && (
+          <div className="mb-4 flex items-center justify-between text-sm text-gray-600">
+            <span>
+              {status === 'success' && (
+                <>
+                  {data?.pages[0].total || 0} results found
+                  {selectedPlatforms.length > 0 && (
+                    <span className="ml-2 text-gray-400">
+                      ({selectedPlatforms.length} source{selectedPlatforms.length > 1 ? 's' : ''} selected)
+                    </span>
+                  )}
+                </>
+              )}
+            </span>
+          </div>
+        )}
+
+        {/* Error State */}
+        {status === 'error' && (
+          <div className="text-center p-8 text-red-500 bg-red-50 rounded-lg border border-red-100 mt-4">
+            <p className="font-medium">Something went wrong</p>
+            <p className="text-sm mt-1">{(error as Error).message}</p>
+          </div>
+        )}
+
+        {/* Initial State */}
+        {showInitialState && (
+          <div className="flex-1 flex flex-col items-center justify-center text-gray-400 mt-20">
+            <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+              <Loader2 className="h-8 w-8 animate-spin-slow text-gray-300" />
+            </div>
+            <p className="text-lg">Start typing to search your history...</p>
+            <p className="text-sm mt-2">Use the filter below to narrow results by source.</p>
+          </div>
+        )}
+
+        {/* Empty State (with filter hint) */}
+        {showEmptyState && (
+          <div className="flex-1 flex flex-col items-center justify-center text-gray-500 mt-20">
+            <p className="text-lg font-medium">No results found</p>
+            <p className="text-sm mt-1">
+              {hasActiveFilter
+                ? "Try adjusting your filters or search terms."
+                : "Try different keywords or check your spelling."}
+            </p>
+            {hasActiveFilter && (
+              <button
+                onClick={handleClearFilters}
+                className="mt-4 text-blue-600 hover:text-blue-700 text-sm font-medium"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Results Grid */}
+        <div className="space-y-4">
+          {data?.pages.map((page, i) => (
+            <div key={i} className="contents">
+              {page.results.map((result) => (
+                <ResultCard key={result.id} result={result} />
+              ))}
+            </div>
+          ))}
+        </div>
+
+        {/* Loading Indicator for Infinite Scroll */}
+        {(isFetchingNextPage || hasNextPage) && showEmptyState === false && (
+          <div
+            ref={lastElementRef}
+            className="w-full py-8 flex justify-center items-center text-gray-400"
+          >
+            {isFetchingNextPage ? (
+              <Loader2 className="h-6 w-6 animate-spin" />
+            ) : (
+              <span className="text-sm">Load more</span>
+            )}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
