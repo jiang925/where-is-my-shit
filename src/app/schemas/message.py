@@ -104,3 +104,30 @@ class SearchResponse(BaseModel):
     secondary_groups: list[SearchResultGroup] = []  # Secondary results
     secondary_count: int = 0  # Total secondary results count
     total_considered: int = 0  # Total results before threshold filtering
+
+
+class BrowseItem(BaseModel):
+    """Single item in browse results."""
+    id: str
+    conversation_id: str
+    timestamp: int  # Unix timestamp
+    platform: str
+    title: str = ""
+    content: str
+    url: str = ""
+
+
+class BrowseRequest(BaseModel):
+    """Payload for browse (chronological listing) queries."""
+    cursor: str | None = None  # Base64-encoded JSON: {"timestamp": str, "id": str}
+    limit: int = 20
+    date_range: str | None = None  # "today", "this_week", "this_month", "all_time" or None
+    platforms: list[str] | None = None  # Optional platform filter
+
+
+class BrowseResponse(BaseModel):
+    """Browse results with cursor-based pagination."""
+    items: list[BrowseItem]
+    nextCursor: str | None = None  # Base64-encoded cursor for next page
+    hasMore: bool = False
+    total: int = 0
