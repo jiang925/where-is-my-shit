@@ -207,10 +207,12 @@ Plans:
   2. User can filter browse results by date range (Today, This Week, Custom Range)
   3. User sees grouped timeline sections (Today, Yesterday, This Week) for easy scanning
   4. Pagination works correctly even when new conversations are added (no duplicates or gaps)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 18-01: [TBD during planning]
+- [ ] 18-01-PLAN.md -- Backend browse API endpoint with cursor pagination, date range and platform filtering
+- [ ] 18-02-PLAN.md -- Frontend browse infrastructure (date-fns, useBrowse hook, DateRangeFilter, TimelineSection)
+- [ ] 18-03-PLAN.md -- BrowsePage rewrite with timeline layout and E2E tests
 
 ## Progress
 
@@ -236,4 +238,4 @@ Phases 15-16-17 can be built in parallel (independent), then Phase 18 (depends o
 | 15. Source Filtering | v1.4 | 4/4 | Complete | 2026-02-13 |
 | 16. Claude Code Path Display | v1.4 | 1/1 | Complete | 2026-02-13 |
 | 17. Search Relevance Improvements | v1.4 | 5/5 | Complete | 2026-02-13 |
-| 18. Browse Page with Timeline | v1.4 | 0/TBD | Not started | - |
+| 18. Browse Page with Timeline | v1.4 | 0/3 | Not started | - |
