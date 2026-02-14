@@ -1,6 +1,6 @@
 import { Zap } from 'lucide-react';
 import { cn } from '../lib/utils';
-import type { PlatformId } from './SourceFilterUI';
+import { AVAILABLE_PLATFORMS, type PlatformId } from './SourceFilterUI';
 
 interface PresetButtonsProps {
   selectedPlatforms: PlatformId[];
@@ -8,11 +8,14 @@ interface PresetButtonsProps {
   className?: string;
 }
 
+// All platform IDs for the "All Sources" preset
+const ALL_PLATFORM_IDS = AVAILABLE_PLATFORMS.map(p => p.id) as PlatformId[];
+
 // Define preset configurations
 const PRESETS = [
   {
     name: 'Web Chats Only',
-    platforms: ['chatgpt', 'claude', 'gemini'] as PlatformId[],
+    platforms: ['chatgpt', 'claude', 'gemini', 'perplexity'] as PlatformId[],
     icon: Zap,
   },
   {
@@ -22,7 +25,7 @@ const PRESETS = [
   },
   {
     name: 'All Sources',
-    platforms: [] as PlatformId[], // Empty array means clear all filters
+    platforms: ALL_PLATFORM_IDS,
     icon: Zap,
   },
 ];
@@ -34,9 +37,11 @@ export function PresetButtons({
 }: PresetButtonsProps) {
   // Check if a preset is currently active
   const isPresetActive = (presetPlatforms: PlatformId[]) => {
-    if (presetPlatforms.length === 0) {
-      // "All Sources" preset is active when no platforms are selected
-      return selectedPlatforms.length === 0;
+    // "All Sources" is active when all platforms are selected OR none are selected
+    if (presetPlatforms.length === ALL_PLATFORM_IDS.length) {
+      return selectedPlatforms.length === 0 ||
+        (selectedPlatforms.length === presetPlatforms.length &&
+          presetPlatforms.every(p => selectedPlatforms.includes(p)));
     }
 
     // Check if selected platforms exactly match preset
@@ -68,7 +73,7 @@ export function PresetButtons({
             key={preset.name}
             onClick={() => handlePresetClick(preset.platforms)}
             className={cn(
-              "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all border",
+              "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all border cursor-pointer",
               isActive
                 ? "bg-blue-100 text-blue-700 border-blue-300"
                 : "bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-100"

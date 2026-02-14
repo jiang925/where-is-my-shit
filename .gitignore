@@ -61,3 +61,6 @@ ui/node_modules/
 
 # Playwright test results
 test-results/
+
+# Vite build output (rebuilt by: cd ui && npx vite build)
+src/static/

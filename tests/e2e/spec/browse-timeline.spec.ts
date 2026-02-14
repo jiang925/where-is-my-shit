@@ -282,7 +282,7 @@ test.describe('Browse Page - Frontend', () => {
     // Wait for page to load
     await page.waitForSelector('h1:has-text("Browse History")', { timeout: 5000 });
 
-    // Verify timeline section headers are visible
+    // Verify all timeline section headers are visible (default is "All Time")
     await expect(page.locator('h2:has-text("Today")').first()).toBeVisible();
     await expect(page.locator('h2:has-text("Yesterday")').first()).toBeVisible();
     await expect(page.locator('h2:has-text("This Week")').first()).toBeVisible();

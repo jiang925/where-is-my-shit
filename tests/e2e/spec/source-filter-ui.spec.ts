@@ -202,15 +202,16 @@ test('source filter UI: platform filtering works correctly on search page', asyn
   const webChatsPreset = page.getByRole('button', { name: /Web Chats Only/i });
   await webChatsPreset.click();
 
-  // Verify URL contains chatgpt, claude, gemini
+  // Verify URL contains chatgpt, claude, gemini, perplexity
   await page.waitForTimeout(300);
   const webChatsUrl = page.url();
   const webChatsPlatforms = new URLSearchParams(webChatsUrl.split('?')[1]).get('platforms');
   expect(webChatsPlatforms).toContain('chatgpt');
   expect(webChatsPlatforms).toContain('claude');
   expect(webChatsPlatforms).toContain('gemini');
-  await expect(page.getByText('3 selected')).toBeVisible();
-  console.log('VERIFIED: Web Chats Only preset selects chatgpt, claude, gemini');
+  expect(webChatsPlatforms).toContain('perplexity');
+  await expect(page.getByText('4 selected')).toBeVisible();
+  console.log('VERIFIED: Web Chats Only preset selects chatgpt, claude, gemini, perplexity');
 
   // Click "Dev Sessions Only" preset
   const devSessionsPreset = page.getByRole('button', { name: /Dev Sessions Only/i });
@@ -229,12 +230,18 @@ test('source filter UI: platform filtering works correctly on search page', asyn
   const allSourcesPreset = page.getByRole('button', { name: /All Sources/i });
   await allSourcesPreset.click();
 
-  // Verify URL has no platform parameter
+  // Verify URL has all platforms selected
   await page.waitForTimeout(300);
-  expect(page.url()).not.toContain('platforms');
-  await expect(page.getByText('1 selected')).not.toBeVisible();
-  await expect(page.getByText('2 selected')).not.toBeVisible();
-  console.log('VERIFIED: All Sources preset clears all filters');
+  const allSourcesUrl = page.url();
+  const allSourcesPlatforms = new URLSearchParams(allSourcesUrl.split('?')[1]).get('platforms');
+  expect(allSourcesPlatforms).toContain('chatgpt');
+  expect(allSourcesPlatforms).toContain('claude');
+  expect(allSourcesPlatforms).toContain('claude-code');
+  expect(allSourcesPlatforms).toContain('gemini');
+  expect(allSourcesPlatforms).toContain('perplexity');
+  expect(allSourcesPlatforms).toContain('cursor');
+  await expect(page.getByText('6 selected')).toBeVisible();
+  console.log('VERIFIED: All Sources preset selects all 6 platforms');
 
   // Step 10 - Test visual feedback and navigation
   await page.waitForTimeout(300);

@@ -79,7 +79,7 @@ function NavHeader() {
       <button
         onClick={() => navigate('/')}
         className={cn(
-          "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all",
+          "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer",
           isSearch
             ? "bg-blue-600 text-white shadow-md"
             : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
@@ -91,7 +91,7 @@ function NavHeader() {
       <button
         onClick={() => navigate('/browse')}
         className={cn(
-          "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all",
+          "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer",
           !isSearch
             ? "bg-blue-600 text-white shadow-md"
             : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"

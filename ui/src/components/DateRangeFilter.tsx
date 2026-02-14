@@ -42,7 +42,7 @@ export function DateRangeFilter({ className }: DateRangeFilterProps) {
               key={option.id}
               onClick={() => handleRangeChange(option.id)}
               className={cn(
-                "inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium transition-all border",
+                "inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium transition-all border cursor-pointer",
                 isActive
                   ? "bg-blue-100 text-blue-700 border-blue-300"
                   : "bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50"

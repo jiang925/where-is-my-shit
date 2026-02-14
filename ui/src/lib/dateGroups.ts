@@ -1,5 +1,5 @@
 import { isToday, isYesterday, isThisWeek, isThisMonth } from 'date-fns';
-import type { BrowseItem } from './api';
+import type { BrowseItem, DateRangeOption } from './api';
 
 export type TimelineGroupKey = 'today' | 'yesterday' | 'this_week' | 'this_month' | 'older';
 
@@ -79,4 +79,22 @@ export function flattenAndGroup(pages: Array<{ items: BrowseItem[] }> | undefine
 export function totalGroupedItems(groups: GroupedTimeline): number {
   return groups.today.length + groups.yesterday.length +
     groups.this_week.length + groups.this_month.length + groups.older.length;
+}
+
+/**
+ * Returns which timeline sections are relevant for a given date range filter.
+ * Sections outside the filter range are hidden entirely (not shown empty).
+ */
+export function sectionsForDateRange(range: DateRangeOption | string): TimelineGroupKey[] {
+  switch (range) {
+    case 'today':
+      return ['today'];
+    case 'this_week':
+      return ['today', 'yesterday', 'this_week'];
+    case 'this_month':
+      return ['today', 'yesterday', 'this_week', 'this_month'];
+    case 'all_time':
+    default:
+      return ['today', 'yesterday', 'this_week', 'this_month', 'older'];
+  }
 }

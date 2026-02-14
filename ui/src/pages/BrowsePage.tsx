@@ -5,7 +5,7 @@ import { PresetButtons } from '../components/PresetButtons';
 import { DateRangeFilter } from '../components/DateRangeFilter';
 import { TimelineSection } from '../components/TimelineSection';
 import { useBrowse, type DateRangeOption } from '../lib/api';
-import { flattenAndGroup, TIMELINE_SECTIONS, totalGroupedItems } from '../lib/dateGroups';
+import { flattenAndGroup, TIMELINE_SECTIONS, totalGroupedItems, sectionsForDateRange } from '../lib/dateGroups';
 import { Loader2, LogOut } from 'lucide-react';
 
 interface BrowsePageProps {
@@ -97,7 +97,7 @@ export function BrowsePage({ onLogout }: BrowsePageProps) {
             </h1>
             <button
               onClick={onLogout}
-              className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
               title="Disconnect / Change API Key"
             >
               <LogOut className="w-5 h-5" />
@@ -171,7 +171,9 @@ export function BrowsePage({ onLogout }: BrowsePageProps) {
         {/* Timeline Sections */}
         {status === 'success' && !showEmptyState && (
           <div>
-            {TIMELINE_SECTIONS.map(section => (
+            {TIMELINE_SECTIONS
+              .filter(section => sectionsForDateRange(dateRange).includes(section.key))
+              .map(section => (
               <TimelineSection
                 key={section.key}
                 title={section.label}

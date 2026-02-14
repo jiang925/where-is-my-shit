@@ -52,6 +52,7 @@ export function TimelineSection({ title, items, isEmpty }: TimelineSectionProps)
             <ResultCard
               key={item.id}
               result={browseItemToSearchResult(item)}
+              hideScore
             />
           ))}
         </div>

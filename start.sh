@@ -2,6 +2,13 @@
 set -e
 
 echo "Starting Where Is My Shit (WIMS)..."
+
+# Build frontend if needed
+if [ ! -f src/static/index.html ]; then
+  echo "Building frontend..."
+  (cd ui && npm install --silent && npx vite build)
+fi
+
 echo "Press Ctrl+C to stop."
 
 # Run the application using uv

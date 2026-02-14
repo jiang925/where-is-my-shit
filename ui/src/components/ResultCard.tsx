@@ -6,6 +6,7 @@ import { CopyablePath, isFilePath } from './CopyablePath';
 interface ResultCardProps {
   result: SearchResult;
   className?: string;
+  hideScore?: boolean;
 }
 
 // Platform configuration matching SourceFilterUI for consistency
@@ -93,7 +94,7 @@ function getPlatformConfig(source?: string) {
   };
 }
 
-export function ResultCard({ result, className }: ResultCardProps) {
+export function ResultCard({ result, className, hideScore }: ResultCardProps) {
   const { content, meta } = result;
   const platform = getPlatformConfig(meta.source);
   const Icon = platform?.icon || MessageSquare;
@@ -136,25 +137,27 @@ export function ResultCard({ result, className }: ResultCardProps) {
           )}
         </div>
 
-        <div className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 flex items-center gap-2">
-          <span>
-            {result.relevance_score
-              ? `${(result.relevance_score * 100).toFixed(0)}%`
-              : `Score: ${result.score.toFixed(2)}`}
-          </span>
-          {result.exact_match && (
-            <span className="px-1.5 py-0.5 text-xs font-semibold bg-green-100 text-green-700 rounded">
-              Exact
+        {!hideScore && (
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 flex items-center gap-2">
+            <span>
+              {result.relevance_score
+                ? `${(result.relevance_score * 100).toFixed(0)}%`
+                : `Score: ${result.score.toFixed(2)}`}
             </span>
-          )}
-        </div>
+            {result.exact_match && (
+              <span className="px-1.5 py-0.5 text-xs font-semibold bg-green-100 text-green-700 rounded">
+                Exact
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="mb-3">
         <h3 className="font-medium text-gray-900 truncate mb-1" title={title}>
           {title}
         </h3>
-        <p className="text-sm text-gray-600 line-clamp-3 font-mono bg-gray-50 p-2 rounded">
+        <p className="text-sm text-gray-600 line-clamp-4 font-mono bg-gray-50 p-2 rounded">
           {content}
         </p>
       </div>

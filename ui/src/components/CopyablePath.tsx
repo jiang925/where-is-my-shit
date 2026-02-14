@@ -64,13 +64,28 @@ interface CopyablePathProps {
 export function CopyablePath({ path }: CopyablePathProps) {
   const [copied, setCopied] = useState(false);
 
-  const handleCopy = async () => {
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     try {
       await navigator.clipboard.writeText(path);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
-      console.error('Failed to copy path to clipboard:', error);
+    } catch {
+      // Fallback for environments where clipboard API is not available
+      try {
+        const textArea = document.createElement('textarea');
+        textArea.value = path;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-9999px';
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (fallbackError) {
+        console.error('Failed to copy path to clipboard:', fallbackError);
+      }
     }
   };
 
@@ -85,7 +100,7 @@ export function CopyablePath({ path }: CopyablePathProps) {
 
       <button
         onClick={handleCopy}
-        className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full transition-colors ${
+        className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full transition-colors cursor-pointer ${
           copied
             ? 'text-green-600 bg-green-50'
             : 'bg-orange-50 hover:bg-orange-100 text-orange-700'

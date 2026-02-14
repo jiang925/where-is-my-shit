@@ -112,11 +112,10 @@ export function SearchPage({ onLogout }: SearchPageProps) {
       {/* Sticky Header */}
       <div className="sticky top-0 z-10 w-full bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm pt-4 pb-4 px-4">
         <div className="max-w-3xl mx-auto w-full">
-          {/* Title when filter is active */}
-          {hasActiveFilter && (
+          {/* Title - always show when there's a query */}
+          {query && (
             <h1 className="text-lg font-semibold text-gray-800 mb-3">
-              Search Results
-              {query && ` for "${query}"`}
+              Search Results for "{query}"
             </h1>
           )}
 
@@ -129,7 +128,7 @@ export function SearchPage({ onLogout }: SearchPageProps) {
             </div>
             <button
               onClick={onLogout}
-              className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors mt-1"
+              className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer mt-1"
               title="Disconnect / Change API Key"
             >
               <LogOut className="w-5 h-5" />
@@ -215,7 +214,7 @@ export function SearchPage({ onLogout }: SearchPageProps) {
             {hasActiveFilter && (
               <button
                 onClick={handleClearFilters}
-                className="mt-4 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                className="mt-4 text-blue-600 hover:text-blue-700 text-sm font-medium cursor-pointer"
               >
                 Clear filters
               </button>
@@ -239,7 +238,7 @@ export function SearchPage({ onLogout }: SearchPageProps) {
           <div className="mt-6 border-t border-gray-200 pt-4">
             <button
               onClick={() => setShowSecondary(!showSecondary)}
-              className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+              className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
               aria-expanded={showSecondary}
               aria-controls="secondary-results"
             >
