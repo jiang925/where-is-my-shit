@@ -136,3 +136,62 @@ export const useSearch = (query: string, platforms: string[] = []) => {
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 };
+
+// === Browse API Types ===
+
+export interface BrowseItem {
+  id: string;
+  conversation_id: string;
+  timestamp: number; // Unix timestamp
+  platform: string;
+  title: string;
+  content: string;
+  url: string;
+}
+
+export interface BrowseResponse {
+  items: BrowseItem[];
+  nextCursor: string | null;
+  hasMore: boolean;
+  total: number;
+}
+
+export type DateRangeOption = 'today' | 'this_week' | 'this_month' | 'all_time';
+
+export const browse = async ({
+  cursor,
+  limit = 20,
+  dateRange,
+  platforms,
+}: {
+  cursor: string | null;
+  limit?: number;
+  dateRange?: string;
+  platforms?: string[];
+}): Promise<BrowseResponse> => {
+  const response = await api.post<BrowseResponse>('/browse', {
+    cursor,
+    limit,
+    date_range: dateRange === 'all_time' ? undefined : dateRange,
+    platforms: platforms && platforms.length > 0 ? platforms : undefined,
+  });
+  return response.data;
+};
+
+export const useBrowse = (dateRange: string, platforms: string[] = []) => {
+  return useInfiniteQuery({
+    queryKey: ['browse', dateRange, platforms.sort()],
+    queryFn: async ({ pageParam }) => {
+      return browse({
+        cursor: pageParam as string | null,
+        dateRange,
+        platforms,
+      });
+    },
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => {
+      return lastPage.hasMore ? lastPage.nextCursor : undefined;
+    },
+    staleTime: 1000 * 60, // 1 minute cache
+  });
+};
