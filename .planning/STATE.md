@@ -3,16 +3,16 @@
 ## Project Reference
 
 **Core Value:** Never lose a conversation again: Instantly recall specific AI discussions or dev sessions across any platform and jump straight back into the original context.
-**Current Focus:** v1.4 Search & Browse UX Polish - Phase 17 (Search Relevance Improvements)
+**Current Focus:** v1.4 Search & Browse UX Polish - Phase 18 (Browse Page with Timeline)
 
 ## Current Position
 
-**Phase:** 17 of 18 (Search Relevance Improvements)
-**Plan:** 05 of 5
-**Status:** Phase 17 complete (all search relevance improvements delivered)
-**Last activity:** 2026-02-13 — Completed 17-05-PLAN.md (frontend two-tier search results with collapsible secondary section)
+**Phase:** 18 of 18 (Browse Page with Timeline)
+**Plan:** 01 of TBD
+**Status:** In progress - Backend browse API complete
+**Last activity:** 2026-02-14 — Completed 18-01-PLAN.md (backend browse API with cursor pagination)
 
-Progress: [██████████████████░░] 94.4% (17/18 phases complete)
+Progress: [███████████████████░] 94.4% (17/18 phases complete, Phase 18 in progress)
 
 ## Performance Metrics
 
@@ -30,7 +30,13 @@ Progress: [██████████████████░░] 94.4% (
 - Phase 15: Source Filtering (4/4 plans complete) - Backend multi-platform filtering, React Router URL state, Source filtering UI, gap closure complete - ALL SUCCESS CRITERIA MET
 - Phase 16: Claude Code Path Display (1/1 plans complete) - File path display with copy-to-clipboard for Claude Code conversations - PHASE COMPLETE
 - Phase 17: Search Relevance Improvements (5/5 plans complete) - Embedding provider abstraction, content quality scorer and unified reranker, hybrid search and reranker integration, database migration with CLI, frontend two-tier display - PHASE COMPLETE
-- Phase 18: Browse Page with Timeline (0/TBD plans) - Not started
+- Phase 18: Browse Page with Timeline (1/TBD plans complete) - Backend browse API with cursor pagination complete
+
+**Phase 18 Execution Metrics:**
+
+| Plan | Duration (s) | Tasks | Files |
+|------|--------------|-------|-------|
+| Phase 18-browse-timeline P01 | 256 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -70,6 +76,10 @@ Recent decisions affecting v1.4:
 - **Relevance Score as Percentage**: Display relevance_score * 100 formatted as "85%" for user-friendly presentation vs raw 0.0-1.0 scores (v1.4 - Phase 17)
 - **Auto-Expand Secondary Results**: When primary count is 0 but secondary results exist, auto-expand the secondary section for better UX (v1.4 - Phase 17)
 - **Secondary Results Visual Differentiation**: Render secondary results with opacity-80 to indicate lower relevance without making unreadable (v1.4 - Phase 17)
+- **Dummy Vector Scan for Browse**: Use zero vector with vector search to scan all LanceDB records since no pure scan API exists (v1.4 - Phase 18)
+- **Python-Side Date Filtering**: Apply date range filters in Python instead of LanceDB WHERE clause due to timestamp literal format issues (v1.4 - Phase 18)
+- **Composite Cursor Pagination**: Cursor encodes both timestamp and id for stable pagination even with duplicate timestamps (v1.4 - Phase 18)
+- **Base64 Cursor Encoding**: Use base64-encoded JSON for cursor to make it opaque and URL-safe (v1.4 - Phase 18)
 - **Hybrid Architecture**: Local DB for privacy/control, Cloud APIs for quality/speed (v1.0)
 - **API Key Auth**: Simpler for local tools, persistent, no refresh token complexity (v1.2)
 - **uv Package Manager**: Faster, robust venv handling, prevents system breakage (v1.2)
@@ -97,6 +107,6 @@ None yet (new milestone).
 
 ## Session Continuity
 
-**Last session end:** 2026-02-13
-**Stopped at:** Phase 17 complete - All search relevance improvements delivered: embedding providers, quality scorer, hybrid search, migration, two-tier UI - Ready for Phase 18 (Browse Page with Timeline)
-**Resume file:** .planning/phases/17-search-relevance/17-05-SUMMARY.md
+**Last session end:** 2026-02-14
+**Stopped at:** Completed 18-01-PLAN.md (backend browse API with cursor pagination, date/platform filtering)
+**Resume file:** .planning/phases/18-browse-timeline/18-01-SUMMARY.md
