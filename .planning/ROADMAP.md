@@ -210,9 +210,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 18-01-PLAN.md -- Backend browse API endpoint with cursor pagination, date range and platform filtering
-- [ ] 18-02-PLAN.md -- Frontend browse infrastructure (date-fns, useBrowse hook, DateRangeFilter, TimelineSection)
-- [ ] 18-03-PLAN.md -- BrowsePage rewrite with timeline layout and E2E tests
+- [x] 18-01-PLAN.md -- Backend browse API endpoint with cursor pagination, date range and platform filtering
+- [x] 18-02-PLAN.md -- Frontend browse infrastructure (date-fns, useBrowse hook, DateRangeFilter, TimelineSection)
+- [x] 18-03-PLAN.md -- BrowsePage rewrite with timeline layout and E2E tests
 
 ## Progress
 
@@ -238,4 +238,4 @@ Phases 15-16-17 can be built in parallel (independent), then Phase 18 (depends o
 | 15. Source Filtering | v1.4 | 4/4 | Complete | 2026-02-13 |
 | 16. Claude Code Path Display | v1.4 | 1/1 | Complete | 2026-02-13 |
 | 17. Search Relevance Improvements | v1.4 | 5/5 | Complete | 2026-02-13 |
-| 18. Browse Page with Timeline | v1.4 | 0/3 | Not started | - |
+| 18. Browse Page with Timeline | v1.4 | 3/3 | Complete | 2026-02-14 |
