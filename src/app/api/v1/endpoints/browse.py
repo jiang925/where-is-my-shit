@@ -53,50 +53,42 @@ async def browse_documents(request: BrowseRequest):
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Invalid cursor format: {str(e)}")
 
-    # 4. Build LanceDB query
+    # 4. Query LanceDB table
     try:
         table = db_client.get_table("messages")
 
-        # Build WHERE clause filters
-        filters = []
-
-        # Date filter
-        if start_date:
-            start_date_iso = start_date.isoformat()
-            filters.append(f"timestamp >= '{start_date_iso}'")
-
-        # Platform filter
-        if platforms_to_filter:
-            platform_list = "', '".join(platforms_to_filter)
-            filters.append(f"platform IN ('{platform_list}')")
-
-        # Cursor filter (composite: timestamp < cursor_ts OR (timestamp = cursor_ts AND id < cursor_id))
-        if cursor_timestamp and cursor_id:
-            filters.append(f"(timestamp < '{cursor_timestamp}' OR (timestamp = '{cursor_timestamp}' AND id < '{cursor_id}'))")
-
-        where_clause = " AND ".join(filters) if filters else None
-
-        # Query: Use LanceDB's search() to create a scan query
-        # We don't need vector search, so we'll use the table scanner directly
-        # The most reliable approach is to use the underlying lance dataset scanner
+        # Use search() without query_type to scan all records
+        # This approach works for browse operations with reasonable dataset sizes
         def query_table():
-            import pyarrow.compute as pc
+            # Build WHERE clause for LanceDB
+            # Note: LanceDB WHERE clause doesn't work well with timestamp comparisons
+            # We'll fetch all data and filter in Python instead
+            filters = []
 
-            lance_ds = table.to_lance()
-            columns = ["id", "conversation_id", "timestamp", "platform", "title", "content", "url"]
+            # Platform filter (this works in LanceDB)
+            if platforms_to_filter:
+                platform_list = "', '".join(platforms_to_filter)
+                filters.append(f"platform IN ('{platform_list}')")
 
-            # Build PyArrow filter expression
-            filter_expr = None
+            where_clause = " AND ".join(filters) if filters else None
+
+            # Create a dummy vector for scanning (all zeros)
+            # This allows us to use vector search as a scan operation
+            dummy_vector = [0.0] * 384  # Match the vector dimensions from Message model
+
+            query_builder = table.search(dummy_vector, query_type="vector")
+
             if where_clause:
-                # Since we have complex SQL-like WHERE clause, we need to parse it
-                # For simplicity, we'll fetch all data and filter in Python
-                # This is acceptable for browse operations with reasonable dataset sizes
-                scanner = lance_ds.scanner(columns=columns)
-            else:
-                scanner = lance_ds.scanner(columns=columns)
+                query_builder = query_builder.where(where_clause)
 
-            results_table = scanner.to_table()
-            return results_table.to_pylist()
+            # Select only needed columns (exclude vector to reduce memory)
+            query_builder = query_builder.select(["id", "conversation_id", "timestamp", "platform", "title", "content", "url"])
+
+            # Fetch a large limit to get all matching records
+            # We'll apply date and cursor filters in Python
+            results = query_builder.limit(10000).to_list()
+
+            return results
 
         results_list = await run_in_threadpool(query_table)
 
