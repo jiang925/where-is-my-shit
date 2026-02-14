@@ -8,9 +8,9 @@
 ## Current Position
 
 **Phase:** 18 of 18 (Browse Page with Timeline)
-**Plan:** 01 of TBD
-**Status:** In progress - Backend browse API complete
-**Last activity:** 2026-02-14 — Completed 18-01-PLAN.md (backend browse API with cursor pagination)
+**Plan:** 02 of TBD
+**Status:** In progress - Frontend browse infrastructure complete
+**Last activity:** 2026-02-14 — Completed 18-02-PLAN.md (browse types, hook, timeline grouping, DateRangeFilter, TimelineSection)
 
 Progress: [███████████████████░] 94.4% (17/18 phases complete, Phase 18 in progress)
 
@@ -30,13 +30,14 @@ Progress: [███████████████████░] 94.4% (
 - Phase 15: Source Filtering (4/4 plans complete) - Backend multi-platform filtering, React Router URL state, Source filtering UI, gap closure complete - ALL SUCCESS CRITERIA MET
 - Phase 16: Claude Code Path Display (1/1 plans complete) - File path display with copy-to-clipboard for Claude Code conversations - PHASE COMPLETE
 - Phase 17: Search Relevance Improvements (5/5 plans complete) - Embedding provider abstraction, content quality scorer and unified reranker, hybrid search and reranker integration, database migration with CLI, frontend two-tier display - PHASE COMPLETE
-- Phase 18: Browse Page with Timeline (1/TBD plans complete) - Backend browse API with cursor pagination complete
+- Phase 18: Browse Page with Timeline (2/TBD plans complete) - Backend browse API complete, frontend browse infrastructure complete
 
 **Phase 18 Execution Metrics:**
 
 | Plan | Duration (s) | Tasks | Files |
 |------|--------------|-------|-------|
 | Phase 18-browse-timeline P01 | 256 | 2 tasks | 4 files |
+| Phase 18 P02 | 91 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -80,6 +81,12 @@ Recent decisions affecting v1.4:
 - **Python-Side Date Filtering**: Apply date range filters in Python instead of LanceDB WHERE clause due to timestamp literal format issues (v1.4 - Phase 18)
 - **Composite Cursor Pagination**: Cursor encodes both timestamp and id for stable pagination even with duplicate timestamps (v1.4 - Phase 18)
 - **Base64 Cursor Encoding**: Use base64-encoded JSON for cursor to make it opaque and URL-safe (v1.4 - Phase 18)
+- **date-fns for Timeline Grouping**: Use date-fns relative time functions (isToday, isYesterday, isThisWeek, isThisMonth) for automatic daily group refresh (v1.4 - Phase 18)
+- **5-Bucket Timeline Structure**: Today, Yesterday, This Week, This Month, Older buckets provide clear chronological organization (v1.4 - Phase 18)
+- **URL State for Date Range**: Persist date range selection in URL query params for shareable links (v1.4 - Phase 18)
+- **All Time Default**: Omit 'all_time' from URL when active for cleaner default URLs (v1.4 - Phase 18)
+- **Inline Section Headers**: Use inline headers instead of sticky to avoid stacking on page header (v1.4 - Phase 18)
+- **ResultCard Reuse via Adapter**: Convert BrowseItem to SearchResult format to reuse existing ResultCard without modification (v1.4 - Phase 18)
 - **Hybrid Architecture**: Local DB for privacy/control, Cloud APIs for quality/speed (v1.0)
 - **API Key Auth**: Simpler for local tools, persistent, no refresh token complexity (v1.2)
 - **uv Package Manager**: Faster, robust venv handling, prevents system breakage (v1.2)
@@ -108,5 +115,5 @@ None yet (new milestone).
 ## Session Continuity
 
 **Last session end:** 2026-02-14
-**Stopped at:** Completed 18-01-PLAN.md (backend browse API with cursor pagination, date/platform filtering)
-**Resume file:** .planning/phases/18-browse-timeline/18-01-SUMMARY.md
+**Stopped at:** Completed 18-02-PLAN.md (browse types, hook, timeline grouping, DateRangeFilter, TimelineSection)
+**Resume file:** .planning/phases/18-browse-timeline/18-02-SUMMARY.md
