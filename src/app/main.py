@@ -12,7 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from src.app.api.v1.router import api_router
 from src.app.core.config import config_manager, get_settings
 from src.app.core.logging import setup_logging
-from src.app.db.client import init_db
+from src.app.db.client import db_client, init_db
 
 logger = structlog.get_logger()
 
@@ -45,6 +45,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         await config_task
     except asyncio.CancelledError:
         pass
+    db_client.close()
 
 
 settings = get_settings()

@@ -10,10 +10,12 @@ from src.app.schemas.message import Message
 class DBClient:
     _instance: Optional["DBClient"] = None
     _db: lancedb.DBConnection | None = None
+    _tables: dict[str, lancedb.table.Table] = {}
 
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
+            cls._tables = {}
         return cls._instance
 
     def connect(self) -> lancedb.DBConnection:
@@ -37,15 +39,8 @@ class DBClient:
 
         if table_name not in db.table_names():
             # Create the table using the Pydantic schema
-            # Note: We don't need to pass data to create_table if we pass schema
             table = db.create_table(table_name, schema=Message)
-
-            # Create FTS index on 'content'
-            # Note: FTS index creation might require some data strictly speaking in some versions,
-            # but usually it's defined on the table.
-            # LanceDB python client might expect data or allow empty table index creation.
-            # create_index implementation varies.
-            # According to docs, we create indices.
+            self._tables[table_name] = table
 
             # Creating indices on empty table works in recent LanceDB versions.
             try:
@@ -55,8 +50,8 @@ class DBClient:
                 print(f"Warning: Failed to create FTS index on new table: {e}")
                 print(f"  FTS index will be created when data is present")
         else:
-            # If table exists, open it
-            table = db.open_table(table_name)
+            # If table exists, open it and cache the handle
+            table = self.get_table(table_name)
 
             # Ensure FTS index exists for existing tables
             try:
@@ -78,8 +73,15 @@ class DBClient:
                 print(f"  Hybrid search may fall back to vector-only mode")
 
     def get_table(self, table_name: str = "messages") -> lancedb.table.Table:
-        db = self.connect()
-        return db.open_table(table_name)
+        if table_name not in self._tables:
+            db = self.connect()
+            self._tables[table_name] = db.open_table(table_name)
+        return self._tables[table_name]
+
+    def close(self):
+        """Close all cached table handles and the database connection."""
+        self._tables.clear()
+        self._db = None
 
 
 # Global instance
