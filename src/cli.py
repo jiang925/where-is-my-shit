@@ -44,19 +44,33 @@ def start_server(args):
 
 def reembed_command(args):
     """Re-embed documents with the current embedding model."""
-    from src.app.db.migration import get_migration_status, run_full_migration
     from src.app.db.client import db_client
+    from src.app.db.migration import get_migration_status, promote_migration, run_full_migration
 
     # Get current config
     settings = config_manager.config
     embedding_config = settings.embedding.model_dump()
 
-    print(f"Re-embedding Configuration:")
+    print("Re-embedding Configuration:")
     print(f"  Provider: {embedding_config['provider']}")
-    print(f"  Model: {embedding_config['model']}")
+    print(f"  Target model: {embedding_config['model']}")
     if embedding_config['provider'] in ('ollama', 'openai'):
         print(f"  Base URL: {embedding_config['base_url']}")
     print(f"  Config file: {config_manager.path}\n")
+
+    # If --promote flag, force promotion and exit
+    if args.promote:
+        try:
+            table = db_client.get_table("messages")
+            success = promote_migration(table)
+            if success:
+                print("Migration promotion complete! v2 vectors promoted to v1.")
+            else:
+                print("No migration to promote (vector_v2 column not found).")
+        except Exception as e:
+            print(f"Error during promotion: {e}")
+            sys.exit(1)
+        return
 
     # If --status flag, just show status and exit
     if args.status:
@@ -71,7 +85,8 @@ def reembed_command(args):
             print(f"  Progress: {status['percent_complete']:.1f}%")
 
             if status['has_v2']:
-                print("\n  Note: vector_v2 column exists")
+                print("\n  Note: vector_v2 column exists (migration in progress)")
+                print("  Auto-promotion will occur when all documents are re-embedded.")
             else:
                 print("\n  Note: vector_v2 column not yet created (will be created on first run)")
 
@@ -115,6 +130,7 @@ def main():
     reembed_parser.add_argument("--batch-size", type=int, default=100, help="Documents per batch")
     reembed_parser.add_argument("--delay", type=float, default=0.5, help="Seconds between batches")
     reembed_parser.add_argument("--status", action="store_true", help="Show migration status only")
+    reembed_parser.add_argument("--promote", action="store_true", help="Force promote v2 to v1 without re-embedding")
 
     args = parser.parse_args()
 

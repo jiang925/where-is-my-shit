@@ -18,8 +18,8 @@ class EmbeddingConfig(BaseModel):
     onnx (ONNX Runtime), openai (OpenAI-compatible API).
     """
 
-    provider: str = "fastembed"  # One of: "fastembed", "sentence-transformers", "onnx", "openai"
-    model: str = "BAAI/bge-small-en-v1.5"  # Model name for the provider
+    provider: str = "sentence-transformers"  # One of: "fastembed", "sentence-transformers", "onnx", "openai"
+    model: str = "BAAI/bge-m3"  # Model name for the provider
     base_url: str = "http://localhost:11434/v1"  # Only used for openai provider
     dimensions: int | None = None  # Optional override, auto-detected if not set
     api_key: str | None = None  # API key for external providers

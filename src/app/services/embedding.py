@@ -11,8 +11,7 @@ class EmbeddingService:
     This service delegates to a configurable EmbeddingProvider backend
     (fastembed, ollama, openai, etc.) based on the server configuration.
 
-    Default behavior: Uses fastembed with BAAI/bge-small-en-v1.5 (384 dimensions),
-    maintaining backward compatibility with the original WIMS implementation.
+    Default behavior: Uses sentence-transformers with BAAI/bge-m3 (1024 dimensions).
     """
 
     _instance: Optional["EmbeddingService"] = None
@@ -25,6 +24,12 @@ class EmbeddingService:
             config = get_settings().embedding.model_dump()
             cls._provider = create_embedding_provider(config)
         return cls._instance
+
+    @classmethod
+    def reset(cls):
+        """Reset the singleton instance. Used in tests to reinitialize with different configs."""
+        cls._instance = None
+        cls._provider = None
 
     def embed_text(self, text: str) -> list[float]:
         """

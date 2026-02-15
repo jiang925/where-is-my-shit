@@ -34,12 +34,44 @@ def test_embed_empty_text(embedding_service):
     assert vector == []
 
 
-def test_default_config_creates_fastembed_provider():
-    """Test that default configuration creates a FastEmbedProvider."""
-    # Reset singleton
-    EmbeddingService._instance = None
+def test_default_config_creates_sentence_transformer_provider():
+    """Test that default configuration creates a SentenceTransformerProvider."""
+    EmbeddingService.reset()
 
-    # Mock the config to ensure we get default values
+    with patch("src.app.services.embedding.get_settings") as mock_settings:
+        mock_config = MagicMock()
+        mock_config.embedding.model_dump.return_value = {
+            "provider": "sentence-transformers",
+            "model": "BAAI/bge-m3",
+            "base_url": "http://localhost:11434/v1",
+            "dimensions": None,
+            "api_key": None,
+            "timeout": 30,
+            "batch_size": 100,
+        }
+        mock_settings.return_value = mock_config
+
+        import numpy as np
+
+        with patch(
+            "src.app.services.providers.sentence_transformer_provider.SentenceTransformer"
+        ) as mock_st:
+            mock_model = MagicMock()
+            mock_model.encode.return_value = np.array([0.1] * 1024)
+            mock_st.return_value = mock_model
+
+            service = EmbeddingService()
+            from src.app.services.providers.sentence_transformer_provider import SentenceTransformerProvider
+
+            assert isinstance(service.get_provider(), SentenceTransformerProvider)
+
+    EmbeddingService.reset()
+
+
+def test_explicit_fastembed_config_still_works():
+    """Test that explicit fastembed configuration creates a FastEmbedProvider."""
+    EmbeddingService.reset()
+
     with patch("src.app.services.embedding.get_settings") as mock_settings:
         mock_config = MagicMock()
         mock_config.embedding.model_dump.return_value = {
@@ -47,24 +79,23 @@ def test_default_config_creates_fastembed_provider():
             "model": "BAAI/bge-small-en-v1.5",
             "base_url": "http://localhost:11434/v1",
             "dimensions": None,
+            "api_key": None,
+            "timeout": 30,
+            "batch_size": 100,
         }
         mock_settings.return_value = mock_config
 
-        # Mock the FastEmbedProvider to avoid actually loading the model
         with patch("src.app.services.providers.fastembed_provider.TextEmbedding"):
             service = EmbeddingService()
             assert isinstance(service.get_provider(), FastEmbedProvider)
 
-    # Cleanup
-    EmbeddingService._instance = None
+    EmbeddingService.reset()
 
 
 def test_ollama_config_creates_openai_compatible_provider():
     """Test that ollama configuration creates an OpenAICompatibleProvider."""
-    # Reset singleton
-    EmbeddingService._instance = None
+    EmbeddingService.reset()
 
-    # Mock the config for Ollama
     with patch("src.app.services.embedding.get_settings") as mock_settings:
         mock_config = MagicMock()
         mock_config.embedding.model_dump.return_value = {
@@ -98,8 +129,7 @@ def test_ollama_config_creates_openai_compatible_provider():
             assert provider.get_model_name() == "nomic-embed-text"
             assert provider.get_dimensions() == 768
 
-    # Cleanup
-    EmbeddingService._instance = None
+    EmbeddingService.reset()
 
 
 def test_get_dimensions_returns_correct_value(embedding_service):
@@ -229,12 +259,12 @@ class TestEmbeddingConfig:
     """Tests for the EmbeddingConfig model."""
 
     def test_default_config(self):
-        """Test default EmbeddingConfig values."""
+        """Test default EmbeddingConfig values use bge-m3."""
         from src.app.core.config import EmbeddingConfig
 
         config = EmbeddingConfig()
-        assert config.provider == "fastembed"
-        assert config.model == "BAAI/bge-small-en-v1.5"
+        assert config.provider == "sentence-transformers"
+        assert config.model == "BAAI/bge-m3"
         assert config.api_key is None
         assert config.timeout == 30
         assert config.batch_size == 100
@@ -265,3 +295,36 @@ class TestEmbeddingConfig:
         assert "api_key" in dumped
         assert "timeout" in dumped
         assert "batch_size" in dumped
+
+
+class TestEmbeddingServiceReset:
+    """Tests for EmbeddingService.reset()."""
+
+    def test_reset_clears_instance(self):
+        """Test that reset() clears the singleton."""
+        EmbeddingService.reset()
+        assert EmbeddingService._instance is None
+        assert EmbeddingService._provider is None
+
+    def test_reset_allows_reinitialization(self):
+        """Test that after reset, a new instance can be created with different config."""
+        EmbeddingService.reset()
+
+        with patch("src.app.services.embedding.get_settings") as mock_settings:
+            mock_config = MagicMock()
+            mock_config.embedding.model_dump.return_value = {
+                "provider": "fastembed",
+                "model": "BAAI/bge-small-en-v1.5",
+                "base_url": "http://localhost:11434/v1",
+                "dimensions": None,
+                "api_key": None,
+                "timeout": 30,
+                "batch_size": 100,
+            }
+            mock_settings.return_value = mock_config
+
+            with patch("src.app.services.providers.fastembed_provider.TextEmbedding"):
+                s1 = EmbeddingService()
+                assert isinstance(s1.get_provider(), FastEmbedProvider)
+
+        EmbeddingService.reset()
