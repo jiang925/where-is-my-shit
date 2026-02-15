@@ -8,9 +8,9 @@
 ## Current Position
 
 **Phase:** 21 (Documentation for GitHub Release)
-**Plan:** 0 of TBD
-**Status:** Phase 20 (deployment bugfixes) complete. Phase 21 needs planning.
-**Last activity:** 2026-02-15 — Deployed to remote server, fixed 8 runtime/UI bugs, documented as Phase 20
+**Plan:** 3 of TBD (in progress)
+**Status:** Phase 21 documentation in progress - CLI reference and embedding providers docs complete
+**Last activity:** 2026-02-15 — Created CLI reference and embedding providers documentation (21-03)
 
 Progress: [████████████████████] 100% (20/20 phases complete) + Phase 21 planned
 
@@ -32,6 +32,9 @@ Progress: [████████████████████] 100% (2
 - Phase 19: Embedding Model Upgrade & DB Maintenance (3/3 plans complete) - Multi-backend providers, background compaction, auto-migration, bge-m3 default, CLI --promote
 - Phase 20: Deployment Bugfixes (retroactive, complete) - 8 fixes: compaction API, dimension mismatch fallback, schema evolution, All Sources toggle, layout shifts, initial filter state, snippet truncation
 
+**v1.6 Progress:**
+- Phase 21: Documentation for GitHub Release (3+ plans in progress) - CLI reference with migration workflow, embedding providers guide with 5 providers documented
+
 **v1.4 Progress:**
 - Phase 15: Source Filtering (4/4 plans complete) - Backend multi-platform filtering, React Router URL state, Source filtering UI, gap closure complete - ALL SUCCESS CRITERIA MET
 - Phase 16: Claude Code Path Display (1/1 plans complete) - File path display with copy-to-clipboard for Claude Code conversations - PHASE COMPLETE
@@ -46,6 +49,7 @@ Progress: [████████████████████] 100% (2
 | Phase 18 P02 | 91 | 2 tasks | 5 files |
 | Phase 18 P03 | 140 | 2 tasks | 2 files |
 | Phase 19 P02 | 227 | 2 tasks | 6 files |
+| Phase 21 P03 | 104 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -132,5 +136,5 @@ None yet (new milestone).
 ## Session Continuity
 
 **Last session end:** 2026-02-15
-**Stopped at:** Phases 19-20 complete. Phase 21 (documentation) needs planning via /gsd:discuss-phase or /gsd:plan-phase.
-**Resume file:** .planning/ROADMAP.md
+**Stopped at:** Completed 21-03-PLAN.md
+**Resume file:** None
