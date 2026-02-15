@@ -290,4 +290,9 @@ Fixes:
   2. Setup/installation guide covers all three components (server, extension, watcher)
   3. Configuration reference documents all server.json options and embedding providers
   4. Architecture overview explains system components and data flow for contributors
-**Plans:** TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 21-01-PLAN.md — English README.md and LICENSE file
+- [ ] 21-02-PLAN.md — Chinese README_CN.md (translation)
+- [ ] 21-03-PLAN.md — docs/ reference files (CLI reference, embedding providers)
