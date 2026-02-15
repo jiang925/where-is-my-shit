@@ -7,8 +7,8 @@
 - ✅ **v1.2 Simplify & Deploy** - Phases 8-11 (shipped 2026-02-11)
 - ✅ **v1.3 UI/API Integration & Verification** - Phases 12-14 (shipped 2026-02-12)
 - ✅ **v1.4 Search & Browse UX Polish** - Phases 15-18 (shipped 2026-02-14)
-- 🚧 **v1.5 Embedding & Infrastructure** - Phases 19-20 (in progress)
-- 🚧 **v1.6 GitHub Release** - Phase 21 (planned)
+- ✅ **v1.5 Embedding & Infrastructure** - Phases 19-20 (shipped 2026-02-15)
+- ✅ **v1.6 GitHub Release** - Phase 21 (shipped 2026-02-13)
 
 ## Phases
 
@@ -243,7 +243,7 @@ Phases 15-16-17 can be built in parallel (independent), then Phase 18 (depends o
 | 18. Browse Page with Timeline | v1.4 | 3/3 | Complete | 2026-02-14 |
 | 19. Embedding Model Upgrade | v1.5 | 3/3 | Complete | 2026-02-15 |
 | 20. Deployment Bugfixes | v1.5 | retroactive | Complete | 2026-02-15 |
-| 21. Documentation for GitHub Release | v1.6 | TBD | Planned | — |
+| 21. Documentation for GitHub Release | v1.6 | 3/3 | Complete | 2026-02-13 |
 
 ### Phase 19: Embedding Model Upgrade & DB Maintenance
 

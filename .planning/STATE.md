@@ -3,16 +3,16 @@
 ## Project Reference
 
 **Core Value:** Never lose a conversation again: Instantly recall specific AI discussions or dev sessions across any platform and jump straight back into the original context.
-**Current Focus:** v1.6 GitHub Release - Phase 21 (Documentation)
+**Current Focus:** All milestones complete through v1.6
 
 ## Current Position
 
-**Phase:** 21 (Documentation for GitHub Release)
-**Plan:** 2 of 3 complete
-**Status:** Phase 21 documentation in progress - English and Chinese READMEs complete, CLI reference pending
-**Last activity:** 2026-02-15 — Created Chinese README translation (21-02)
+**Phase:** 21 (Documentation for GitHub Release) — COMPLETE
+**Plan:** 3 of 3 complete
+**Status:** All phases complete. Project ready for GitHub release.
+**Last activity:** 2026-02-13 — Phase 21 complete (README, README_CN, docs/ reference files)
 
-Progress: [████████████████████] 100% (20/20 phases complete) + Phase 21 planned
+Progress: [████████████████████] 100% (21/21 phases complete)
 
 ## Performance Metrics
 
@@ -26,14 +26,14 @@ Progress: [████████████████████] 100% (2
 | v1.3 UI/API Integration | 3 | Complete (2026-02-12) |
 | v1.4 Search & Browse UX | 4 | Complete (2026-02-14) |
 | v1.5 Embedding & Infrastructure | 2 | Complete (2026-02-15) |
-| v1.6 GitHub Release | 1 | Planned |
+| v1.6 GitHub Release | 1 | Complete (2026-02-13) |
 
 **v1.5 Progress:**
 - Phase 19: Embedding Model Upgrade & DB Maintenance (3/3 plans complete) - Multi-backend providers, background compaction, auto-migration, bge-m3 default, CLI --promote
 - Phase 20: Deployment Bugfixes (retroactive, complete) - 8 fixes: compaction API, dimension mismatch fallback, schema evolution, All Sources toggle, layout shifts, initial filter state, snippet truncation
 
 **v1.6 Progress:**
-- Phase 21: Documentation for GitHub Release (2/3 plans complete) - English README (596 lines) with MIT license, Chinese README translation (596 lines, bidirectional language toggle), CLI reference docs pending
+- Phase 21: Documentation for GitHub Release (3/3 plans complete) - English README (596 lines) with MIT license, Chinese README translation (596 lines), CLI reference + embedding providers docs — PHASE COMPLETE
 
 **v1.4 Progress:**
 - Phase 15: Source Filtering (4/4 plans complete) - Backend multi-platform filtering, React Router URL state, Source filtering UI, gap closure complete - ALL SUCCESS CRITERIA MET
@@ -138,6 +138,6 @@ None yet (new milestone).
 
 ## Session Continuity
 
-**Last session end:** 2026-02-15
-**Stopped at:** Completed 21-02-PLAN.md (Chinese README). Next: 21-03-PLAN.md (CLI docs)
+**Last session end:** 2026-02-13
+**Stopped at:** All phases complete. Project ready for GitHub release.
 **Resume file:** None
