@@ -256,6 +256,6 @@ Phases 15-16-17 can be built in parallel (independent), then Phase 18 (depends o
 **Plans:** 3 plans
 
 Plans:
-- [ ] 19-01-PLAN.md — Multi-backend embedding providers (SentenceTransformer, ONNX, OpenAI-compatible)
-- [ ] 19-02-PLAN.md — LanceDB compaction manager and migration auto-promotion
-- [ ] 19-03-PLAN.md — Default model upgrade to bge-m3 and final integration
+- [x] 19-01-PLAN.md — Multi-backend embedding providers (SentenceTransformer, ONNX, OpenAI-compatible)
+- [x] 19-02-PLAN.md — LanceDB compaction manager and migration auto-promotion
+- [x] 19-03-PLAN.md — Default model upgrade to bge-m3 and final integration

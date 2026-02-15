@@ -8,9 +8,9 @@
 ## Current Position
 
 **Phase:** 19 (Embedding Model Upgrade & DB Maintenance)
-**Plan:** 1 of 3 (19-02 complete)
-**Status:** In execution — Wave 1 in progress (19-02 complete, 19-01 and 19-03 remaining)
-**Last activity:** 2026-02-15 — Plan 19-02 complete (background compaction and auto-migration)
+**Plan:** 3 of 3 (all complete)
+**Status:** Phase 19 execution complete — all 3 plans in 2 waves done, awaiting verification
+**Last activity:** 2026-02-15 — All Phase 19 plans executed (providers, compaction, model upgrade)
 
 Progress: [████████████████████] 100% (18/18 phases complete) + Phase 19 in progress
 
@@ -28,7 +28,7 @@ Progress: [████████████████████] 100% (1
 | v1.5 Embedding & Infrastructure | 1 | In Progress |
 
 **v1.5 Progress:**
-- Phase 19: Embedding Model Upgrade & DB Maintenance (1/3 plans complete) - Background compaction and auto-migration complete
+- Phase 19: Embedding Model Upgrade & DB Maintenance (3/3 plans complete) - Multi-backend providers, background compaction, auto-migration, bge-m3 default, CLI --promote
 
 **v1.4 Progress:**
 - Phase 15: Source Filtering (4/4 plans complete) - Backend multi-platform filtering, React Router URL state, Source filtering UI, gap closure complete - ALL SUCCESS CRITERIA MET
@@ -87,6 +87,9 @@ Recent decisions affecting v1.4:
 - **Skip-Silently Concurrent Compaction**: Non-blocking lock prevents log spam and queue buildup during rapid writes (v1.5 - Phase 19)
 - **Auto-Promote on Migration Complete**: Migration automatically promotes v2->v1 and drops columns when complete, making v2 reusable (v1.5 - Phase 19)
 - **Background Auto-Resume Migration**: Server startup spawns daemon thread to resume incomplete migrations without blocking (v1.5 - Phase 19)
+- **Multi-Backend Embedding Providers**: SentenceTransformer (PyTorch), ONNX (optional), OpenAI-compatible API - all sharing EmbeddingProvider ABC (v1.5 - Phase 19)
+- **Default Model bge-m3**: Upgraded from bge-small-en-v1.5 (384d) to BAAI/bge-m3 (1024d) for better multilingual search (v1.5 - Phase 19)
+- **CLI --promote Flag**: Manual promotion of v2->v1 vectors without re-embedding for recovery scenarios (v1.5 - Phase 19)
 - **Dummy Vector Scan for Browse**: Use zero vector with vector search to scan all LanceDB records since no pure scan API exists (v1.4 - Phase 18)
 - **Python-Side Date Filtering**: Apply date range filters in Python instead of LanceDB WHERE clause due to timestamp literal format issues (v1.4 - Phase 18)
 - **Composite Cursor Pagination**: Cursor encodes both timestamp and id for stable pagination even with duplicate timestamps (v1.4 - Phase 18)
@@ -127,5 +130,5 @@ None yet (new milestone).
 ## Session Continuity
 
 **Last session end:** 2026-02-15
-**Stopped at:** Phase 19 plan 02 complete — Background compaction and auto-migration implemented. Next: 19-01 or 19-03.
-**Resume file:** .planning/phases/19-embedding-model-upgrade-db-maintenance/19-02-SUMMARY.md
+**Stopped at:** Phase 19 all 3 plans executed successfully. 56 unit tests passing. Needs phase verification.
+**Resume file:** .planning/phases/19-embedding-model-upgrade-db-maintenance/19-03-PLAN.md
