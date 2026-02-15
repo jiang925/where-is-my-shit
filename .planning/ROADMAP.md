@@ -253,7 +253,9 @@ Phases 15-16-17 can be built in parallel (independent), then Phase 18 (depends o
   4. Migration system is reusable: promotes v2→v1 after completion (not v3/v4/v5 increments)
   5. Default embedding model upgraded from bge-small-en-v1.5 to bge-m3
   6. Re-embedding CLI supports rate limiting via --delay flag for remote API providers
-**Plans:** 0 plans
+**Plans:** 3 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 19 to break down)
+- [ ] 19-01-PLAN.md — Multi-backend embedding providers (SentenceTransformer, ONNX, OpenAI-compatible)
+- [ ] 19-02-PLAN.md — LanceDB compaction manager and migration auto-promotion
+- [ ] 19-03-PLAN.md — Default model upgrade to bge-m3 and final integration
