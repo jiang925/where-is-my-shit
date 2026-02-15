@@ -7,7 +7,8 @@
 - ✅ **v1.2 Simplify & Deploy** - Phases 8-11 (shipped 2026-02-11)
 - ✅ **v1.3 UI/API Integration & Verification** - Phases 12-14 (shipped 2026-02-12)
 - ✅ **v1.4 Search & Browse UX Polish** - Phases 15-18 (shipped 2026-02-14)
-- 🚧 **v1.5 Embedding & Infrastructure** - Phase 19 (in progress)
+- 🚧 **v1.5 Embedding & Infrastructure** - Phases 19-20 (in progress)
+- 🚧 **v1.6 GitHub Release** - Phase 21 (planned)
 
 ## Phases
 
@@ -146,7 +147,7 @@ Plans:
 
 </details>
 
-### v1.4 Search & Browse UX Polish (In Progress)
+### v1.4 Search & Browse UX Polish
 
 **Milestone Goal:** Transform WIMS from "it works" to "it's actually useful" by improving search quality and adding flexible browsing capabilities.
 
@@ -240,6 +241,9 @@ Phases 15-16-17 can be built in parallel (independent), then Phase 18 (depends o
 | 16. Claude Code Path Display | v1.4 | 1/1 | Complete | 2026-02-13 |
 | 17. Search Relevance Improvements | v1.4 | 5/5 | Complete | 2026-02-13 |
 | 18. Browse Page with Timeline | v1.4 | 3/3 | Complete | 2026-02-14 |
+| 19. Embedding Model Upgrade | v1.5 | 3/3 | Complete | 2026-02-15 |
+| 20. Deployment Bugfixes | v1.5 | retroactive | Complete | 2026-02-15 |
+| 21. Documentation for GitHub Release | v1.6 | TBD | Planned | — |
 
 ### Phase 19: Embedding Model Upgrade & DB Maintenance
 
@@ -259,3 +263,31 @@ Plans:
 - [x] 19-01-PLAN.md — Multi-backend embedding providers (SentenceTransformer, ONNX, OpenAI-compatible)
 - [x] 19-02-PLAN.md — LanceDB compaction manager and migration auto-promotion
 - [x] 19-03-PLAN.md — Default model upgrade to bge-m3 and final integration
+
+### Phase 20: Deployment Bugfixes (Retroactive)
+
+**Goal:** Fix runtime bugs found during first real deployment and UI testing
+**Depends on:** Phase 19
+**Status:** Complete (retroactive — 8 fixes across backend and frontend)
+
+Fixes:
+- [x] LanceDB compaction API mismatch (list_fragments → stats)
+- [x] Embedding dimension mismatch auto-fallback on startup
+- [x] Schema evolution: add missing embedding_model column
+- [x] "All Sources" preset toggle stuck in loop
+- [x] "Search Results for X" layout shift
+- [x] Initial state: all source buttons unlit
+- [x] "Showing results from: ..." layout shift
+- [x] Content snippet truncation (line-clamp + word breaking)
+
+### Phase 21: Documentation for GitHub Release
+
+**Goal:** Write user-facing documentation so the project can be published on GitHub as an open-source tool
+**Depends on:** Phase 20
+**Requirements**: DOC-01, DOC-02, DOC-03, DOC-04
+**Success Criteria** (what must be TRUE):
+  1. README.md provides clear project overview, screenshots/demo, and quick-start instructions
+  2. Setup/installation guide covers all three components (server, extension, watcher)
+  3. Configuration reference documents all server.json options and embedding providers
+  4. Architecture overview explains system components and data flow for contributors
+**Plans:** TBD

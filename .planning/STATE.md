@@ -3,16 +3,16 @@
 ## Project Reference
 
 **Core Value:** Never lose a conversation again: Instantly recall specific AI discussions or dev sessions across any platform and jump straight back into the original context.
-**Current Focus:** v1.5 Embedding & Infrastructure - Phase 19 (Embedding Model Upgrade & DB Maintenance)
+**Current Focus:** v1.6 GitHub Release - Phase 21 (Documentation)
 
 ## Current Position
 
-**Phase:** 19 (Embedding Model Upgrade & DB Maintenance)
-**Plan:** 3 of 3 (all complete)
-**Status:** Phase 19 execution complete — all 3 plans in 2 waves done, awaiting verification
-**Last activity:** 2026-02-15 — All Phase 19 plans executed (providers, compaction, model upgrade)
+**Phase:** 21 (Documentation for GitHub Release)
+**Plan:** 0 of TBD
+**Status:** Phase 20 (deployment bugfixes) complete. Phase 21 needs planning.
+**Last activity:** 2026-02-15 — Deployed to remote server, fixed 8 runtime/UI bugs, documented as Phase 20
 
-Progress: [████████████████████] 100% (18/18 phases complete) + Phase 19 in progress
+Progress: [████████████████████] 100% (20/20 phases complete) + Phase 21 planned
 
 ## Performance Metrics
 
@@ -25,10 +25,12 @@ Progress: [████████████████████] 100% (1
 | v1.2 Simplify & Deploy | 4 | Complete (2026-02-11) |
 | v1.3 UI/API Integration | 3 | Complete (2026-02-12) |
 | v1.4 Search & Browse UX | 4 | Complete (2026-02-14) |
-| v1.5 Embedding & Infrastructure | 1 | In Progress |
+| v1.5 Embedding & Infrastructure | 2 | Complete (2026-02-15) |
+| v1.6 GitHub Release | 1 | Planned |
 
 **v1.5 Progress:**
 - Phase 19: Embedding Model Upgrade & DB Maintenance (3/3 plans complete) - Multi-backend providers, background compaction, auto-migration, bge-m3 default, CLI --promote
+- Phase 20: Deployment Bugfixes (retroactive, complete) - 8 fixes: compaction API, dimension mismatch fallback, schema evolution, All Sources toggle, layout shifts, initial filter state, snippet truncation
 
 **v1.4 Progress:**
 - Phase 15: Source Filtering (4/4 plans complete) - Backend multi-platform filtering, React Router URL state, Source filtering UI, gap closure complete - ALL SUCCESS CRITERIA MET
@@ -130,5 +132,5 @@ None yet (new milestone).
 ## Session Continuity
 
 **Last session end:** 2026-02-15
-**Stopped at:** Phase 19 all 3 plans executed successfully. 56 unit tests passing. Needs phase verification.
-**Resume file:** .planning/phases/19-embedding-model-upgrade-db-maintenance/19-03-PLAN.md
+**Stopped at:** Phases 19-20 complete. Phase 21 (documentation) needs planning via /gsd:discuss-phase or /gsd:plan-phase.
+**Resume file:** .planning/ROADMAP.md
