@@ -8,9 +8,9 @@
 ## Current Position
 
 **Phase:** 21 (Documentation for GitHub Release)
-**Plan:** 3 of TBD (in progress)
-**Status:** Phase 21 documentation in progress - CLI reference and embedding providers docs complete
-**Last activity:** 2026-02-15 — Created CLI reference and embedding providers documentation (21-03)
+**Plan:** 1 of 3 complete
+**Status:** Phase 21 documentation in progress - English README and CLI docs complete, Chinese README pending
+**Last activity:** 2026-02-15 — Created English README.md and LICENSE (21-01)
 
 Progress: [████████████████████] 100% (20/20 phases complete) + Phase 21 planned
 
@@ -33,7 +33,7 @@ Progress: [████████████████████] 100% (2
 - Phase 20: Deployment Bugfixes (retroactive, complete) - 8 fixes: compaction API, dimension mismatch fallback, schema evolution, All Sources toggle, layout shifts, initial filter state, snippet truncation
 
 **v1.6 Progress:**
-- Phase 21: Documentation for GitHub Release (3+ plans in progress) - CLI reference with migration workflow, embedding providers guide with 5 providers documented
+- Phase 21: Documentation for GitHub Release (2/3 plans complete) - English README (596 lines) with MIT license, CLI reference with migration workflow, embedding providers guide with 5 providers documented
 
 **v1.4 Progress:**
 - Phase 15: Source Filtering (4/4 plans complete) - Backend multi-platform filtering, React Router URL state, Source filtering UI, gap closure complete - ALL SUCCESS CRITERIA MET
@@ -50,6 +50,7 @@ Progress: [████████████████████] 100% (2
 | Phase 18 P03 | 140 | 2 tasks | 2 files |
 | Phase 19 P02 | 227 | 2 tasks | 6 files |
 | Phase 21 P03 | 104 | 2 tasks | 2 files |
+| Phase 21 P01 | 170 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -136,5 +137,5 @@ None yet (new milestone).
 ## Session Continuity
 
 **Last session end:** 2026-02-15
-**Stopped at:** Completed 21-03-PLAN.md
-**Resume file:** None
+**Stopped at:** Completed 21-01-PLAN.md (English README & License). Next: 21-02-PLAN.md (Chinese README)
+**Resume file:** .planning/phases/21-documentation-github-release/21-02-PLAN.md
