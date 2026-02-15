@@ -8,9 +8,9 @@
 ## Current Position
 
 **Phase:** 19 (Embedding Model Upgrade & DB Maintenance)
-**Plan:** 0 of 3 (planned, not yet executed)
-**Status:** Phase planned — 3 plans in 2 waves, research and verification complete
-**Last activity:** 2026-02-14 — Phase 19 planned (3 plans, 2 waves, verification passed)
+**Plan:** 1 of 3 (19-02 complete)
+**Status:** In execution — Wave 1 in progress (19-02 complete, 19-01 and 19-03 remaining)
+**Last activity:** 2026-02-15 — Plan 19-02 complete (background compaction and auto-migration)
 
 Progress: [████████████████████] 100% (18/18 phases complete) + Phase 19 in progress
 
@@ -27,6 +27,9 @@ Progress: [████████████████████] 100% (1
 | v1.4 Search & Browse UX | 4 | Complete (2026-02-14) |
 | v1.5 Embedding & Infrastructure | 1 | In Progress |
 
+**v1.5 Progress:**
+- Phase 19: Embedding Model Upgrade & DB Maintenance (1/3 plans complete) - Background compaction and auto-migration complete
+
 **v1.4 Progress:**
 - Phase 15: Source Filtering (4/4 plans complete) - Backend multi-platform filtering, React Router URL state, Source filtering UI, gap closure complete - ALL SUCCESS CRITERIA MET
 - Phase 16: Claude Code Path Display (1/1 plans complete) - File path display with copy-to-clipboard for Claude Code conversations - PHASE COMPLETE
@@ -40,6 +43,7 @@ Progress: [████████████████████] 100% (1
 | Phase 18-browse-timeline P01 | 256 | 2 tasks | 4 files |
 | Phase 18 P02 | 91 | 2 tasks | 5 files |
 | Phase 18 P03 | 140 | 2 tasks | 2 files |
+| Phase 19 P02 | 227 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -79,6 +83,10 @@ Recent decisions affecting v1.4:
 - **Relevance Score as Percentage**: Display relevance_score * 100 formatted as "85%" for user-friendly presentation vs raw 0.0-1.0 scores (v1.4 - Phase 17)
 - **Auto-Expand Secondary Results**: When primary count is 0 but secondary results exist, auto-expand the secondary section for better UX (v1.4 - Phase 17)
 - **Secondary Results Visual Differentiation**: Render secondary results with opacity-80 to indicate lower relevance without making unreadable (v1.4 - Phase 17)
+- **Write Threshold Default 100**: Compaction triggers after 100 writes - balances maintenance frequency vs overhead for single-user tool (v1.5 - Phase 19)
+- **Skip-Silently Concurrent Compaction**: Non-blocking lock prevents log spam and queue buildup during rapid writes (v1.5 - Phase 19)
+- **Auto-Promote on Migration Complete**: Migration automatically promotes v2->v1 and drops columns when complete, making v2 reusable (v1.5 - Phase 19)
+- **Background Auto-Resume Migration**: Server startup spawns daemon thread to resume incomplete migrations without blocking (v1.5 - Phase 19)
 - **Dummy Vector Scan for Browse**: Use zero vector with vector search to scan all LanceDB records since no pure scan API exists (v1.4 - Phase 18)
 - **Python-Side Date Filtering**: Apply date range filters in Python instead of LanceDB WHERE clause due to timestamp literal format issues (v1.4 - Phase 18)
 - **Composite Cursor Pagination**: Cursor encodes both timestamp and id for stable pagination even with duplicate timestamps (v1.4 - Phase 18)
@@ -118,6 +126,6 @@ None yet (new milestone).
 
 ## Session Continuity
 
-**Last session end:** 2026-02-14
-**Stopped at:** Phase 19 planned — 3 plans in 2 waves, verification passed. Next: execute-phase 19.
-**Resume file:** .planning/phases/19-embedding-model-upgrade-db-maintenance/19-01-PLAN.md
+**Last session end:** 2026-02-15
+**Stopped at:** Phase 19 plan 02 complete — Background compaction and auto-migration implemented. Next: 19-01 or 19-03.
+**Resume file:** .planning/phases/19-embedding-model-upgrade-db-maintenance/19-02-SUMMARY.md
