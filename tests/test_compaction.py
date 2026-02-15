@@ -117,10 +117,10 @@ class TestCompactionManager:
         manager = CompactionManager()
         mock_table = MagicMock()
 
-        # Mock fragment counts
-        mock_table.list_fragments.side_effect = [
-            [1, 2, 3, 4, 5],  # Before compaction: 5 fragments
-            [1, 2],           # After compaction: 2 fragments
+        # Mock stats() API for fragment counts (before and after compaction)
+        mock_table.stats.side_effect = [
+            {"fragment_stats": {"num_fragments": 5}},  # Before compaction
+            {"fragment_stats": {"num_fragments": 2}},  # After compaction
         ]
         manager.set_table(mock_table)
 
@@ -129,14 +129,14 @@ class TestCompactionManager:
         # Should have called compact_files
         mock_table.compact_files.assert_called_once()
 
-        # Should have queried fragments twice (before and after)
-        assert mock_table.list_fragments.call_count == 2
+        # Should have queried stats twice (before and after)
+        assert mock_table.stats.call_count == 2
 
     def test_compact_handles_errors(self):
         """Should handle and log compaction errors."""
         manager = CompactionManager()
         mock_table = MagicMock()
-        mock_table.list_fragments.return_value = [1, 2, 3]
+        mock_table.stats.return_value = {"fragment_stats": {"num_fragments": 3}}
         mock_table.compact_files.side_effect = Exception("Compaction failed")
         manager.set_table(mock_table)
 

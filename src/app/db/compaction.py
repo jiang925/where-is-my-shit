@@ -122,15 +122,17 @@ class CompactionManager:
         try:
             logger.info("compaction_started")
 
-            # Count fragments before compaction
-            fragments_before = len(self._table.list_fragments())
+            # Count fragments before compaction via stats API
+            stats = self._table.stats()
+            fragments_before = stats.get("fragment_stats", {}).get("num_fragments", -1)
 
             # Perform compaction
             self._table.compact_files()
 
             # Count fragments after compaction
-            fragments_after = len(self._table.list_fragments())
-            fragments_merged = fragments_before - fragments_after
+            stats = self._table.stats()
+            fragments_after = stats.get("fragment_stats", {}).get("num_fragments", -1)
+            fragments_merged = fragments_before - fragments_after if fragments_before >= 0 else -1
 
             logger.info(
                 "compaction_complete",

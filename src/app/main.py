@@ -20,6 +20,66 @@ from src.app.db.migration import auto_resume_migration
 logger = structlog.get_logger()
 
 
+def _check_embedding_dimension_compat(table) -> None:
+    """
+    Check if the configured embedding model dimensions match existing data.
+
+    If the existing DB has vectors with different dimensions than the configured
+    provider, fall back to fastembed/bge-small-en-v1.5 to avoid search errors.
+    """
+    from src.app.services.embedding import EmbeddingService
+
+    try:
+        row_count = table.count_rows()
+        if row_count == 0:
+            return  # Empty table, no compatibility concern
+
+        # Get vector dimensions from table schema
+        schema = table.schema
+        db_dims = None
+        for field in schema:
+            if field.name == "vector" and hasattr(field.type, "list_size"):
+                db_dims = field.type.list_size
+                break
+
+        if db_dims is None:
+            return  # No vector column found
+
+        # Initialize the embedding service (creates the provider)
+        service = EmbeddingService()
+        provider_dims = service.get_dimensions()
+
+        if db_dims != provider_dims:
+            logger.warning(
+                "embedding_dimension_mismatch",
+                db_dimensions=db_dims,
+                provider_dimensions=provider_dims,
+                provider_model=service.get_model_name(),
+                action="falling_back_to_fastembed_bge_small",
+            )
+            print(f"\n⚠️  Dimension mismatch: DB has {db_dims}-dim vectors, "
+                  f"but configured model produces {provider_dims}-dim vectors.")
+            print(f"   Falling back to fastembed/BAAI/bge-small-en-v1.5 ({db_dims}d) for compatibility.")
+            print(f"   Run 'uv run python -m src.cli reembed' to upgrade existing vectors.\n")
+
+            # Reset and reinitialize with fastembed
+            EmbeddingService.reset()
+            from src.app.services.embedding_provider import create_embedding_provider
+            EmbeddingService._instance = EmbeddingService.__new__(EmbeddingService)
+            EmbeddingService._provider = create_embedding_provider({
+                "provider": "fastembed",
+                "model": "BAAI/bge-small-en-v1.5",
+            })
+        else:
+            logger.info(
+                "embedding_dimensions_ok",
+                dimensions=db_dims,
+                model=service.get_model_name(),
+            )
+    except Exception as e:
+        logger.warning("embedding_compat_check_failed", error=str(e))
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     setup_logging()
@@ -27,6 +87,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # Get messages table for compaction and migration
     table = db_client.get_table("messages")
+
+    # Check embedding dimension compatibility before any requests
+    _check_embedding_dimension_compat(table)
 
     # Set up and start compaction manager
     compaction_manager.set_table(table)
