@@ -112,13 +112,6 @@ export function SearchPage({ onLogout }: SearchPageProps) {
       {/* Sticky Header */}
       <div className="sticky top-0 z-10 w-full bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm pt-4 pb-4 px-4">
         <div className="max-w-3xl mx-auto w-full">
-          {/* Title - always show when there's a query */}
-          {query && (
-            <h1 className="text-lg font-semibold text-gray-800 mb-3">
-              Search Results for "{query}"
-            </h1>
-          )}
-
           <div className="flex items-start gap-4">
             <div className="flex-1">
               <SearchBar

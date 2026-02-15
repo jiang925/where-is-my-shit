@@ -50,11 +50,15 @@ export function PresetButtons({
   };
 
   const handlePresetClick = (presetPlatforms: PlatformId[]) => {
-    // If preset is already active, deactivate it (clear all)
+    // "All Sources" always resets to no filter — it's not a toggle
+    if (presetPlatforms.length === ALL_PLATFORM_IDS.length) {
+      onPresetSelect([]);
+      return;
+    }
+    // Other presets toggle on/off
     if (isPresetActive(presetPlatforms)) {
       onPresetSelect([]);
     } else {
-      // Apply the preset
       onPresetSelect(presetPlatforms);
     }
   };
