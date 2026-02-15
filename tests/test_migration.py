@@ -7,7 +7,14 @@ from unittest.mock import MagicMock, patch
 import pyarrow as pa
 import pytest
 
-from src.app.db.migration import add_vector_v2_column, get_migration_status, reembed_batch
+from src.app.db.migration import (
+    add_vector_v2_column,
+    auto_resume_migration,
+    get_migration_status,
+    is_migration_incomplete,
+    promote_migration,
+    reembed_batch,
+)
 
 
 class TestMigrationStatus:
@@ -300,3 +307,201 @@ class TestReembedBatch:
         assert result["processed"] == 0
         assert result["status"] == "error"
         table.merge.assert_not_called()
+
+    def test_reembed_batch_auto_promotes_on_completion(self):
+        """Should automatically promote migration when all rows are migrated."""
+        table = MagicMock()
+        provider = MagicMock()
+
+        provider.get_model_name.return_value = "test-model"
+        provider.embed.return_value = [[0.1] * 384]
+
+        search_mock = MagicMock()
+        where_mock = MagicMock()
+        limit_mock = MagicMock()
+
+        table.search.return_value = search_mock
+        search_mock.where.return_value = where_mock
+        where_mock.limit.return_value = limit_mock
+        limit_mock.to_list.return_value = [{"id": "msg-1", "content": "Last one"}]
+
+        # Mock promote_migration
+        with patch("src.app.db.migration.get_migration_status") as status_mock:
+            with patch("src.app.db.migration.promote_migration") as promote_mock:
+                status_mock.return_value = {"remaining": 0}
+
+                result = reembed_batch(table, provider, batch_size=10)
+
+                # Should have called promote_migration
+                promote_mock.assert_called_once_with(table)
+
+                assert result["status"] == "complete"
+
+
+class TestPromoteMigration:
+    """Tests for promote_migration function."""
+
+    def test_promote_migration_success(self):
+        """Should promote v2 to v1 and drop migration columns."""
+        table = MagicMock()
+        table.name = "messages"
+
+        # Mock schema with vector_v2
+        table.schema = pa.schema([
+            pa.field("id", pa.utf8()),
+            pa.field("content", pa.utf8()),
+            pa.field("vector", pa.list_(pa.float32(), 384)),
+            pa.field("vector_v2", pa.list_(pa.float32(), 768)),
+            pa.field("embedding_model_v2", pa.utf8()),
+        ])
+
+        # Mock arrow table data
+        mock_arrow_table = MagicMock()
+        mock_v2_column = MagicMock()
+        table.to_arrow.return_value = mock_arrow_table
+        mock_arrow_table.column.return_value = mock_v2_column
+
+        # Mock drop and append operations
+        mock_after_drop_vector = MagicMock()
+        mock_after_append = MagicMock()
+        mock_final = MagicMock()
+
+        mock_arrow_table.drop.side_effect = [
+            mock_after_drop_vector,  # After dropping 'vector'
+            mock_final,              # After dropping migration columns
+        ]
+        mock_after_drop_vector.append_column.return_value = mock_after_append
+        mock_after_append.drop.return_value = mock_final
+
+        # Mock db_client
+        with patch("src.app.db.migration.db_client") as db_client_mock:
+            mock_db = MagicMock()
+            db_client_mock.connect.return_value = mock_db
+
+            result = promote_migration(table)
+
+            # Should return True
+            assert result is True
+
+            # Verify operations
+            table.to_arrow.assert_called_once()
+            mock_arrow_table.column.assert_called_with("vector_v2")
+            mock_after_drop_vector.append_column.assert_called_with("vector", mock_v2_column)
+
+            # Verify database overwrite
+            mock_db.create_table.assert_called_once_with("messages", mock_final, mode="overwrite")
+
+    def test_promote_migration_no_v2_column(self):
+        """Should skip promotion if no vector_v2 column exists."""
+        table = MagicMock()
+        table.schema = pa.schema([
+            pa.field("id", pa.utf8()),
+            pa.field("vector", pa.list_(pa.float32(), 384)),
+        ])
+
+        result = promote_migration(table)
+
+        # Should return False and not call to_arrow
+        assert result is False
+        table.to_arrow.assert_not_called()
+
+
+class TestIsMigrationIncomplete:
+    """Tests for is_migration_incomplete function."""
+
+    def test_incomplete_when_v2_exists_with_nulls(self):
+        """Should return True when v2 column exists with NULL rows."""
+        table = MagicMock()
+        table.schema = pa.schema([
+            pa.field("id", pa.utf8()),
+            pa.field("vector_v2", pa.list_(pa.float32(), 768)),
+        ])
+
+        with patch("src.app.db.migration.get_migration_status") as status_mock:
+            status_mock.return_value = {"remaining": 10}
+
+            result = is_migration_incomplete(table)
+
+            assert result is True
+
+    def test_not_incomplete_when_no_v2(self):
+        """Should return False when no v2 column exists."""
+        table = MagicMock()
+        table.schema = pa.schema([
+            pa.field("id", pa.utf8()),
+            pa.field("vector", pa.list_(pa.float32(), 384)),
+        ])
+
+        result = is_migration_incomplete(table)
+
+        assert result is False
+
+    def test_not_incomplete_when_all_migrated(self):
+        """Should return False when all rows are migrated."""
+        table = MagicMock()
+        table.schema = pa.schema([
+            pa.field("id", pa.utf8()),
+            pa.field("vector_v2", pa.list_(pa.float32(), 768)),
+        ])
+
+        with patch("src.app.db.migration.get_migration_status") as status_mock:
+            status_mock.return_value = {"remaining": 0}
+
+            result = is_migration_incomplete(table)
+
+            assert result is False
+
+
+class TestAutoResumeMigration:
+    """Tests for auto_resume_migration function."""
+
+    def test_auto_resume_skips_when_no_migration(self):
+        """Should skip when no incomplete migration exists."""
+        table = MagicMock()
+
+        with patch("src.app.db.migration.is_migration_incomplete") as incomplete_mock:
+            incomplete_mock.return_value = False
+
+            auto_resume_migration(table)
+
+            # Should not attempt to load config or resume
+            incomplete_mock.assert_called_once_with(table)
+
+    def test_auto_resume_runs_migration(self):
+        """Should run migration batches when incomplete migration exists."""
+        table = MagicMock()
+
+        with patch("src.app.db.migration.is_migration_incomplete") as incomplete_mock:
+            with patch("src.app.db.migration.config_manager") as config_mock:
+                with patch("src.app.db.migration.create_embedding_provider") as provider_mock:
+                    with patch("src.app.db.migration.get_migration_status") as status_mock:
+                        with patch("src.app.db.migration.reembed_batch") as batch_mock:
+                            # Setup mocks
+                            incomplete_mock.return_value = True
+                            mock_config = MagicMock()
+                            mock_config.embedding.model_dump.return_value = {"provider": "fastembed"}
+                            config_mock.config = mock_config
+
+                            mock_provider = MagicMock()
+                            mock_provider.get_model_name.return_value = "bge-small"
+                            mock_provider.get_dimensions.return_value = 384
+                            provider_mock.return_value = mock_provider
+
+                            status_mock.return_value = {
+                                "total": 100,
+                                "migrated": 50,
+                                "remaining": 50,
+                                "percent_complete": 50.0
+                            }
+
+                            # Simulate two batches then complete
+                            batch_mock.side_effect = [
+                                {"processed": 50, "remaining": 50, "status": "progress"},
+                                {"processed": 50, "remaining": 0, "status": "complete"},
+                            ]
+
+                            # Run auto-resume
+                            auto_resume_migration(table, batch_size=50, delay_seconds=0)
+
+                            # Should have called reembed_batch twice
+                            assert batch_mock.call_count == 2

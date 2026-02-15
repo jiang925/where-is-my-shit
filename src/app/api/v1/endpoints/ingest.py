@@ -5,6 +5,7 @@ from fastapi.concurrency import run_in_threadpool
 
 from src.app.core.auth import verify_api_key
 from src.app.db.client import db_client
+from src.app.db.compaction import compaction_manager
 from src.app.schemas.message import IngestRequest, Message
 from src.app.services.embedding import EmbeddingService
 
@@ -52,6 +53,9 @@ async def ingest_document(request: IngestRequest):
         table = db_client.get_table("messages")
         # table.add expects a list of items
         await run_in_threadpool(table.add, [message])
+
+        # Record write for compaction tracking
+        compaction_manager.record_write()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database insertion failed: {str(e)}")
 

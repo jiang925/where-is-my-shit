@@ -115,6 +115,77 @@ def add_vector_v2_column(table, dimensions: int) -> None:
     logger.info("Migration columns added successfully")
 
 
+def is_migration_incomplete(table) -> bool:
+    """
+    Check if there is an incomplete migration in progress.
+
+    Args:
+        table: LanceDB table instance
+
+    Returns:
+        True if vector_v2 column exists and has unmigrated rows, False otherwise
+    """
+    schema = table.schema
+    if "vector_v2" not in schema.names:
+        return False
+
+    status = get_migration_status(table)
+    return status["remaining"] > 0
+
+
+def promote_migration(table) -> bool:
+    """
+    Promote migration: copy vector_v2 to vector, drop migration columns.
+
+    This function completes the migration by:
+    1. Replacing the 'vector' column with data from 'vector_v2'
+    2. Dropping the migration columns (vector_v2, embedding_model_v2)
+
+    This makes the v2 column reusable for future migrations.
+
+    Args:
+        table: LanceDB table instance
+
+    Returns:
+        True if promotion was performed, False if no v2 column exists
+    """
+    schema = table.schema
+    if "vector_v2" not in schema.names:
+        logger.info("promote_migration_skipped", reason="no_v2_column")
+        return False
+
+    logger.info("migration_promotion_starting")
+
+    try:
+        # Read entire table to PyArrow
+        arrow_table = table.to_arrow()
+
+        # Get vector_v2 data
+        v2_data = arrow_table.column("vector_v2")
+
+        # Drop old vector column
+        arrow_table = arrow_table.drop("vector")
+
+        # Add v2 data as 'vector' column
+        arrow_table = arrow_table.append_column("vector", v2_data)
+
+        # Drop migration columns
+        arrow_table = arrow_table.drop(["vector_v2", "embedding_model_v2"])
+
+        # Overwrite table atomically
+        # Get database connection to recreate table
+        db = db_client.connect()
+        table_name = table.name
+        db.create_table(table_name, arrow_table, mode="overwrite")
+
+        logger.info("migration_promotion_complete", table=table_name)
+        return True
+
+    except Exception as e:
+        logger.error("migration_promotion_failed", error=str(e), exc_info=True)
+        raise
+
+
 def reembed_batch(table, provider, batch_size: int = 100, model_name: str | None = None) -> dict[str, Any]:
     """
     Re-embed a batch of documents that haven't been migrated yet.
@@ -197,6 +268,16 @@ def reembed_batch(table, provider, batch_size: int = 100, model_name: str | None
     # Check remaining count
     status_info = get_migration_status(table)
     remaining = status_info["remaining"]
+
+    # Auto-promote if migration is complete
+    if remaining == 0:
+        logger.info("migration_complete_auto_promoting")
+        try:
+            promote_migration(table)
+            logger.info("auto_promotion_successful")
+        except Exception as e:
+            logger.error("auto_promotion_failed", error=str(e))
+            # Don't fail the batch - migration data is still valid
 
     return {
         "processed": processed,
@@ -285,3 +366,87 @@ def run_full_migration(batch_size: int = 100, delay_seconds: float = 0.5) -> Non
     print(f"  Total: {final_status['total']}")
     print(f"  Migrated: {final_status['migrated']}")
     print(f"  Progress: {final_status['percent_complete']:.1f}%")
+
+
+def auto_resume_migration(table, batch_size: int = 100, delay_seconds: float = 0.5) -> None:
+    """
+    Auto-resume incomplete migration on server startup.
+
+    This function checks if there's an incomplete migration and resumes it
+    in the background. It's designed to be called in a background thread
+    during server startup.
+
+    Args:
+        table: LanceDB table instance
+        batch_size: Documents to process per batch (default 100)
+        delay_seconds: Delay between batches (default 0.5s)
+    """
+    # Check if migration is incomplete
+    if not is_migration_incomplete(table):
+        logger.info("auto_resume_migration_skipped", reason="no_incomplete_migration")
+        return
+
+    logger.info("migration_auto_resume_starting")
+
+    try:
+        # Load config and create provider
+        config = config_manager.config
+        embedding_config = config.embedding.model_dump()
+        provider = create_embedding_provider(embedding_config)
+
+        logger.info(
+            "auto_resume_migration_config",
+            provider=embedding_config["provider"],
+            model=provider.get_model_name(),
+            dimensions=provider.get_dimensions()
+        )
+
+        # Get initial status
+        status = get_migration_status(table)
+        logger.info(
+            "auto_resume_migration_status",
+            total=status["total"],
+            migrated=status["migrated"],
+            remaining=status["remaining"],
+            percent_complete=status["percent_complete"]
+        )
+
+        # Process in batches until complete
+        total_processed = 0
+        iteration = 0
+
+        while True:
+            iteration += 1
+            logger.debug("auto_resume_batch_starting", iteration=iteration, batch_size=batch_size)
+
+            result = reembed_batch(table, provider, batch_size=batch_size)
+
+            if result["status"] == "error":
+                logger.error("auto_resume_migration_error", iteration=iteration)
+                break
+
+            processed = result["processed"]
+            remaining = result["remaining"]
+            total_processed += processed
+
+            logger.info(
+                "auto_resume_batch_complete",
+                iteration=iteration,
+                processed=processed,
+                remaining=remaining,
+                total_processed=total_processed
+            )
+
+            if result["status"] == "complete":
+                logger.info(
+                    "auto_resume_migration_complete",
+                    total_processed=total_processed
+                )
+                break
+
+            # Delay before next batch
+            if delay_seconds > 0 and remaining > 0:
+                time.sleep(delay_seconds)
+
+    except Exception as e:
+        logger.error("auto_resume_migration_failed", error=str(e), exc_info=True)

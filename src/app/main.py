@@ -1,5 +1,6 @@
 import asyncio
 import os
+import threading
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
@@ -13,6 +14,8 @@ from src.app.api.v1.router import api_router
 from src.app.core.config import config_manager, get_settings
 from src.app.core.logging import setup_logging
 from src.app.db.client import db_client, init_db
+from src.app.db.compaction import compaction_manager
+from src.app.db.migration import auto_resume_migration
 
 logger = structlog.get_logger()
 
@@ -21,6 +24,22 @@ logger = structlog.get_logger()
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     setup_logging()
     init_db()
+
+    # Get messages table for compaction and migration
+    table = db_client.get_table("messages")
+
+    # Set up and start compaction manager
+    compaction_manager.set_table(table)
+    compaction_manager.start()
+
+    # Check for incomplete migration and auto-resume in background thread
+    migration_thread = threading.Thread(
+        target=auto_resume_migration,
+        args=(table,),
+        daemon=True,
+        name="MigrationResumeThread"
+    )
+    migration_thread.start()
 
     # Start config watcher
     config_task = asyncio.create_task(config_manager.watch_loop())
@@ -40,6 +59,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     yield
 
     # Shutdown
+    compaction_manager.stop()
     config_task.cancel()
     try:
         await config_task
