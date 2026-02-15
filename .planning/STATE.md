@@ -3,16 +3,16 @@
 ## Project Reference
 
 **Core Value:** Never lose a conversation again: Instantly recall specific AI discussions or dev sessions across any platform and jump straight back into the original context.
-**Current Focus:** v1.4 Search & Browse UX Polish - Phase 18 (Browse Page with Timeline)
+**Current Focus:** v1.5 Embedding & Infrastructure - Phase 19 (Embedding Model Upgrade & DB Maintenance)
 
 ## Current Position
 
-**Phase:** 18 of 18 (Browse Page with Timeline)
-**Plan:** 3 of 3
-**Status:** Phase complete - Browse page with timeline fully functional
-**Last activity:** 2026-02-14 — Completed 18-03-PLAN.md (BrowsePage integration with E2E tests)
+**Phase:** 19 (Embedding Model Upgrade & DB Maintenance)
+**Plan:** 0 of 0 (not yet planned)
+**Status:** Phase added, awaiting context discussion and planning
+**Last activity:** 2026-02-14 — Phase 19 added to roadmap, goals defined
 
-Progress: [████████████████████] 100% (18/18 phases complete)
+Progress: [████████████████████] 100% (18/18 phases complete) + Phase 19 in progress
 
 ## Performance Metrics
 
@@ -25,6 +25,7 @@ Progress: [████████████████████] 100% (1
 | v1.2 Simplify & Deploy | 4 | Complete (2026-02-11) |
 | v1.3 UI/API Integration | 3 | Complete (2026-02-12) |
 | v1.4 Search & Browse UX | 4 | Complete (2026-02-14) |
+| v1.5 Embedding & Infrastructure | 1 | In Progress |
 
 **v1.4 Progress:**
 - Phase 15: Source Filtering (4/4 plans complete) - Backend multi-platform filtering, React Router URL state, Source filtering UI, gap closure complete - ALL SUCCESS CRITERIA MET
@@ -118,5 +119,5 @@ None yet (new milestone).
 ## Session Continuity
 
 **Last session end:** 2026-02-14
-**Stopped at:** Completed 18-03-PLAN.md (BrowsePage integration with E2E tests) - Phase 18 and v1.4 milestone complete
-**Resume file:** .planning/phases/18-browse-timeline/18-03-SUMMARY.md
+**Stopped at:** Phase 19 added to roadmap, goals defined from user discussion. Next: discuss-phase to capture implementation decisions.
+**Resume file:** N/A (phase not yet planned)

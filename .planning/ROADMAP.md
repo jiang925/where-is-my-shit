@@ -6,7 +6,8 @@
 - ✅ **v1.1 Security & Hardening** - Phases 5-7 (shipped 2026-02-07)
 - ✅ **v1.2 Simplify & Deploy** - Phases 8-11 (shipped 2026-02-11)
 - ✅ **v1.3 UI/API Integration & Verification** - Phases 12-14 (shipped 2026-02-12)
-- 🚧 **v1.4 Search & Browse UX Polish** - Phases 15-18 (in progress)
+- ✅ **v1.4 Search & Browse UX Polish** - Phases 15-18 (shipped 2026-02-14)
+- 🚧 **v1.5 Embedding & Infrastructure** - Phase 19 (in progress)
 
 ## Phases
 
@@ -239,3 +240,20 @@ Phases 15-16-17 can be built in parallel (independent), then Phase 18 (depends o
 | 16. Claude Code Path Display | v1.4 | 1/1 | Complete | 2026-02-13 |
 | 17. Search Relevance Improvements | v1.4 | 5/5 | Complete | 2026-02-13 |
 | 18. Browse Page with Timeline | v1.4 | 3/3 | Complete | 2026-02-14 |
+
+### Phase 19: Embedding Model Upgrade & DB Maintenance
+
+**Goal:** Upgrade embedding model to bge-m3 with multiple backend support (sentence-transformers, ONNX, OpenAI-compatible API), add periodic LanceDB compaction, and improve migration system for reusable model transitions
+**Depends on:** Phase 18
+**Requirements**: EMB-01, EMB-02, EMB-03, EMB-04, EMB-05, EMB-06
+**Success Criteria** (what must be TRUE):
+  1. New embedding providers (SentenceTransformerProvider, OnnxProvider) can load bge-m3 from HuggingFace with unit tests
+  2. External API provider abstracted as ExternalAPIProvider base with OpenAICompatibleProvider implementation (replacing OllamaProvider)
+  3. LanceDB periodic compaction runs safely with concurrency guards (no duplicate compactions)
+  4. Migration system is reusable: promotes v2→v1 after completion (not v3/v4/v5 increments)
+  5. Default embedding model upgraded from bge-small-en-v1.5 to bge-m3
+  6. Re-embedding CLI supports rate limiting via --delay flag for remote API providers
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 19 to break down)
