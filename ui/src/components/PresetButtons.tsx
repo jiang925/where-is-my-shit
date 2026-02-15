@@ -37,22 +37,14 @@ export function PresetButtons({
 }: PresetButtonsProps) {
   // Check if a preset is currently active
   const isPresetActive = (presetPlatforms: PlatformId[]) => {
-    // "All Sources" is active when all platforms are selected OR none are selected
-    if (presetPlatforms.length === ALL_PLATFORM_IDS.length) {
-      return selectedPlatforms.length === 0 ||
-        (selectedPlatforms.length === presetPlatforms.length &&
-          presetPlatforms.every(p => selectedPlatforms.includes(p)));
-    }
-
-    // Check if selected platforms exactly match preset
     return presetPlatforms.length === selectedPlatforms.length &&
       presetPlatforms.every(p => selectedPlatforms.includes(p));
   };
 
   const handlePresetClick = (presetPlatforms: PlatformId[]) => {
-    // "All Sources" always resets to no filter — it's not a toggle
+    // "All Sources" always selects all — not a toggle
     if (presetPlatforms.length === ALL_PLATFORM_IDS.length) {
-      onPresetSelect([]);
+      onPresetSelect(ALL_PLATFORM_IDS);
       return;
     }
     // Other presets toggle on/off
