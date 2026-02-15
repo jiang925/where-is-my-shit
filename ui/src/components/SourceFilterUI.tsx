@@ -81,13 +81,6 @@ export function SourceFilterUI({
         })}
       </div>
 
-      {hasActiveFilter && (
-        <p className="text-xs text-gray-500 italic">
-          Showing results from: {selectedPlatforms.map(p =>
-            AVAILABLE_PLATFORMS.find(ap => ap.id === p)?.label
-          ).join(', ')}
-        </p>
-      )}
     </div>
   );
 }

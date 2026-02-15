@@ -15,7 +15,8 @@ interface BrowsePageProps {
 export function BrowsePage({ onLogout }: BrowsePageProps) {
   // URL state management
   const [searchParams, setSearchParams] = useSearchParams();
-  const [selectedPlatforms, setSelectedPlatforms] = useState<PlatformId[]>([]);
+  const allPlatformIds = AVAILABLE_PLATFORMS.map(p => p.id) as PlatformId[];
+  const [selectedPlatforms, setSelectedPlatforms] = useState<PlatformId[]>(allPlatformIds);
 
   // Get platforms from URL on mount, sync to state
   useEffect(() => {

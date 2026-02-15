@@ -16,8 +16,9 @@ export function SearchPage({ onLogout }: SearchPageProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState('');
 
-  // Get platforms from URL on mount, sync to state
-  const [selectedPlatforms, setSelectedPlatforms] = useState<PlatformId[]>([]);
+  // Default to all platforms selected
+  const allPlatformIds = AVAILABLE_PLATFORMS.map(p => p.id) as PlatformId[];
+  const [selectedPlatforms, setSelectedPlatforms] = useState<PlatformId[]>(allPlatformIds);
 
   // State for collapsible secondary results
   const [showSecondary, setShowSecondary] = useState(false);
@@ -157,24 +158,6 @@ export function SearchPage({ onLogout }: SearchPageProps) {
 
       {/* Main Content */}
       <main className="w-full max-w-3xl px-4 py-6 flex-1 flex flex-col">
-
-        {/* Filter Active Indicator */}
-        {hasActiveFilter && (
-          <div className="mb-4 flex items-center justify-between text-sm text-gray-600">
-            <span>
-              {status === 'success' && (
-                <>
-                  {data?.pages[0].total || 0} results found
-                  {selectedPlatforms.length > 0 && (
-                    <span className="ml-2 text-gray-400">
-                      ({selectedPlatforms.length} source{selectedPlatforms.length > 1 ? 's' : ''} selected)
-                    </span>
-                  )}
-                </>
-              )}
-            </span>
-          </div>
-        )}
 
         {/* Error State */}
         {status === 'error' && (

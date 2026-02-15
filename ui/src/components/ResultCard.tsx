@@ -157,7 +157,7 @@ export function ResultCard({ result, className, hideScore }: ResultCardProps) {
         <h3 className="font-medium text-gray-900 truncate mb-1" title={title}>
           {title}
         </h3>
-        <p className="text-sm text-gray-600 line-clamp-4 font-mono bg-gray-50 p-2 rounded">
+        <p className="text-sm text-gray-600 line-clamp-6 font-mono bg-gray-50 p-2 rounded break-words whitespace-pre-wrap">
           {content}
         </p>
       </div>
