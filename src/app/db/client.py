@@ -53,6 +53,15 @@ class DBClient:
             # If table exists, open it and cache the handle
             table = self.get_table(table_name)
 
+            # Add embedding_model column if missing (schema evolution from Phase 19)
+            schema_fields = {field.name for field in table.schema}
+            if "embedding_model" not in schema_fields:
+                try:
+                    table.add_columns({"embedding_model": "'BAAI/bge-small-en-v1.5'"})
+                    print(f"Added 'embedding_model' column to existing table '{table_name}'")
+                except Exception as e:
+                    print(f"Warning: Failed to add 'embedding_model' column: {e}")
+
             # Ensure FTS index exists for existing tables
             try:
                 # Check existing indices
