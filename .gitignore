@@ -62,5 +62,8 @@ ui/node_modules/
 # Playwright test results
 test-results/
 
+# Exploratory tests (contain local credentials)
+tests/e2e/spec/exploratory.spec.ts
+
 # Vite build output (rebuilt by: cd ui && npx vite build)
 src/static/
