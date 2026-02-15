@@ -14,13 +14,17 @@ logger = logging.getLogger(__name__)
 class EmbeddingConfig(BaseModel):
     """
     Configuration for embedding generation.
-    Supports multiple providers: fastembed (CPU), ollama (GPU/remote), openai (API).
+    Supports multiple providers: fastembed (CPU), sentence-transformers (PyTorch),
+    onnx (ONNX Runtime), openai (OpenAI-compatible API).
     """
 
-    provider: str = "fastembed"  # One of: "fastembed", "ollama", "openai"
+    provider: str = "fastembed"  # One of: "fastembed", "sentence-transformers", "onnx", "openai"
     model: str = "BAAI/bge-small-en-v1.5"  # Model name for the provider
-    base_url: str = "http://localhost:11434/v1"  # Only used for ollama/openai providers
+    base_url: str = "http://localhost:11434/v1"  # Only used for openai provider
     dimensions: int | None = None  # Optional override, auto-detected if not set
+    api_key: str | None = None  # API key for external providers
+    timeout: int = 30  # Request timeout in seconds for external API providers
+    batch_size: int = 100  # Batch size for external API providers
 
 
 class ServerConfig(BaseModel):

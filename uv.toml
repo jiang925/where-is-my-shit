@@ -1,0 +1,5 @@
+# Override global uv config to use PyPI (not CodeArtifact) for this project
+[[index]]
+name = "pypi"
+url = "https://pypi.org/simple/"
+default = true

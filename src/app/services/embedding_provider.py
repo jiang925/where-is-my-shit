@@ -74,9 +74,12 @@ def create_embedding_provider(config: dict) -> EmbeddingProvider:
     Args:
         config: Dictionary with at least a 'provider' key.
                 Expected keys:
-                - provider: str (one of: "fastembed", "ollama", "openai")
+                - provider: str (one of: "fastembed", "sentence-transformers", "onnx", "openai", "ollama")
                 - model: str (model name)
-                - base_url: str (for ollama/openai providers)
+                - base_url: str (for openai provider)
+                - api_key: str | None (for openai provider)
+                - timeout: int (for openai provider, default 30)
+                - batch_size: int (for openai provider, default 100)
                 - dimensions: int | None (optional dimension override)
 
     Returns:
@@ -93,17 +96,33 @@ def create_embedding_provider(config: dict) -> EmbeddingProvider:
         model_name = config.get("model", "BAAI/bge-small-en-v1.5")
         return FastEmbedProvider(model_name=model_name)
 
-    elif provider_type in ("ollama", "openai"):
-        from src.app.services.providers.ollama_provider import OllamaProvider
+    elif provider_type == "sentence-transformers":
+        from src.app.services.providers.sentence_transformer_provider import SentenceTransformerProvider
+
+        model_name = config.get("model", "BAAI/bge-m3")
+        return SentenceTransformerProvider(model_name=model_name)
+
+    elif provider_type == "onnx":
+        from src.app.services.providers.onnx_provider import OnnxProvider
+
+        model_name = config.get("model", "BAAI/bge-m3")
+        return OnnxProvider(model_name=model_name)
+
+    elif provider_type in ("openai", "ollama"):
+        from src.app.services.providers.external_api_provider import OpenAICompatibleProvider
 
         model_name = config.get("model", "nomic-embed-text")
         base_url = config.get("base_url", "http://localhost:11434/v1")
-        dimensions = config.get("dimensions")
+        api_key = config.get("api_key")
+        timeout = config.get("timeout", 30)
+        batch_size = config.get("batch_size", 100)
 
-        return OllamaProvider(
-            model_name=model_name,
+        return OpenAICompatibleProvider(
+            model=model_name,
             base_url=base_url,
-            dimensions=dimensions
+            api_key=api_key,
+            timeout=timeout,
+            batch_size=batch_size,
         )
 
     else:
