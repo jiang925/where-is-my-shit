@@ -4,9 +4,6 @@ import pytest
 from fastapi.testclient import TestClient
 
 from src.app.core.config import ServerConfig
-from src.app.main import app
-
-client = TestClient(app)
 
 
 @pytest.fixture
@@ -35,12 +32,20 @@ def mock_settings(monkeypatch, test_api_key):
 
 
 @pytest.fixture
+def client(mock_settings):
+    """Create TestClient after settings are mocked."""
+    from src.app.main import app
+
+    return TestClient(app)
+
+
+@pytest.fixture
 def auth_headers(test_api_key):
     """Return headers with valid API key."""
     return {"X-API-Key": test_api_key}
 
 
-def ingest_test_message(content: str, platform: str, timestamp: datetime, conversation_id: str, headers: dict):
+def ingest_test_message(client, content: str, platform: str, timestamp: datetime, conversation_id: str, headers: dict):
     """Helper to ingest a test message."""
     response = client.post(
         "/api/v1/ingest",
@@ -59,15 +64,15 @@ def ingest_test_message(content: str, platform: str, timestamp: datetime, conver
     return response.json()
 
 
-def test_browse_returns_conversations_newest_first(mock_settings, auth_headers, db_client, test_db_path):
+def test_browse_returns_conversations_newest_first(client, auth_headers, db_client, test_db_path):
     """Test that browse returns conversations sorted by timestamp (newest first)."""
     db_client.init_db()
 
     # Ingest 3 messages with different timestamps
     now = datetime.now()
-    _msg1 = ingest_test_message("Oldest message", "chatgpt", now - timedelta(hours=2), "conv1", auth_headers)
-    _msg2 = ingest_test_message("Middle message", "claude", now - timedelta(hours=1), "conv2", auth_headers)
-    _msg3 = ingest_test_message("Newest message", "gemini", now, "conv3", auth_headers)
+    _msg1 = ingest_test_message(client, "Oldest message", "chatgpt", now - timedelta(hours=2), "conv1", auth_headers)
+    _msg2 = ingest_test_message(client, "Middle message", "claude", now - timedelta(hours=1), "conv2", auth_headers)
+    _msg3 = ingest_test_message(client, "Newest message", "gemini", now, "conv3", auth_headers)
 
     # Browse without filters
     response = client.post("/api/v1/browse", json={"limit": 10}, headers=auth_headers)
@@ -83,7 +88,7 @@ def test_browse_returns_conversations_newest_first(mock_settings, auth_headers, 
     assert data["items"][2]["content"] == "Oldest message"
 
 
-def test_browse_cursor_pagination(mock_settings, auth_headers, db_client, test_db_path):
+def test_browse_cursor_pagination(client, auth_headers, db_client, test_db_path):
     """Test cursor-based pagination prevents duplicates."""
     db_client.init_db()
 
@@ -91,7 +96,7 @@ def test_browse_cursor_pagination(mock_settings, auth_headers, db_client, test_d
     now = datetime.now()
     for i in range(5):
         timestamp = now - timedelta(hours=i)
-        ingest_test_message(f"Message {i}", "chatgpt", timestamp, f"conv{i}", auth_headers)
+        ingest_test_message(client, f"Message {i}", "chatgpt", timestamp, f"conv{i}", auth_headers)
 
     # First page: limit=2
     response1 = client.post("/api/v1/browse", json={"limit": 2}, headers=auth_headers)
@@ -125,7 +130,7 @@ def test_browse_cursor_pagination(mock_settings, auth_headers, db_client, test_d
     assert data2["items"][1]["content"] == "Message 3"
 
 
-def test_browse_date_range_today(mock_settings, auth_headers, db_client, test_db_path):
+def test_browse_date_range_today(client, auth_headers, db_client, test_db_path):
     """Test date range filter for 'today'."""
     db_client.init_db()
 
@@ -133,8 +138,8 @@ def test_browse_date_range_today(mock_settings, auth_headers, db_client, test_db
     week_ago = now - timedelta(days=7)
 
     # Ingest 2 messages: one today, one from 7 days ago
-    ingest_test_message("Today's message", "chatgpt", now, "conv1", auth_headers)
-    ingest_test_message("Old message", "claude", week_ago, "conv2", auth_headers)
+    ingest_test_message(client, "Today's message", "chatgpt", now, "conv1", auth_headers)
+    ingest_test_message(client, "Old message", "claude", week_ago, "conv2", auth_headers)
 
     # Browse with date_range="today"
     response = client.post("/api/v1/browse", json={"limit": 10, "date_range": "today"}, headers=auth_headers)
@@ -145,16 +150,16 @@ def test_browse_date_range_today(mock_settings, auth_headers, db_client, test_db
     assert data["items"][0]["content"] == "Today's message"
 
 
-def test_browse_platform_filter(mock_settings, auth_headers, db_client, test_db_path):
+def test_browse_platform_filter(client, auth_headers, db_client, test_db_path):
     """Test platform filtering."""
     db_client.init_db()
 
     now = datetime.now()
 
     # Ingest messages from different platforms
-    ingest_test_message("ChatGPT message", "chatgpt", now - timedelta(hours=1), "conv1", auth_headers)
-    ingest_test_message("Claude message", "claude", now - timedelta(hours=2), "conv2", auth_headers)
-    ingest_test_message("Gemini message", "gemini", now - timedelta(hours=3), "conv3", auth_headers)
+    ingest_test_message(client, "ChatGPT message", "chatgpt", now - timedelta(hours=1), "conv1", auth_headers)
+    ingest_test_message(client, "Claude message", "claude", now - timedelta(hours=2), "conv2", auth_headers)
+    ingest_test_message(client, "Gemini message", "gemini", now - timedelta(hours=3), "conv3", auth_headers)
 
     # Browse with platform filter
     response = client.post("/api/v1/browse", json={"limit": 10, "platforms": ["chatgpt"]}, headers=auth_headers)
@@ -166,7 +171,7 @@ def test_browse_platform_filter(mock_settings, auth_headers, db_client, test_db_
     assert data["items"][0]["content"] == "ChatGPT message"
 
 
-def test_browse_combined_filters(mock_settings, auth_headers, db_client, test_db_path):
+def test_browse_combined_filters(client, auth_headers, db_client, test_db_path):
     """Test combining date range and platform filters."""
     db_client.init_db()
 
@@ -174,9 +179,9 @@ def test_browse_combined_filters(mock_settings, auth_headers, db_client, test_db
     week_ago = now - timedelta(days=7)
 
     # Ingest messages with different platforms and dates
-    ingest_test_message("Recent ChatGPT", "chatgpt", now, "conv1", auth_headers)
-    ingest_test_message("Old ChatGPT", "chatgpt", week_ago, "conv2", auth_headers)
-    ingest_test_message("Recent Claude", "claude", now, "conv3", auth_headers)
+    ingest_test_message(client, "Recent ChatGPT", "chatgpt", now, "conv1", auth_headers)
+    ingest_test_message(client, "Old ChatGPT", "chatgpt", week_ago, "conv2", auth_headers)
+    ingest_test_message(client, "Recent Claude", "claude", now, "conv3", auth_headers)
 
     # Browse with both filters
     response = client.post(
@@ -190,14 +195,14 @@ def test_browse_combined_filters(mock_settings, auth_headers, db_client, test_db
     assert data["items"][0]["platform"] == "chatgpt"
 
 
-def test_browse_empty_result(mock_settings, auth_headers, db_client, test_db_path):
+def test_browse_empty_result(client, auth_headers, db_client, test_db_path):
     """Test browse returns empty result when no matches."""
     db_client.init_db()
 
     week_ago = datetime.now() - timedelta(days=7)
 
     # Ingest only an old message
-    ingest_test_message("Old message", "chatgpt", week_ago, "conv1", auth_headers)
+    ingest_test_message(client, "Old message", "chatgpt", week_ago, "conv1", auth_headers)
 
     # Browse with date_range="today" (should return nothing)
     response = client.post("/api/v1/browse", json={"limit": 10, "date_range": "today"}, headers=auth_headers)
@@ -210,7 +215,7 @@ def test_browse_empty_result(mock_settings, auth_headers, db_client, test_db_pat
     assert data["total"] == 0
 
 
-def test_browse_requires_auth(mock_settings):
+def test_browse_requires_auth(client):
     """Test that browse endpoint requires authentication."""
     # Call without X-API-Key header
     response = client.post("/api/v1/browse", json={"limit": 10})
