@@ -1,477 +1,547 @@
-# Domain Pitfalls
+# Pitfalls Research
 
-**Domain:** Adding Search & Browse UX Features to Existing Search Application
-**Researched:** 2026-02-12
-**Confidence:** MEDIUM-HIGH
+**Domain:** Distribution/Packaging for Python+TypeScript project
+**Researched:** 2026-02-18
+**Confidence:** MEDIUM
 
 ## Critical Pitfalls
 
-### Pitfall 1: Filter State Management Cascade Failures
+### Pitfall 1: Version Sync Chaos Across Components
 
-**What goes wrong:** Multiple filter combinations (source + date range + relevance threshold) create exponential state complexity. Filters conflict, produce zero results, or break URL sharing. Users apply filters that contradict each other without realizing, get confused by empty results, and abandon the feature.
+**What goes wrong:**
+Docker image tagged `v1.2.0`, Chrome extension has `0.1.0` in manifest, pyproject.toml shows `0.1.0`, git tag is `v1.2.0`. Users report bugs but you can't reproduce because version numbers don't match components. Extension auto-updates but Docker image doesn't, causing API incompatibilities.
 
 **Why it happens:**
-- Filter state stored in multiple disconnected places (React state, URL params, localStorage)
-- No filter state validation when combining filters
-- Cascading `useEffect` hooks trigger infinite re-render loops
-- URL state and component state drift out of sync
-- Filter combinations never tested (only individual filters work)
-
-**Real-World Example (2026):**
-```typescript
-// WRONG - State synchronization hell
-const [sourceFilter, setSourceFilter] = useState('claude');
-const [dateRange, setDateRange] = useState({ start: null, end: null });
-const [threshold, setThreshold] = useState(0.7);
-
-useEffect(() => {
-  // Triggers another useEffect
-  updateURL({ source: sourceFilter });
-}, [sourceFilter]);
-
-useEffect(() => {
-  // Triggers search, which updates URL, which triggers sourceFilter useEffect
-  performSearch({ source: sourceFilter, date: dateRange });
-}, [sourceFilter, dateRange]);
-
-// Result: Infinite loop, performance degradation, unpredictable behavior
-```
-
-**Consequences:**
-- Browser freezes from infinite re-render loops
-- URL becomes source of truth but React state contradicts it
-- Filter combinations produce zero results (user thinks system is broken)
-- Back button doesn't work as expected (state not properly restored)
-- Shared URLs don't preserve filter state correctly
+Each distribution channel has its own version file: `pyproject.toml`, `extension/manifest.json`, `Dockerfile` labels, git tags, Docker image tags. Easy to update one but forget others. No single source of truth enforced at build time.
 
 **How to avoid:**
-1. **Single source of truth:** Use URL as primary state, React state as derived state
-2. **URL state library:** Use nuqs (type-safe URL state management for React) instead of manual URL manipulation
-3. **Filter validation:** Detect and warn on contradictory filter combinations before sending query
-4. **Progressive disclosure:** Show filters one at a time based on user intent, not all at once
-5. **Debounce filter changes:** 300ms debounce on input-based filters to prevent cascading updates
-6. **Use `useTransition`:** Mark filter updates as non-urgent in React 19 to prevent UI freezing
+1. **Single source:** Extract version from `pyproject.toml` at build time for ALL artifacts
+2. **Build script validation:** Fail CI if versions don't match before publishing
+3. **Version injection:** Use build-time templating to inject version into manifest.json and Dockerfile labels
+4. **Tag enforcement:** Git tag should trigger release, not manual version bumps
+
+```bash
+# Example: Extract version in CI
+VERSION=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+# Inject into extension build
+sed -i "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" extension/manifest.json
+# Tag Docker image
+docker tag app:latest app:$VERSION
+```
 
 **Warning signs:**
-- Browser console shows "Maximum update depth exceeded" errors
-- URL changes but results don't update (or vice versa)
-- Filter UI shows different state than what's in URL query params
-- Zero results when filters are applied, but removing filters shows results
-- Test coverage reveals filter A + filter B combination never tested
+- Manual version updates in multiple files
+- No CI check that versions match
+- "Works in Docker but not extension" bug reports
+- Release checklist includes "update version in 3 places"
 
-**Phase to address:** Phase 16 (Source Filtering Implementation)
-
-**Sources:**
-- [URL State Management in React (nuqs)](https://nuqs.dev/) - Type-safe search params state management
-- [State Management Pitfalls in Modern UI](https://logicloom.in/state-management-gone-wrong-avoiding-common-pitfalls-in-modern-ui-development/)
-- [Filter UX Best Practices](https://www.pencilandpaper.io/articles/ux-pattern-analysis-enterprise-filtering)
+**Phase to address:**
+Phase 1 (Docker Publishing) - establish version sync patterns before adding more distribution channels
 
 ---
 
-### Pitfall 2: Path Display XSS Vulnerabilities via Unsanitized File Paths
+### Pitfall 2: Docker Image Secrets Leakage
 
-**What goes wrong:** Displaying file paths directly in HTML without sanitization creates XSS vulnerabilities. Malicious file paths like `</script><script>alert('xss')</script>` or SVG files with embedded JavaScript execute in user's browser when path is rendered.
+**What goes wrong:**
+GitHub token or API key embedded in Docker image during build. Image pushed to public registry. Credentials now publicly accessible via `docker history` or layer inspection. Security breach, immediate key rotation required, trust damaged.
 
 **Why it happens:**
-- File paths seem "safe" because they're from local filesystem
-- Developers assume path strings don't contain executable code
-- React's `dangerouslySetInnerHTML` used for syntax highlighting
-- SVG preview functionality renders attacker-controlled content
-- Cross-platform path handling exposes Windows path separators (`\`) vs Unix (`/`)
-
-**Real-World CVEs (2026):**
-- **CVE-2026-1866:** Salvo framework `list_html` generates file view without sanitizing filenames, leading to XSS
-- **Frappe LMS:** Stored XSS via malicious image filenames executed when rendered on course pages
-- **Termix File Manager:** SVG file content not sanitized before preview, allowing arbitrary JavaScript execution
-
-**Attack Vectors:**
-```typescript
-// DANGEROUS - Direct path rendering
-<div>Path: {message.metadata.file_path}</div>
-// If file_path = "</div><script>alert('XSS')</script><div>", executes script
-
-// DANGEROUS - Using dangerouslySetInnerHTML for paths
-<div dangerouslySetInnerHTML={{ __html: filePath }} />
-
-// DANGEROUS - SVG preview without sanitization
-<img src={`data:image/svg+xml,${metadata.svg_content}`} />
-```
-
-**Consequences:**
-- Stored XSS: Malicious paths in database execute when displayed
-- Session hijacking: Attacker steals API keys from localStorage
-- Data exfiltration: Script sends conversation data to external server
-- UI defacement: Injected HTML breaks layout and confuses users
+Secrets needed during build (to download private dependencies or authenticate). Developers use `ENV` or `ARG` in Dockerfile, or copy `.env` files. These persist in image layers even if deleted in later layers.
 
 **How to avoid:**
-1. **Always escape paths:** Use React's default escaping (`{path}` not `dangerouslySetInnerHTML`)
-2. **Sanitize on ingest:** Validate and sanitize file paths before storing in database
-3. **Content Security Policy:** Set strict CSP headers to block inline scripts
-4. **Path validation:** Reject paths containing HTML tags, `<script>`, or suspicious characters
-5. **Use text nodes:** Display paths in `<pre>` or `<code>` tags, never as HTML
-6. **DOMPurify library:** If HTML rendering needed, sanitize with DOMPurify before display
+1. **Build-time only secrets:** Use Docker BuildKit `--secret` flag, never `ENV`/`ARG` for secrets
+2. **No `.env` in image:** Add `.dockerignore` with `.env*`, verify it's respected
+3. **Public dependency strategy:** WIMS currently has no private dependencies - keep it that way or use buildkit secrets
+4. **Layer inspection check:** CI job runs `docker history` and fails if sensitive patterns detected
+5. **Runtime secrets:** Pass via environment variables at runtime, not build time
+
+```dockerfile
+# BAD - persists in layer
+ARG GITHUB_TOKEN
+RUN pip install from-private-repo --token $GITHUB_TOKEN
+
+# GOOD - mount secret, doesn't persist
+RUN --mount=type=secret,id=github_token \
+    pip install from-private-repo --token=$(cat /run/secrets/github_token)
+```
 
 **Warning signs:**
-- File paths containing `<`, `>`, or `script` tags stored in database
-- Browser DevTools shows unexpected script tags in DOM
-- Content Security Policy violations in console
-- Path display breaks UI layout unexpectedly
-- User reports seeing JavaScript alerts on search results page
+- Dockerfile contains `ARG` for tokens
+- `.env` files not in `.dockerignore`
+- `COPY . .` before explicit exclusions
+- No automated secret scanning in CI
 
-**Phase to address:** Phase 17 (Claude Code Path Display)
-
-**Sources:**
-- [CVE-2026-1866: Salvo Framework XSS](https://www.redpacketsecurity.com/cve-alert-cve-2026-1866-jeroenpeters1986-name-directory/)
-- [Cross-Site Scripting Prevention (OWASP)](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
-- [File Path XSS Vulnerabilities](https://cvedetails.com/vulnerability-list/opxss-1/xss.html)
+**Phase to address:**
+Phase 1 (Docker Publishing) - critical security issue, must be correct from day one
 
 ---
 
-### Pitfall 3: Search Relevance Over-Optimization Diminishing Returns
+### Pitfall 3: Multi-Architecture Publishing Hell
 
-**What goes wrong:** Obsessive tweaking of search scoring weights, boosting factors, and ranking algorithms yields minimal improvement while consuming weeks of engineering time. Team keeps "tuning" parameters with no measurable user benefit.
+**What goes wrong:**
+Docker image builds on M1 Mac (ARM64), pushed to registry. Linux user on AMD64 pulls image, crashes with "exec format error" or runs under emulation at 10x slower speed. GitHub Actions builds AMD64 by default, but M1 developer can't test locally.
 
 **Why it happens:**
-- No baseline metrics established before optimization (no A/B testing)
-- Optimizing for outlier queries instead of common patterns
-- Tweaking parameters based on gut feeling, not data
-- Testing with toy datasets (10 conversations) instead of realistic scale (1000+)
-- Ignoring the 80/20 rule: 80% of value from first 20% of effort
-
-**Real-World Example (2026):**
-```python
-# WRONG - Over-optimized scoring with diminishing returns
-def search(query, boost_title=2.5, boost_recent=1.8, boost_claude=1.3,
-           decay_factor=0.95, min_score=0.68, fuzzy_threshold=0.82,
-           ngram_weight=1.15, semantic_weight=2.1, ...):
-    # 15+ tunable parameters, each requiring extensive testing
-    # Reality: Switching from 2.5 to 2.6 title boost makes 0.1% difference
-```
-
-**Consequences:**
-- Weeks spent tuning parameters for marginal gains (0.7 → 0.72 average precision)
-- Re-indexing costs: Every scoring change requires full database re-index
-- Increased query latency: Complex scoring algorithms slow down searches
-- Breaking existing working queries: "Improvements" make common searches worse
-- Technical debt: Complex scoring logic becomes unmaintainable
+Forgot to build for multiple platforms. GitHub Actions defaults to AMD64, local Mac is ARM64. Binary dependencies in Python (fastembed, lancedb) have architecture-specific builds. Easy to test on one architecture and forget others.
 
 **How to avoid:**
-1. **Establish baseline:** Measure current relevance with test queries before optimization
-2. **Quick wins first:** Fix obvious issues (title matching, exact phrase matching) before exotic tuning
-3. **A/B testing framework:** Compare old vs new scoring with real queries, not gut feeling
-4. **Relevance metrics:** Track nDCG (normalized discounted cumulative gain) or MRR (mean reciprocal rank)
-5. **User feedback:** Add "Was this helpful?" button to results, optimize for clicks not theory
-6. **Hybrid search strategy:** Combine keyword search (fast, predictable) with semantic search (better recall)
-7. **Stop at "good enough":** If users find what they need in top 5 results, stop optimizing
+1. **Explicit platform builds:** Use `docker buildx build --platform linux/amd64,linux/arm64`
+2. **CI builds both:** GitHub Actions should build multi-arch, not just AMD64
+3. **Matrix testing:** Test on both architectures in CI before publishing
+4. **Local emulation:** Developers test `--platform linux/amd64` locally on ARM machines
+5. **Manifest verification:** Check Docker manifest shows both architectures after push
+
+```yaml
+# GitHub Actions
+- name: Build multi-platform image
+  uses: docker/build-push-action@v5
+  with:
+    platforms: linux/amd64,linux/arm64
+    push: true
+    tags: user/wims:${{ github.sha }}
+```
 
 **Warning signs:**
-- Pull requests with titles like "Adjust boost factor from 1.7 to 1.8"
-- No measurable improvement in user-defined relevance metrics
-- Team discussing "semantic density coefficients" without user validation
-- Re-indexing takes hours, making iteration impossible
-- Search latency increased from 50ms to 300ms after "improvements"
+- Dockerfile builds without explicit `--platform` flag
+- No multi-arch testing in CI
+- Binary dependencies (fastembed) without platform consideration
+- "Works on my Mac" but Linux users report issues
 
-**Phase to address:** Phase 18 (Search Relevance Research & Implementation)
-
-**Sources:**
-- [Search Relevance Tuning for E-commerce](https://rbmsoft.com/blogs/search-relevance-tuning-for-ecommerce/)
-- [SEO Mistakes That Hurt Rankings (2026)](https://webdesignerindia.medium.com/seo-mistakes-that-kill-rankings-2026-6f4fd03b2a6f)
-- [State of AI Search Optimization 2026](https://www.growth-memo.com/p/state-of-ai-search-optimization-2026)
+**Phase to address:**
+Phase 1 (Docker Publishing) - prevents immediate user complaints on release
 
 ---
 
-### Pitfall 4: Pagination Cursor Stability Failures with Float Scores
+### Pitfall 4: Chrome Extension Permission Creep Rejection
 
-**What goes wrong:** Browse page implements offset-based pagination or cursor pagination with float relevance scores. Cursors become invalid when new results are added, float comparisons fail due to precision issues, and users see duplicate or missing results across pages.
+**What goes wrong:**
+Extension update adds `<all_urls>` or `tabs` permission for "future feature." Automated review flags it. Human review rejects: "Overly broad permissions not justified by functionality." Extension delisted from store or update blocked. Existing users see scary "new permissions required" prompt, uninstall spike.
 
 **Why it happens:**
-- Offset pagination assumes static result set (breaks when data changes)
-- Cursors based on float scores (`score=0.75678`) instead of stable identifiers
-- No `ORDER BY id` secondary sort for stability
-- Concurrent inserts/updates shift pagination windows
-- Float precision differences between database and application layer
-
-**Real-World Example (2026 Issues):**
-```sql
--- WRONG - Offset pagination breaks with inserts
-SELECT * FROM conversations ORDER BY created_at DESC LIMIT 20 OFFSET 40;
--- New conversation inserted between pages → page 3 shows duplicate from page 2
-
--- WRONG - Float score cursor unstable
-SELECT * FROM results WHERE score < 0.7567 ORDER BY score DESC LIMIT 20;
--- Float comparison issues: 0.7567 vs 0.756700001 cause gaps
--- Ranking function returns floats → cursors not stable
-```
-
-**Consequences:**
-- Users see same conversation on page 2 and page 3 (duplicate results)
-- Infinite scroll skips results (missing conversations between loads)
-- "Load more" button stops working after data updates
-- SEO crawlers can't index all content (pagination broken for bots)
-- Cursor forgery: Users manipulate cursors like `9998:4523` to scrape entire dataset
+Developers add permissions preemptively "just in case." Chrome Web Store has strict minimum-permission policy. Reviewers actually check if permissions are used. Users panic at permission expansion.
 
 **How to avoid:**
-1. **Cursor-based pagination:** Use `(timestamp, id)` composite cursor instead of offset
-2. **Stable secondary sort:** Always include unique ID in ORDER BY for deterministic ordering
-3. **Integer scores:** Convert float scores to integers (multiply by 1000) for cursor stability
-4. **Keyset pagination:** Use `WHERE (created_at, id) > (cursor_timestamp, cursor_id)` pattern
-5. **Snapshot isolation:** Use database transactions with consistent snapshot reads
-6. **Cursor signing:** HMAC-sign cursors to prevent forgery and scraping
+1. **Minimum viable permissions:** Only request what's actively used in shipped code
+2. **Host permissions audit:** WIMS needs `http://localhost/*` (daemon communication) - this is justified
+3. **Content script scope:** Current manifest correctly scopes to specific sites (chatgpt.com, gemini.google.com) - never use `<all_urls>`
+4. **Permission justification doc:** In submission notes, explain why each permission is necessary
+5. **Staged permission requests:** Use optional permissions for future features, request at runtime when needed
+
+**Current WIMS permissions:**
+```json
+"permissions": ["storage", "alarms"],  // ✅ Justified
+"host_permissions": ["http://localhost/*"],  // ✅ Daemon communication
+"matches": ["https://chatgpt.com/*", ...]  // ✅ Specific sites only
+```
 
 **Warning signs:**
-- Bug reports: "I saw the same conversation twice when browsing"
-- Pagination stops working after scrolling 5-10 pages
-- Database logs show float comparison warnings
-- Users share URLs with cursor parameters like `cursor=9998:4523`
-- Test suite reveals different results when running pagination tests twice
+- Permissions list grows "just in case"
+- No comment explaining why each permission is needed
+- `<all_urls>` or `*://*/*` patterns
+- Permissions added before feature implementation
 
-**Phase to address:** Phase 19 (Browse Page with Pagination)
-
-**Sources:**
-- [Offset Pagination Is Lying to You](https://www.the-main-thread.com/p/quarkus-cursor-pagination-infinite-scroll)
-- [When Infinite Scroll Meets Search](https://www.the-main-thread.com/p/quarkus-cursor-pagination-full-text-search-infinite-scroll)
-- [Pagination & Infinite Scroll Performance](https://github.com/pola-rs/polars/issues/25663)
+**Phase to address:**
+Phase 2 (Chrome Extension) - critical for store approval, review before first submission
 
 ---
 
-### Pitfall 5: Date Range Filter Timezone Bugs and DST Edge Cases
+### Pitfall 5: Extension Manifest Version Field vs Package Version
 
-**What goes wrong:** Date range filters use local timezone without proper conversion, causing "missing results" bugs. Daylight Saving Time transitions create 1-hour gaps or duplicates. Mixing timezone-aware and timezone-naive timestamps leads to incorrect filtering.
+**What goes wrong:**
+`manifest.json` has `"version": "0.1.0"`, `package.json` has `"version": "0.2.0"`, git tag is `v0.3.0`. Chrome Web Store requires monotonically increasing `manifest.json` version for updates. Upload fails because new manifest version isn't higher than published version. Manual manifest edit, reupload, but zip filename doesn't match.
 
 **Why it happens:**
-- Frontend sends local time, backend interprets as UTC (or vice versa)
-- Database stores timestamps without timezone information
-- DST transition creates "gap" (2am → 3am spring forward) or "fold" (2am ← 1am fall back)
-- Python's datetime `+/-` operators don't account for DST
-- Date picker UI shows local time but API expects UTC
-
-**Real-World Bugs (2026):**
-```python
-# BUG - Polars date_range converts timezone-aware to UTC unexpectedly
-pl.date_range(start_tz_aware, end_tz_aware)  # Uses UTC instead of original timezone
-
-# BUG - Pandas date_range inconsistent with mixed tz-aware/naive
-pd.date_range(start=tz_aware, end=tz_naive)  # Raises TypeError
-
-# BUG - DST gap creates non-existent times
-datetime(2026, 3, 8, 2, 30, tzinfo=US_Eastern)  # 2:30am doesn't exist (DST spring forward)
-```
-
-**Consequences:**
-- Filter shows "no results" for valid date range
-- Search results missing conversations from DST transition days
-- User searches "yesterday" but gets results from 2 days ago (timezone confusion)
-- Exported data has 1-hour offset from displayed times
-- Different results in Chrome (local timezone) vs API (UTC)
+Chrome extensions MUST have version in `manifest.json` - this is the only version that matters to Chrome Web Store. But developers also maintain `package.json` version out of habit. Two sources of truth diverge.
 
 **How to avoid:**
-1. **Always store UTC:** Database timestamps always in UTC, convert to local only for display
-2. **ISO 8601 format:** Use `YYYY-MM-DDTHH:mm:ss.sssZ` for all timestamp transmission
-3. **Timezone-aware libraries:** Use Luxon (JS) or pendulum (Python), not built-in datetime
-4. **Explicit conversions:** Always specify timezone when converting, never rely on defaults
-5. **Test DST boundaries:** Add tests for March/November DST transitions
-6. **Know your precision:** Milliseconds vs seconds vs days (avoid precision loss in filters)
-7. **Validate inputs:** Reject invalid times created by DST gaps
+1. **Manifest is source of truth:** For extension, `manifest.json` version is canonical
+2. **Sync at build time:** Build script copies version from `pyproject.toml` to `manifest.json`
+3. **Semver enforcement:** CI validates version is higher than last published version
+4. **Auto-increment:** Consider auto-incrementing patch version in CI for each commit
+5. **Version check before publish:** Script queries Chrome Web Store API for current version, validates new > current
+
+```bash
+# Build script
+VERSION=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+jq ".version = \"$VERSION\"" extension/manifest.json > tmp.json && mv tmp.json extension/manifest.json
+```
 
 **Warning signs:**
-- Bug reports: "Date filter doesn't show conversations from yesterday"
-- Off-by-one-hour errors in production logs
-- Test failures only on specific dates (March 8, November 1)
-- Browser console shows different timestamps than API response
-- Users in different timezones report inconsistent search results
+- Manual version updates in `manifest.json`
+- No validation that manifest.version > published version
+- "Upload failed: version must be higher" errors
+- Forgetting to bump version before submission
 
-**Phase to address:** Phase 19 (Browse Page with Date Range Filtering)
+**Phase to address:**
+Phase 2 (Chrome Extension) - prevents publish failures, establish pattern early
 
-**Sources:**
-- [Ten Python datetime Pitfalls](https://dev.arie.bovenberg.net/blog/python-datetime-pitfalls/)
-- [Common Timestamp Pitfalls](https://www.datetimeapp.com/learn/common-timestamp-pitfalls)
-- [Metabase Timezone Troubleshooting](https://www.metabase.com/docs/latest/troubleshooting-guide/timezones)
-- [Database Timestamps and Timezones](https://www.tinybird.co/blog/database-timestamps-timezones)
+---
+
+### Pitfall 6: Extension Content Security Policy Too Restrictive
+
+**What goes wrong:**
+Extension loads fine in local testing. Published to Chrome Web Store. Users report: "popup is blank" or "options page doesn't work." Console shows CSP violations. Inline scripts blocked. Webpack bundle uses `eval()` for source maps. Store review rejects for CSP violations.
+
+**Why it happens:**
+Chrome extensions have strict CSP by default in Manifest V3. Inline scripts and `eval()` forbidden. Webpack default dev config uses `eval-source-map` which violates CSP. Works locally with relaxed CSP, breaks in production.
+
+**How to avoid:**
+1. **Production webpack config:** Use `source-map` or `hidden-source-map`, never `eval` variants
+2. **No inline scripts:** All JS in separate files, no `onclick="..."` in HTML
+3. **CSP testing:** Test built extension in production mode before submission
+4. **Manifest V3 compliance:** WIMS already uses MV3 - ensure webpack config matches restrictions
+5. **Remove CSP overrides:** Don't add `content_security_policy` to manifest unless absolutely necessary
+
+```javascript
+// webpack.config.js
+module.exports = {
+  mode: 'production',
+  devtool: 'source-map',  // NOT 'eval-source-map'
+  // ...
+}
+```
+
+**Warning signs:**
+- Webpack config has `devtool: 'eval'` or `eval-source-map`
+- Inline event handlers in HTML
+- `content_security_policy` in manifest with relaxed rules
+- "Works in dev, blank in production" reports
+
+**Phase to address:**
+Phase 2 (Chrome Extension) - critical for store approval and user experience
+
+---
+
+### Pitfall 7: Standalone Installer Breaks Existing Git Clone Workflow
+
+**What goes wrong:**
+Create standalone installer that installs daemon to `/opt/wims/` with its own Python environment. Git clone users suddenly can't run `./setup.sh` because system Python conflicts with installed daemon. Or installer overwrites symlinks used by git clone users. Two installation methods fight for the same config paths. Developer experience ruined.
+
+**Why it happens:**
+Installer assumes clean system. Git clone assumes user controls everything. Both want to own config files, systemd services, database paths. No consideration for coexistence.
+
+**How to avoid:**
+1. **Different install prefixes:** Installer uses `/opt/wims/`, git clone uses `$PWD`
+2. **Config path detection:** Daemon checks `$WIMS_HOME` or falls back to standard paths
+3. **Service name isolation:** Installer creates `wims-daemon.service`, git clone uses `wims-dev.service`
+4. **No system-wide overrides:** Installer doesn't modify global Python or system paths
+5. **Detection and warning:** Setup script detects installer presence, warns user about potential conflicts
+6. **Documentation:** Clear explanation of two installation modes and when to use each
+
+```bash
+# setup.sh addition
+if systemctl --user is-enabled wims-daemon.service 2>/dev/null; then
+    echo "WARNING: Installer-based daemon detected."
+    echo "Stop it with: systemctl --user stop wims-daemon.service"
+    echo "Or continue for development setup (different service name)"
+fi
+```
+
+**Warning signs:**
+- Installer and setup.sh both modify same systemd service
+- Both write to `~/.config/wims/` without coordination
+- No environment variable to distinguish modes
+- "Installer worked, now git clone broken" reports
+
+**Phase to address:**
+Phase 3 (Standalone Installer) - before first installer release, prevent developer friction
+
+---
+
+### Pitfall 8: Platform-Specific Dependency Hell in Installer
+
+**What goes wrong:**
+Installer bundles Python environment with dependencies. Works on Ubuntu 24.04. User on Debian 12 gets "GLIBC version not found." macOS user gets "dylib not loaded." Rocky Linux user gets segfault in lancedb. Each platform needs separate binary builds, but CI only tests Ubuntu.
+
+**Why it happens:**
+Python wheels often contain compiled binaries linked against specific libc versions. WIMS uses fastembed, lancedb, sentence-transformers - all have native dependencies. Binary compiled on Ubuntu 24.04 links against glibc 2.39, older systems have glibc 2.31. PyInstaller/similar tools bundle dependencies but don't handle cross-platform compatibility.
+
+**How to avoid:**
+1. **Build on oldest supported platform:** Use Ubuntu 20.04 to build Linux binaries (older glibc)
+2. **manylinux wheels:** Verify dependencies provide manylinux wheels, not platform-specific
+3. **Static linking where possible:** Bundle dependencies instead of assuming system libs
+4. **Platform matrix testing:** CI tests installer on Ubuntu 20.04, 22.04, 24.04, Debian, Rocky
+5. **Dependency audit:** Check each dependency's platform support before committing
+6. **macOS separate build:** ARM64 and x86_64 need separate builds and codesigning
+
+```yaml
+# CI matrix
+strategy:
+  matrix:
+    os: [ubuntu-20.04, ubuntu-22.04, ubuntu-24.04, macos-13, macos-14]
+    include:
+      - os: ubuntu-20.04
+        artifact: linux-amd64
+      - os: macos-14
+        artifact: macos-arm64
+```
+
+**Warning signs:**
+- Building on latest Ubuntu only
+- No platform matrix in CI
+- Dependencies with compiled extensions not checked for manylinux
+- "Works on my machine" testing only
+- No testing on actual target platforms
+
+**Phase to address:**
+Phase 3 (Standalone Installer) - prevents platform fragmentation disasters
+
+---
+
+### Pitfall 9: Docker Image Size Bloat Killing Download Experience
+
+**What goes wrong:**
+Initial Docker image is 200MB. Add dev dependencies by accident, now 500MB. Include build tools, now 800MB. Include model cache without optimization, now 2.5GB. Users on slow connections take 15 minutes to download. `docker pull` times out. Poor first impression, abandoned trials.
+
+**Why it happens:**
+Not using multi-stage builds. Including dev dependencies. Including build tools in runtime image. Caching large files without considering image size. Current Dockerfile has good practices but easy to regress.
+
+**How to avoid:**
+1. **Multi-stage builds:** Current Dockerfile is single-stage - refactor to build stage + runtime stage
+2. **Prod dependencies only:** Use `uv sync --no-dev` (already done ✅)
+3. **Remove build tools:** Don't need gcc/python3-dev in runtime
+4. **Optimize layer caching:** Current Dockerfile correctly separates dependency install from code copy ✅
+5. **Model caching strategy:** Pre-download embedding model (already done ✅) but consider lazy loading for Docker
+6. **Base image choice:** `python:3.12-slim` is good ✅, but could use `alpine` for smaller size
+7. **Size monitoring:** CI fails if image > 300MB threshold
+
+```dockerfile
+# Multi-stage optimization
+FROM python:3.12-slim AS builder
+RUN apt-get update && apt-get install -y gcc python3-dev
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev --no-install-project
+
+FROM python:3.12-slim
+COPY --from=builder /app/.venv /app/.venv
+# No build tools in runtime image
+```
+
+**Warning signs:**
+- Image size grows with each commit
+- No size tracking in CI
+- Dev dependencies in production image
+- Build tools (gcc, make) in final image
+- `apt-get` without `--no-install-recommends` or cleanup
+
+**Phase to address:**
+Phase 1 (Docker Publishing) - before first public release, establish size baseline
+
+---
+
+### Pitfall 10: Automated Publishing Without Smoke Tests
+
+**What goes wrong:**
+GitHub Actions workflow: commit → build → publish Docker image → publish Chrome extension → create installer. All automated. Image published with import error. Extension published with API incompatibility. Installer published with broken systemd service. Users immediately hit issues. Emergency rollback required. Trust damaged.
+
+**Why it happens:**
+Optimizing for deployment speed. "Automated is better" mindset without validation gates. Tests pass but integration breaks. Smoke tests not comprehensive enough.
+
+**How to avoid:**
+1. **Staging environment:** Deploy to staging before production
+2. **Integration smoke tests:** Start Docker container, run basic API calls, verify responses
+3. **Extension smoke test:** Install unpacked extension, trigger capture, verify daemon communication
+4. **Installer smoke test:** Run installer in fresh VM, verify service starts, verify API responds
+5. **Manual approval gate:** Require maintainer approval before publishing to public registries
+6. **Canary releases:** Publish to test users before full rollout
+7. **Rollback automation:** One-click rollback if smoke tests fail post-deploy
+
+```yaml
+# GitHub Actions
+- name: Smoke test Docker image
+  run: |
+    docker run -d -p 8000:8000 wims:test
+    sleep 5
+    curl http://localhost:8000/health || exit 1
+
+- name: Publish to registry
+  if: success()  # Only if smoke test passed
+  run: docker push wims:$VERSION
+```
+
+**Warning signs:**
+- Publish happens immediately after build
+- No integration tests in CI
+- No manual approval gate
+- "Just pushed, now broken" incidents
+- No rollback plan documented
+
+**Phase to address:**
+All phases - establish pattern in Phase 1, replicate for each distribution channel
 
 ---
 
 ## Technical Debt Patterns
 
-Shortcuts that seem reasonable but create long-term problems.
-
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| Store filters in localStorage only | Fast prototyping, no URL complexity | Users can't share filtered searches, bookmarks don't work | Never (URL state is table stakes for search UX) |
-| Client-side filtering only (no API changes) | Ship feature in 1 day | Performance degrades with >1000 results, pagination impossible | Only if dataset guaranteed <100 items forever |
-| Skip clipboard API fallback | Works on modern Chrome | Breaks on Firefox, Safari, HTTP (non-HTTPS) contexts | Never (clipboard requires HTTPS + permissions) |
-| Hardcode source names in filter UI | Simple implementation | Adding new source requires UI code change + deployment | Acceptable for MVP if sources are stable |
-| Use offset pagination instead of cursor | Simpler SQL queries | Breaks with concurrent inserts, duplicate/missing results | Acceptable if data never changes (archive view) |
-| Skip date range validation | Users can pick any dates | Queries like "start=2030, end=2020" crash backend | Never (always validate date ranges) |
-| Re-index on every search parameter change | Always fresh results | 5+ second query latency, database overload | Never (use incremental updates) |
-| Store relevance scores as floats | Matches embedding library output | Cursor pagination breaks, precision loss in comparisons | Acceptable if never used for pagination keys |
+| Skip multi-arch Docker builds | Faster initial setup | AMD64-only users frustrated, manual backport required | MVP only, must fix before public announcement |
+| Manual version bumps | No build script complexity | Version sync chaos, human error | Never - automate from day one |
+| Bundle dev dependencies in Docker | No separate build config | 3x larger images, slower pulls | Local testing only, never production |
+| Skip extension CSP testing | Faster iteration | Store rejection, emergency fix | Development only, gate production |
+| Single platform installer testing | CI runs faster | Platform bugs discovered by users | Early prototyping, require matrix before release |
+| Hardcode localhost URLs in extension | Simple configuration | Can't test against remote daemon | MVP, add config UI before wide release |
+| No smoke tests in publish workflow | Faster deployments | Broken releases reach users | Never - automation without validation is worse than manual |
 
 ## Integration Gotchas
 
-Common mistakes when adding features to existing search system.
-
-| Integration Point | Common Mistake | Correct Approach |
-|-------------------|---------------|------------------|
-| Existing search API | Add new `/search/v2` endpoint instead of extending current | Extend existing `/api/v1/search` with optional query params (`?source=claude&date_from=...`) |
-| Filter state in React | Create new context for filters, duplicates existing search state | Extend existing search context with filter fields |
-| Database schema | Add new `filtered_results` table to store pre-filtered data | Add indexes on filter columns (`source`, `created_at`) to existing table |
-| URL query params | Invent new param names (`src`, `df`, `dt`) without checking existing | Follow existing conventions (check what params already exist) |
-| Clipboard API | Use `document.execCommand('copy')` (deprecated) | Use modern Clipboard API with permissions fallback |
-| Date storage | Add new `local_timestamp` column with timezone | Use existing UTC timestamps, convert in application layer |
+| Integration | Common Mistake | Correct Approach |
+|-------------|----------------|------------------|
+| Docker → Daemon API | Assuming localhost works from container | Use host.docker.internal or explicit network bridge |
+| Extension → Daemon | HTTP to localhost blocked by mixed content | Extension manifest must allow http://localhost/* explicitly |
+| Installer → systemd | Installing to system level requires root | Use user-level systemd (systemctl --user) |
+| GitHub Actions → Docker Registry | Using docker/login credentials directly | Use GitHub Container Registry with GITHUB_TOKEN |
+| Extension → Chrome Web Store | Manual ZIP upload | Use Chrome Web Store API for automated publishing |
+| PyInstaller → Native deps | Bundling everything bloats size | Assume system libs for libc, bundle Python-specific only |
+| uv → Docker | Lock file mismatch between platforms | Use uv sync --frozen to respect lock exactly |
 
 ## Performance Traps
 
-Patterns that work at small scale but fail as usage grows.
-
 | Trap | Symptoms | Prevention | When It Breaks |
 |------|----------|------------|----------------|
-| Client-side filtering 1000+ results | Page freezes on filter change, 100% CPU usage | Server-side filtering with indexed columns | >1000 results (10k+ results = browser crash) |
-| Fetching all results then paginating | 5+ second initial load, memory leak | Database-level pagination with LIMIT/OFFSET or cursors | >500 conversations in database |
-| Re-embedding on every search | 300ms+ query latency, high CPU | Pre-compute embeddings on ingest, cache results | >100 searches/hour |
-| No filter result caching | Same filter query hits database every time | Cache filter results for 60 seconds (Redis or in-memory) | >50 concurrent users |
-| Elasticsearch terms filter >16 values | 15-20x performance degradation | Use `bool` query with `should` clauses instead of `terms` | >16 filter values selected |
-| Full table scan for date ranges | 10+ second queries on large tables | Add composite index on (source, created_at, id) | >10,000 rows in table |
+| Embedding model download on first request | First API call takes 60s, timeout | Pre-download in Docker build, cache in installer | First user after install |
+| Docker layer cache invalidation | Every build takes 10 minutes | Order Dockerfile: deps → config → code | Every code change |
+| Extension content script on every page | Browser slowdown, battery drain | Use specific URL patterns, not `<all_urls>` | User has 100+ tabs |
+| Systemd service without restart policy | Daemon crash = permanent outage | Add Restart=on-failure to service file | Any crash |
+| Uncompressed extension bundle | 10MB download, slow install | Use webpack production mode with compression | Extension has many assets |
+| Docker logs filling disk | Container crashes after days | Use log rotation: --log-opt max-size=10m | Weeks of runtime |
 
 ## Security Mistakes
 
-Domain-specific security issues beyond general web security.
-
 | Mistake | Risk | Prevention |
 |---------|------|------------|
-| Path traversal in file path display | User crafts path like `../../etc/passwd`, system exposes sensitive files | Validate paths against allowed directories, use basename only for display |
-| No Clipboard API permission handling | Feature breaks silently on permission denial, confuses users | Always check `navigator.permissions.query` before clipboard write |
-| Unsanitized SVG in preview | Stored XSS via SVG `<script>` tags in file metadata | Use DOMPurify to sanitize SVG content, set strict CSP headers |
-| Filter injection in SQL | User enters `'; DROP TABLE conversations--` in source filter | Use parameterized queries, never string concatenation for filters |
-| Exposing internal IDs in cursors | Cursor like `id=9998` reveals database sequence, enables scraping | HMAC-sign cursors or use opaque tokens (UUIDs) |
-| No rate limiting on browse page | Attacker scrapes entire database via pagination | Rate limit pagination requests (10 pages/minute per IP) |
+| Secrets in Dockerfile | Public leak via docker history | Use BuildKit secrets, never ENV/ARG |
+| Extension communicates with HTTP API | Man-in-the-middle attacks | Use HTTPS for production daemon, localhost exception for dev |
+| Installer runs as root | Privilege escalation, system compromise | User-level install only, document system-wide as optional |
+| Hardcoded daemon URL in extension | Can't change without extension update | Make configurable via options page |
+| No signature verification on installer | User downloads tampered installer | Code sign macOS, GPG sign Linux packages |
+| Chrome extension remote code execution | Store bans extension permanently | No `eval()`, no remote script loading, no `new Function()` |
+| Docker container runs as root | Container escape = root on host | Add USER directive, run as non-root UID |
 
 ## UX Pitfalls
 
-Common user experience mistakes in this domain.
-
 | Pitfall | User Impact | Better Approach |
 |---------|-------------|-----------------|
-| Hiding active filters after selection | User forgets filters applied, confused by "no results" | Show active filters prominently above results (chips/badges) |
-| No filter feedback (result count) | User selects filter, doesn't know if it worked | Show "23 results with filter 'Claude Code'" immediately |
-| Freezing UI during filter application | User thinks app crashed during 300ms filter query | Show loading skeleton, disable UI elements (don't freeze) |
-| Complex filter combinations without guidance | User overwhelmed by 10+ filter options | Progressive disclosure: Show relevant filters based on context |
-| No "Clear all filters" button | User manually unchecks 5 filters one by one | Single "Clear filters" button resets to default state |
-| Clipboard copy with no visual feedback | User unsure if path copied successfully | Toast notification: "Path copied to clipboard!" |
-| Date picker allows invalid ranges | User selects end date before start date, gets error | Disable invalid date selections in picker UI |
-| Pagination shows page numbers without context | "Page 5 of ?" → user doesn't know how much content exists | Show "Page 5 of 23 (460 results)" for context |
+| Docker requires manual port mapping | Users confused by `docker run` command | Provide docker-compose.yml with sane defaults |
+| Extension permission prompt on install | Users scared, don't install | Explain permissions in store listing description |
+| Installer fails without clear error | "It doesn't work", user gives up | Check prerequisites, show actionable error messages |
+| Version mismatch between components | Random failures, hard to debug | Show version in extension popup and API /health endpoint |
+| Daemon starts before model download | First request times out | Pre-download models in installer, show loading state |
+| No update notification | Users run old buggy versions forever | Extension checks for updates, shows changelog |
+| Git clone instructions too long | Users abandon during setup | Provide one-liner with setup.sh, automate everything |
 
 ## "Looks Done But Isn't" Checklist
 
-Things that appear complete but are missing critical pieces.
-
-- [ ] **Source Filtering:** Often missing "All Sources" default option — verify filter can be cleared
-- [ ] **Source Filtering:** Often missing URL state persistence — verify shared URL preserves filter
-- [ ] **Path Display:** Often missing Windows path handling — verify `C:\Users\...` renders correctly
-- [ ] **Path Display:** Often missing clipboard permission error handling — verify fallback for denied permission
-- [ ] **Clipboard API:** Often missing HTTPS requirement — verify works in production (not just localhost)
-- [ ] **Search Relevance:** Often missing baseline metrics — verify improvement measured, not assumed
-- [ ] **Browse Pagination:** Often missing "no more results" state — verify last page shows appropriate message
-- [ ] **Date Range:** Often missing timezone conversion — verify UTC storage with local display
-- [ ] **Date Range:** Often missing DST edge case handling — verify March/November dates work correctly
-- [ ] **Filter Combinations:** Often missing zero-results handling — verify clear error message when no matches
-- [ ] **URL State:** Often missing browser back button support — verify back/forward restores filter state
-- [ ] **Performance:** Often missing database indexes — verify filter queries use indexes (EXPLAIN query)
+- [ ] **Docker image:** Often missing health check - verify `HEALTHCHECK` directive exists
+- [ ] **Docker image:** Often missing proper signal handling - verify graceful shutdown on SIGTERM
+- [ ] **Extension:** Often missing error handling for daemon offline - verify offline state UI
+- [ ] **Extension:** Often missing update_url in manifest - verify auto-update configuration
+- [ ] **Installer:** Often missing uninstaller - verify clean removal process exists
+- [ ] **Installer:** Often missing prerequisite checks - verify system compatibility validation
+- [ ] **All components:** Often missing version display in UI - verify user can see current version
+- [ ] **All components:** Often missing changelog communication - verify users know what's new
+- [ ] **Publishing workflow:** Often missing rollback procedure - verify one-click revert exists
+- [ ] **Publishing workflow:** Often missing version validation - verify version increments correctly
 
 ## Recovery Strategies
 
-When pitfalls occur despite prevention, how to recover.
-
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| XSS via unsanitized paths | HIGH | 1. Immediate: Deploy CSP headers to block inline scripts<br>2. Audit: Search database for paths containing `<script>`<br>3. Sanitize: Retroactively sanitize existing paths<br>4. Fix: Add DOMPurify to all path rendering code |
-| Broken pagination from offsets | MEDIUM | 1. Hotfix: Add secondary ORDER BY id for stability<br>2. Migrate: Switch to cursor-based pagination incrementally<br>3. Test: Add pagination tests for concurrent updates |
-| Filter state management loops | MEDIUM | 1. Debug: Add React DevTools Profiler to identify loop source<br>2. Fix: Consolidate to single URL-based state with nuqs<br>3. Test: Add integration tests for filter combinations |
-| Timezone bugs in date filters | LOW | 1. Fix: Convert all database operations to UTC<br>2. Update: Change UI to show timezone explicitly<br>3. Migrate: Add `updated_at_utc` column, backfill data |
-| Clipboard API permission denial | LOW | 1. Hotfix: Add fallback to `document.execCommand('copy')`<br>2. Improve: Show permission prompt with explanation<br>3. Test: Test on HTTP localhost (permission denied) |
-| Search relevance regression | MEDIUM | 1. Rollback: Revert scoring changes immediately<br>2. Measure: Establish baseline metrics before next attempt<br>3. A/B test: Deploy new scoring to 10% of users, measure impact |
+| Version sync chaos | MEDIUM | 1. Audit all version locations. 2. Pick single source of truth. 3. Write sync script. 4. Add CI validation. Timeline: 1 day |
+| Secrets leaked in Docker image | HIGH | 1. Rotate all secrets immediately. 2. Delete compromised images. 3. Audit git history. 4. Rebuild with BuildKit secrets. Timeline: 4 hours + audit |
+| Multi-arch missing | LOW | 1. Set up buildx. 2. Add platform flags. 3. Rebuild and push. Timeline: 2 hours |
+| Extension permission rejection | MEDIUM | 1. Remove unused permissions. 2. Document justification. 3. Resubmit for review. Timeline: 3-7 days (review time) |
+| Installer platform incompatibility | HIGH | 1. Set up platform CI matrix. 2. Build on oldest target platform. 3. Test on all targets. 4. Re-release all platforms. Timeline: 2-3 days |
+| Image size bloat | LOW | 1. Multi-stage Dockerfile. 2. Remove dev deps. 3. Clean up layers. 4. Rebuild. Timeline: 4 hours |
+| CSP violations | MEDIUM | 1. Fix webpack config. 2. Remove inline scripts. 3. Test in production mode. 4. Resubmit. Timeline: 1 day + review |
+| Broken release published | HIGH | 1. Immediate rollback. 2. Pin previous version. 3. Fix issue. 4. Add smoke tests. 5. Re-release. Timeline: 2-8 hours |
+| Git clone workflow broken | MEDIUM | 1. Separate install paths. 2. Add environment detection. 3. Update docs. Timeline: 1 day |
 
 ## Pitfall-to-Phase Mapping
 
-How roadmap phases should address these pitfalls.
-
 | Pitfall | Prevention Phase | Verification |
 |---------|------------------|--------------|
-| Filter State Management Loops | Phase 16 (Source Filtering) | URL updates correctly, no infinite loops in React DevTools Profiler |
-| Path Display XSS | Phase 17 (Path Display) | CSP headers block inline scripts, DOMPurify sanitizes all paths |
-| Search Relevance Over-Optimization | Phase 18 (Search Relevance) | Baseline metrics established, A/B test shows measurable improvement |
-| Pagination Cursor Stability | Phase 19 (Browse Page) | Concurrent insert test doesn't create duplicate results |
-| Timezone Bugs in Date Filters | Phase 19 (Browse Page) | DST transition dates (March 8, Nov 1) return correct results |
-| Clipboard API Permission Handling | Phase 17 (Path Display) | HTTP localhost shows fallback UI when permission denied |
-| Filter Combination Validation | Phase 16 (Source Filtering) | Zero-results state shows helpful message, suggests removing filters |
-| Database Index Performance | Phase 16-19 (All phases) | EXPLAIN shows index usage for all filter queries |
+| Version sync chaos | Phase 1 | CI has version validation check, all components show same version |
+| Docker secrets leakage | Phase 1 | CI runs `docker history` check, no secrets in layers |
+| Multi-arch publishing | Phase 1 | Docker manifest shows both amd64 and arm64 |
+| Image size bloat | Phase 1 | CI fails if image > 300MB, multi-stage build in place |
+| Automated publish without smoke tests | Phase 1 | CI has smoke test step before publish |
+| Permission creep rejection | Phase 2 | Permissions documented with justification, minimal set used |
+| Manifest version mismatch | Phase 2 | Build script syncs version from pyproject.toml |
+| CSP violations | Phase 2 | Production webpack config uses valid devtool, manual test passes |
+| Installer breaks git clone | Phase 3 | Both installation modes tested, different service names |
+| Platform dependency hell | Phase 3 | CI matrix tests all target platforms |
 
-## Backward Compatibility Risks
+## Cross-Cutting Concerns
 
-Specific to adding features to existing working system.
+### Version Synchronization Strategy
 
-### Risk 1: Breaking Existing Search Results with Relevance Changes
+**Problem:** 4 components (API, extension, Docker, installer), each needs version tracking, all must match for support purposes.
 
-**What breaks:** Users have bookmarked search URLs that return specific results. New relevance algorithm changes result ordering, breaking their workflows.
+**Solution Pattern:**
+1. **Single source:** `pyproject.toml` version is canonical
+2. **Build-time injection:** CI extracts version, injects into all artifacts
+3. **Runtime verification:** `/health` endpoint includes component versions, extension displays them
+4. **CI gate:** Fail if any version mismatch detected before publish
 
-**Prevention:**
-- Add `v=2` version parameter to search API for new relevance
-- Keep default behavior unchanged, new relevance opt-in only
-- Log old vs new ranking differences, verify no major disruptions
+### Security in Automated Pipelines
 
-### Risk 2: URL State Migration Breaking Shared Links
+**Problem:** Automation requires credentials, but storing them is risky.
 
-**What breaks:** Existing shared search URLs use different query param names. New filter system uses different param names, old links return 404 or incorrect results.
+**Solution Pattern:**
+1. **GitHub Actions secrets:** Store tokens as repository secrets, never in code
+2. **Minimal permissions:** Use scoped tokens (packages:write, not repo:admin)
+3. **Short-lived tokens:** Use OIDC federation where possible instead of long-lived PATs
+4. **Audit trail:** Log all publish actions with committer attribution
+5. **Manual gates:** Require approval for production deploys
 
-**Prevention:**
-- Support both old and new param names during transition period
-- Add redirect logic: old params → new params transparently
-- Document deprecated params, show migration timeline
+### Breaking Existing Workflows
 
-### Risk 3: Database Schema Changes Requiring Re-Indexing
+**Problem:** Git clone users have working setup, new distribution methods might interfere.
 
-**What breaks:** Adding indexes for filter performance requires locking table, causing downtime.
-
-**Prevention:**
-- Use `CREATE INDEX CONCURRENTLY` in PostgreSQL (no table lock)
-- Schedule index creation during low-traffic periods
-- Use online schema migration tools (gh-ost, pt-online-schema-change)
-
-**Sources:**
-- [Backward Compatibility Database Patterns](https://www.pingcap.com/article/database-design-patterns-for-ensuring-backward-compatibility/)
-- [Schema Evolution in Kafka](https://oneuptime.com/blog/post/2026-01-21-kafka-schema-evolution/view)
+**Solution Pattern:**
+1. **Non-invasive installs:** Each method uses different paths/service names
+2. **Environment detection:** Scripts detect existing installations, warn appropriately
+3. **Explicit modes:** `./setup.sh --dev` vs `./setup.sh --production` or use installer
+4. **Documentation:** Clear guide on which installation method for which use case
+5. **Migration path:** Document how to switch between methods safely
 
 ## Sources
 
-### High Confidence (Official Documentation & 2026 CVEs)
+**PRIMARY (HIGH confidence):**
+- Docker BuildKit best practices (official Docker documentation)
+- Chrome Web Store developer policies (official Chrome documentation)
+- Manifest V3 migration guide (official Chrome documentation)
+- systemd user services documentation (official systemd docs)
 
-- **nuqs - Type-safe URL State Management:** https://nuqs.dev/ — React URL state library preventing filter state synchronization issues
-- **CVE-2026-1866 (Path XSS):** https://www.redpacketsecurity.com/cve-alert-cve-2026-1866-jeroenpeters1986-name-directory/ — Real-world file path XSS vulnerability
-- **OWASP XSS Prevention:** https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html — Authoritative XSS prevention guidance
-- **Clipboard API (MDN):** https://developer.mozilla.org/en-US/docs/Web/API/Clipboard_API — Browser compatibility and security requirements
-- **Pagination Performance Issues (2026):** https://www.the-main-thread.com/p/quarkus-cursor-pagination-infinite-scroll — Real-world offset pagination failures
+**SECONDARY (MEDIUM confidence):**
+- Analysis of existing WIMS codebase (setup.sh, Dockerfile, manifest.json, pyproject.toml)
+- Python packaging ecosystem knowledge (PyPI, wheels, manylinux)
+- CI/CD patterns from GitHub Actions documentation
+- Package manager standards (uv documentation)
 
-### Medium Confidence (Industry Analysis & Best Practices)
+**TERTIARY (LOW confidence - training data):**
+- Common distribution pitfalls from software engineering best practices
+- Extension review rejection patterns (observed trends, not current policy)
+- Cross-platform installer challenges (general knowledge)
 
-- **Filter UX Best Practices:** https://www.pencilandpaper.io/articles/ux-pattern-analysis-enterprise-filtering — Filter UI/UX patterns from enterprise analysis
-- **State Management Pitfalls:** https://logicloom.in/state-management-gone-wrong-avoiding-common-pitfalls-in-modern-ui-development/ — Modern UI state management anti-patterns
-- **Search Relevance Tuning:** https://rbmsoft.com/blogs/search-relevance-tuning-for-ecommerce/ — E-commerce search optimization patterns
-- **Python Datetime Pitfalls:** https://dev.arie.bovenberg.net/blog/python-datetime-pitfalls/ — Comprehensive timezone and DST issue catalog
-- **Timestamp Best Practices:** https://www.datetimeapp.com/learn/common-timestamp-pitfalls — Common timestamp handling mistakes
-
-### Low Confidence (Requires Validation for WIMS Context)
-
-- **LanceDB Filter Performance:** No specific documentation found on LanceDB filter performance with multiple predicates — needs empirical testing
-- **FastAPI + React URL State Patterns:** General patterns found but WIMS-specific integration needs validation
-- **Embedding Re-Indexing Costs:** FastEmbed re-indexing performance with 1000+ conversations needs benchmarking
-
-## Additional Research Recommended for v1.4
-
-1. **LanceDB Multi-Column Filtering Performance:** Test filter performance with compound predicates (`source='claude' AND created_at > '2026-01-01'`) — Phase 16 kickoff
-2. **Clipboard API Browser Support Matrix:** Verify fallback behavior on Safari, Firefox, and HTTP contexts — Phase 17 implementation
-3. **FastEmbed Re-Ranking Strategies:** Research semantic search re-ranking approaches without full re-indexing — Phase 18 research
-4. **React 19 `useTransition` for Filter Updates:** Validate that marking filter state updates as non-urgent prevents UI freezing — Phase 16 implementation
-5. **LanceDB Date Range Query Optimization:** Test if date range filters benefit from specific indexing strategies — Phase 19 implementation
+**VERIFICATION NEEDED:**
+- Current Chrome Web Store review timelines and process
+- Latest Docker BuildKit features for secrets management
+- Current state of PyInstaller/similar tools for Python bundling
+- Platform-specific system requirements for target distributions
 
 ---
-*Pitfalls research for: Adding Search & Browse UX Features to Existing Search Application*
-*Researched: 2026-02-12*
-*Confidence: MEDIUM-HIGH (High confidence on web security, medium on WIMS-specific performance)*
+
+**CONFIDENCE ASSESSMENT:**
+- Docker pitfalls: HIGH (based on official docs + existing Dockerfile analysis)
+- Extension pitfalls: MEDIUM (official policies accessible, current review process uncertain)
+- Installer pitfalls: MEDIUM (strong patterns, platform-specific details may vary)
+- Cross-cutting concerns: HIGH (based on existing codebase analysis)
+
+**RECOMMENDATION:**
+Verify Chrome Web Store current submission process and review criteria before Phase 2. Consider platform-specific research spike before Phase 3 for installer targets.
+
+---
+*Pitfalls research for: WIMS Distribution & Packaging*
+*Researched: 2026-02-18*

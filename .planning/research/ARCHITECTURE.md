@@ -1,1075 +1,1166 @@
-# Architecture Research
+# Architecture Research: Distribution & Packaging
 
-**Domain:** AI Conversation Search & Browse UX Enhancements
-**Researched:** 2026-02-12
+**Domain:** Distribution mechanisms for WIMS (Docker, Chrome Extension Publishing, Standalone Daemon)
+**Researched:** 2026-02-18
 **Confidence:** HIGH
 
 ## Executive Summary
 
-This architecture research identifies integration points for adding source filtering, path display with copy functionality, search relevance improvements, and browse page features to the existing FastAPI/React/LanceDB conversation search application.
+This research identifies integration points for adding three distribution mechanisms to the existing WIMS architecture:
 
-**Key Finding:** The existing architecture is well-suited for incremental enhancement. All four features integrate cleanly through:
-- Backend: Extend existing `/search` endpoint with query parameters, minimal schema changes
-- Frontend: New components that compose with existing SearchBar/ResultCard patterns
-- Data Model: No schema changes required - all metadata already present in LanceDB
+1. **Docker containerization** for easy server deployment
+2. **Chrome Web Store automated publishing** for extension distribution
+3. **Standalone daemon packaging** with PyInstaller for watcher distribution
 
-**Build Strategy:** Features are independent and can be built in parallel or sequentially. Recommended order based on dependencies:
-1. Source filtering (foundation for browse page filtering)
-2. Path display with copy (standalone UI enhancement)
-3. Search relevance (algorithm improvement, no UI changes)
-4. Browse page (combines filtering + infinite scroll patterns)
+**Key Finding:** All three distribution mechanisms integrate cleanly without modifying core application architecture. They are packaging/deployment layers that wrap existing components.
+
+**Build Strategy:** Three independent tracks that can be built in parallel:
+1. Docker: Multi-stage build combining React frontend build + FastAPI backend
+2. Extension: GitHub Actions workflow with Chrome Web Store API
+3. Daemon: PyInstaller cross-platform builds with GitHub Releases hosting
+
+**Migration Impact:** Minimal. Existing git clone + setup.sh workflow remains supported alongside new distribution options.
 
 ## Current Architecture Overview
 
 ### System Diagram
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     Frontend Layer (React)                   │
-├─────────────────────────────────────────────────────────────┤
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐    │
-│  │SearchBar │  │ResultCard│  │  State   │  │Infinite  │    │
-│  │          │  │          │  │Management│  │ Scroll   │    │
-│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘    │
-│       │             │             │             │           │
-├───────┴─────────────┴─────────────┴─────────────┴───────────┤
-│                     API Client (Axios)                       │
-│                  TanStack Query Caching                      │
-├─────────────────────────────────────────────────────────────┤
-│                     Backend Layer (FastAPI)                  │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │          API Router (/api/v1)                       │    │
-│  │  /ingest (POST) │ /search (POST) │ /health (GET)   │    │
-│  └────────┬────────────────┬────────────────┬─────────┘    │
-│           │                │                │               │
-│  ┌────────▼────────┐  ┌───▼──────────┐  ┌─▼──────────┐    │
-│  │ Embedding       │  │Search Logic  │  │Auth Guard  │    │
-│  │ Service         │  │(Vector Query)│  │(API Key)   │    │
-│  │(FastEmbed)      │  │              │  │            │    │
-│  └────────┬────────┘  └───┬──────────┘  └────────────┘    │
-│           │               │                                 │
-├───────────┴───────────────┴─────────────────────────────────┤
-│                     Data Layer (LanceDB)                     │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │  Messages Table                                      │   │
-│  │  - id, conversation_id, platform, title, content    │   │
-│  │  - role, timestamp, url, vector (384d)              │   │
-│  └──────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                    User Installation Methods                     │
+│                                                                  │
+│  Current:  git clone → ./setup.sh → ./start.sh                  │
+│  New:      Docker Compose | Chrome Web Store | Binary Download  │
+└─────────────────────────────────────────────────────────────────┘
+                                  ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                        Application Layer                         │
+├─────────────────────────────────────────────────────────────────┤
+│  ┌───────────────┐  ┌──────────────┐  ┌────────────────────┐   │
+│  │  FastAPI      │  │   Chrome     │  │  File Watcher      │   │
+│  │  Backend      │  │  Extension   │  │  (wims-watcher)    │   │
+│  │               │  │              │  │                    │   │
+│  │  • API Server │  │ • Content    │  │ • Watchdog service │   │
+│  │  • Embeddings │  │   Scripts    │  │ • API Client       │   │
+│  │  • LanceDB    │  │ • Background │  │ • Log Parsers      │   │
+│  │  • Static UI  │  │   Worker     │  │                    │   │
+│  └───────┬───────┘  └──────┬───────┘  └─────────┬──────────┘   │
+│          │                  │                    │              │
+│       (serves)          (sends to)           (sends to)         │
+│          │                  │                    │              │
+│  ┌───────▼──────────────────▼────────────────────▼──────────┐  │
+│  │               React Frontend (built to src/static)        │  │
+│  │               • Search UI • Browse UI • Settings          │  │
+│  └───────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-### Existing Data Flow
+### Current Deployment Flow
 
 ```
-User Search Query
-    ↓
-SearchBar (debounce 300ms)
-    ↓
-TanStack useInfiniteQuery
-    ↓
-Axios POST /search {query, limit, offset}
-    ↓
-FastAPI /search endpoint
-    ↓
-EmbeddingService.embed_text(query) → vector
-    ↓
-LanceDB.search(vector).limit(50).offset(0)
-    ↓
-Transform: DB → SearchResult with nested meta
-    ↓
-Group by conversation_id
-    ↓
-Response: {groups: [], count: N}
-    ↓
-Frontend flattens groups → results[]
-    ↓
-ResultCard renders with infinite scroll
+Developer Setup:
+  git clone → ./setup.sh → ./start.sh → http://localhost:8000
+
+Setup.sh:
+  1. Install uv (Python package manager)
+  2. uv sync (install Python deps)
+  3. Download embedding models
+
+Start.sh:
+  1. Check if ui/build exists, if not: cd ui && npm run build
+  2. uv run uvicorn src.app.main:app --reload
+
+Extension:
+  1. cd extension && npm run build
+  2. Manual load unpacked in chrome://extensions
+
+Watcher:
+  1. cd wims-watcher && ./install.sh
+  2. Installs systemd user service
 ```
 
-## Integration Points for New Features
+## Distribution Architecture
 
-### 1. Source Filtering
+### 1. Docker Distribution
 
-**Backend Integration:**
+**Goal:** Package FastAPI backend + React frontend + embedded LanceDB into a single container for one-command deployment.
 
-Location: `/search` endpoint (`src/app/api/v1/endpoints/search.py`)
+#### Multi-Stage Build Architecture
+
+```dockerfile
+# STAGE 1: Build Frontend (Node.js)
+FROM node:20-alpine AS frontend-builder
+WORKDIR /build
+COPY ui/package*.json ui/
+RUN cd ui && npm ci
+COPY ui/ ui/
+RUN cd ui && npm run build
+# Output: ui/dist/ → Static files
+
+# STAGE 2: Build Backend (Python)
+FROM python:3.12-slim AS backend
+WORKDIR /app
+
+# Install uv for dependency management
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc python3-dev curl && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies (use lockfile for reproducibility)
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-install-project --no-dev
+
+# Add venv to PATH
+ENV PATH="/app/.venv/bin:$PATH"
+
+# Pre-download embedding model (cached in image)
+RUN python -c "from fastembed import TextEmbedding; \
+    TextEmbedding(model_name='BAAI/bge-small-en-v1.5')"
+
+# Copy application code
+COPY src/ src/
+
+# Copy frontend build from stage 1
+COPY --from=frontend-builder /build/ui/dist/ src/static/
+
+# Create data directory for volume mount
+RUN mkdir -p /data
+
+# Expose port
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8000/api/v1/health || exit 1
+
+# Run server
+CMD ["uvicorn", "src.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+#### Docker Compose for Production
+
+```yaml
+version: '3.8'
+
+services:
+  wims:
+    build: .
+    container_name: wims-server
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persist database and config
+      - wims-data:/data
+      - wims-config:/root/.wims
+    environment:
+      # Override via .env file
+      - DB_PATH=/data/wims.lance
+      - LOG_LEVEL=INFO
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  wims-data:
+    driver: local
+  wims-config:
+    driver: local
+```
+
+#### Integration Points
+
+**Existing Components Modified:**
+- **Dockerfile** (already exists, needs multi-stage enhancement)
+- **docker-compose.yml** (NEW file)
+- **.dockerignore** (NEW file to exclude node_modules, .venv, .git)
+
+**New Components:**
+- **docker-compose.prod.yml** - Production configuration
+- **docker-entrypoint.sh** - Initialization script for container startup
+- **docs/docker.md** - Docker deployment documentation
+
+**Build Flow:**
+```
+User runs: docker compose up -d
+  ↓
+Docker builds multi-stage image:
+  Stage 1: npm run build → src/static/
+  Stage 2: uv sync → .venv/, download models
+  ↓
+Container starts with volumes mounted:
+  /data → wims-data volume (LanceDB persistence)
+  /root/.wims → wims-config volume (server.json)
+  ↓
+Server accessible at http://localhost:8000
+API key auto-generated on first run
+```
+
+**Configuration Strategy:**
+
+Three-level config precedence:
+1. **Environment variables** (highest priority) - for Docker secrets
+2. **Config file** (~/.wims/server.json) - for persistent settings
+3. **Defaults** (lowest priority) - hardcoded in config.py
 
 ```python
-# EXISTING SearchRequest schema
-class SearchRequest(BaseModel):
-    query: str
-    limit: int = 50
-    offset: int = 0
-    conversation_id: str | None = None
-    platform: str | None = None  # ← ALREADY EXISTS but unused
+# Existing config.py pattern supports this
+class Settings(BaseSettings):
+    API_KEY: str = Field(default_factory=lambda: generate_api_key())
+    DB_PATH: str = "data/wims.lance"
+    PORT: int = 8000
 
-# MODIFY search endpoint to apply filter
-@router.post("/search", response_model=SearchResponse)
-async def search_documents(request: SearchRequest):
-    # ... existing embedding logic ...
-
-    search_builder = table.search(query_vector)
-
-    # ADD: Apply platform filter if provided
-    if request.platform:
-        search_builder = search_builder.where(f"platform = '{request.platform}'")
-
-    # ... rest unchanged ...
-```
-
-**Frontend Integration:**
-
-New component: `ui/src/components/SourceFilter.tsx`
-
-```typescript
-interface SourceFilterProps {
-  selectedSources: string[];
-  onSourcesChange: (sources: string[]) => void;
-  availableSources: string[];  // ['claude', 'chrome', 'terminal', etc.]
-}
-
-export function SourceFilter({ selectedSources, onSourcesChange }: SourceFilterProps) {
-  // Multi-select checkboxes or pills
-  // On change, triggers parent state update → new search query
-}
-```
-
-Integration into App.tsx:
-
-```typescript
-function SearchInterface() {
-  const [query, setQuery] = useState('');
-  const [selectedSources, setSelectedSources] = useState<string[]>([]);  // NEW
-
-  const { data, ... } = useSearch(query, selectedSources);  // MODIFY hook
-
-  return (
-    <>
-      <SearchBar onSearch={setQuery} />
-      <SourceFilter
-        selectedSources={selectedSources}
-        onSourcesChange={setSelectedSources}  // NEW
-      />
-      {/* Results */}
-    </>
-  );
-}
-```
-
-Modify `ui/src/lib/api.ts`:
-
-```typescript
-export const search = async ({
-  query,
-  limit = 20,
-  offset = 0,
-  platform = null  // NEW parameter
-}: SearchParams): Promise<SearchResponse> => {
-  const response = await api.post<BackendSearchResponse>('/search', {
-    query,
-    limit,
-    offset,
-    platform,  // Pass to backend
-  });
-  // ... rest unchanged ...
-}
-```
-
-**Data Model Changes:** None (platform field already exists)
-
-**Confidence:** HIGH - LanceDB SQL WHERE clause filtering is documented and platform field exists in schema.
-
-### 2. Path Display with Copy Button
-
-**Backend Integration:** None required - URL already in metadata
-
-**Frontend Integration:**
-
-Modify existing `ResultCard.tsx`:
-
-```typescript
-// ADD: Copy to clipboard hook
-import { useState } from 'react';
-
-function useCopyToClipboard() {
-  const [copied, setCopied] = useState(false);
-
-  const copy = async (text: string) => {
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return { copied, copy };
-}
-
-export function ResultCard({ result }: ResultCardProps) {
-  const { copied, copy } = useCopyToClipboard();
-
-  // ADD: Path display section
-  const displayPath = result.meta.url || result.meta.conversation_id;
-
-  return (
-    <div className="result-card">
-      {/* Existing content */}
-
-      {/* NEW: Path display with copy button */}
-      {displayPath && (
-        <div className="flex items-center gap-2 text-xs text-gray-500 mt-2">
-          <code className="flex-1 truncate bg-gray-100 px-2 py-1 rounded">
-            {displayPath}
-          </code>
-          <button
-            onClick={() => copy(displayPath)}
-            className="p-1 hover:bg-gray-200 rounded"
-            title="Copy path"
-          >
-            {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-```
-
-**Data Model Changes:** None
-
-**Confidence:** HIGH - Clipboard API is standard, URL field exists in metadata.
-
-### 3. Search Relevance Improvements
-
-**Backend Integration:**
-
-Location: `/search` endpoint with hybrid search strategy
-
-**Option A: Metadata Boosting (Simplest)**
-
-```python
-# In search.py
-async def search_documents(request: SearchRequest):
-    # ... existing vector search ...
-
-    # ADD: Boost recent results
-    search_builder = search_builder.select([
-        "*",
-        # Recency boost: score = distance - (age_days * 0.01)
-        "(_distance - ((julianday('now') - julianday(timestamp)) * 0.01)) as boosted_score"
-    ])
-
-    results_list = await run_in_threadpool(search_builder.to_list)
-
-    # Sort by boosted_score instead of _distance
-    results_list = sorted(results_list, key=lambda x: x['boosted_score'])
-```
-
-**Option B: Hybrid Search (Better Quality)**
-
-```python
-# In search.py - requires LanceDB FTS
-async def search_documents(request: SearchRequest):
-    # Vector search
-    vector_results = table.search(query_vector).limit(100)
-
-    # Keyword search (if FTS index exists)
-    keyword_results = table.search(request.query, query_type="fts").limit(100)
-
-    # Reciprocal Rank Fusion
-    merged_results = reciprocal_rank_fusion([vector_results, keyword_results])
-
-    # Apply offset/limit after fusion
-    return merged_results[offset:offset+limit]
-```
-
-**Option C: Re-ranking Layer (Production Quality)**
-
-```python
-# New service: src/app/services/reranker.py
-from fastembed import TextEmbedding, Reranker
-
-class RerankerService:
-    def __init__(self):
-        self.reranker = Reranker(model_name="BAAI/bge-reranker-base")
-
-    def rerank(self, query: str, documents: list[dict], top_k: int = 50):
-        """Re-rank vector search results for better relevance."""
-        doc_texts = [d['content'] for d in documents]
-        scores = self.reranker.rerank(query, doc_texts)
-
-        # Combine scores with original documents
-        reranked = sorted(
-            zip(documents, scores),
-            key=lambda x: x[1],
-            reverse=True
-        )
-        return [doc for doc, score in reranked[:top_k]]
-
-# In search.py
-async def search_documents(request: SearchRequest):
-    # Get top 100 from vector search
-    results = await vector_search(query_vector, limit=100)
-
-    # Re-rank to top 50
-    reranked = await run_in_threadpool(
-        reranker_service.rerank,
-        request.query,
-        results,
-        top_k=50
+    model_config = SettingsConfigDict(
+        env_file='.env',
+        env_file_encoding='utf-8',
+        case_sensitive=False
     )
-
-    return reranked[offset:offset+request.limit]
 ```
 
-**Recommended Approach:** Start with Option A (metadata boosting), upgrade to Option C (re-ranking) if relevance is insufficient.
+Docker users can override via:
+```yaml
+environment:
+  - API_KEY=sk-wims-custom-key
+  - DB_PATH=/data/wims.lance
+```
 
-**Frontend Integration:** None - transparent to UI
+**Volume Mount Strategy:**
 
-**Data Model Changes:** None
+| Volume | Purpose | Size | Backup Priority |
+|--------|---------|------|-----------------|
+| `/data` | LanceDB database | 100MB-10GB | HIGH - contains all indexed conversations |
+| `/root/.wims` | Server config (server.json) | <1MB | MEDIUM - regeneratable but loses API key |
+| `/tmp` (tmpfs) | Embedding model cache | 2GB | LOW - downloaded on startup |
+
+**Development vs Production:**
+
+```bash
+# Development (with hot reload)
+docker compose -f docker-compose.dev.yml up
+
+# Production (optimized, no reload)
+docker compose -f docker-compose.prod.yml up -d
+```
+
+**Confidence:** HIGH
+- Multi-stage builds are standard Docker pattern
+- Dockerfile already exists in codebase, needs enhancement
+- Volume mounts for database persistence are well-documented
+- FastAPI + React multi-stage builds extensively documented
+
+### 2. Chrome Extension Publishing
+
+**Goal:** Automate extension publishing to Chrome Web Store from GitHub releases/tags.
+
+#### Publishing Flow Architecture
+
+```
+Developer creates git tag → GitHub Actions workflow triggers
+  ↓
+1. Build extension (webpack)
+   - npm install
+   - npm run build
+   - Output: extension/dist/
+  ↓
+2. Package extension
+   - zip extension/dist/ → wims-extension-v0.1.0.zip
+  ↓
+3. Upload to Chrome Web Store
+   - Use Chrome Web Store API
+   - Requires: refresh token, client ID, client secret
+   - API uploads zip file
+  ↓
+4. Publish to testers or public
+   - API call to publish uploaded version
+   - Can target: testers, trusted testers, or public
+  ↓
+5. Create GitHub Release
+   - Attach wims-extension-v0.1.0.zip
+   - Generate release notes from commits
+```
+
+#### GitHub Actions Workflow
+
+```yaml
+# .github/workflows/publish-extension.yml
+name: Publish Chrome Extension
+
+on:
+  push:
+    tags:
+      - 'extension-v*'  # Trigger on extension-v0.1.0 tags
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: extension/package-lock.json
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/extension-v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update manifest version
+        working-directory: ./extension
+        run: |
+          jq '.version = "${{ steps.version.outputs.version }}"' manifest.json > manifest.tmp
+          mv manifest.tmp manifest.json
+
+      - name: Install dependencies
+        working-directory: ./extension
+        run: npm ci
+
+      - name: Build extension
+        working-directory: ./extension
+        run: npm run build
+
+      - name: Package extension
+        run: |
+          cd extension/dist
+          zip -r ../../wims-extension-v${{ steps.version.outputs.version }}.zip .
+
+      - name: Upload to Chrome Web Store
+        uses: mnao305/chrome-extension-upload@v5.0.0
+        with:
+          file-path: wims-extension-v${{ steps.version.outputs.version }}.zip
+          extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
+          client-id: ${{ secrets.CHROME_CLIENT_ID }}
+          client-secret: ${{ secrets.CHROME_CLIENT_SECRET }}
+          refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}
+          publish: true  # Auto-publish or draft
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: wims-extension-v${{ steps.version.outputs.version }}.zip
+          generate_release_notes: true
+          draft: false
+```
+
+#### Secrets Management
+
+**Required GitHub Secrets:**
+
+| Secret | Source | Purpose |
+|--------|--------|---------|
+| `CHROME_EXTENSION_ID` | Chrome Web Store Developer Dashboard | Extension identifier (fixed after first upload) |
+| `CHROME_CLIENT_ID` | Google Cloud Console → OAuth 2.0 credentials | OAuth client for Web Store API |
+| `CHROME_CLIENT_SECRET` | Google Cloud Console → OAuth 2.0 credentials | OAuth client secret |
+| `CHROME_REFRESH_TOKEN` | One-time OAuth flow using chrome-webstore-upload-cli | Long-lived token for automated uploads |
+
+**Obtaining Secrets (One-Time Setup):**
+
+```bash
+# Install CLI tool
+npm install -g chrome-webstore-upload-cli
+
+# Generate refresh token (opens browser for OAuth)
+chrome-webstore-upload-cli \
+  --client-id YOUR_CLIENT_ID \
+  --client-secret YOUR_CLIENT_SECRET \
+  --refresh-token
+
+# Outputs refresh token → save to GitHub Secrets
+```
+
+**Security Best Practices:**
+- Use GitHub Environment Secrets (production environment)
+- Restrict workflow to main branch and version tags
+- Enable branch protection for main
+- Review extension changes in PR before merge
+
+#### Version Syncing Strategy
+
+**Problem:** Keep manifest.json version in sync with git tags
+
+**Solution:** Use git tags as source of truth, update manifest during workflow
+
+```yaml
+# In workflow, before build:
+- name: Update manifest version
+  run: |
+    VERSION=${GITHUB_REF#refs/tags/extension-v}
+    jq '.version = "$VERSION"' extension/manifest.json > manifest.tmp
+    mv manifest.tmp extension/manifest.json
+```
+
+**Version Scheme:**
+- Git tag: `extension-v0.1.0`
+- Manifest version: `0.1.0` (semantic versioning required by Chrome)
+- GitHub Release: `Extension v0.1.0`
+
+#### Integration Points
+
+**Existing Components Modified:**
+- **extension/manifest.json** - version field updated by workflow
+- **extension/package.json** - no changes (version not used by Chrome)
+
+**New Components:**
+- **.github/workflows/publish-extension.yml** - Publishing workflow
+- **docs/extension-publishing.md** - Publishing documentation
+- **scripts/generate-refresh-token.sh** - Helper for OAuth setup
+
+**Build Flow:**
+```
+Developer creates tag: git tag extension-v0.1.0 && git push --tags
+  ↓
+GitHub Actions triggered
+  ↓
+Workflow checks out code
+  ↓
+Updates manifest.json version from tag
+  ↓
+npm ci && npm run build
+  ↓
+Zips extension/dist/ → wims-extension-v0.1.0.zip
+  ↓
+Chrome Web Store API upload
+  ↓
+Chrome Web Store API publish
+  ↓
+GitHub Release created with zip attached
+  ↓
+Users download from GitHub or Chrome Web Store
+```
+
+**Publishing Modes:**
+
+| Mode | Trigger | Visibility | Use Case |
+|------|---------|------------|----------|
+| Draft | Manual workflow dispatch | Hidden | Pre-release testing |
+| Trusted Testers | Tag: `extension-v*-beta` | Limited audience | Beta testing |
+| Public | Tag: `extension-v*` (no suffix) | Everyone | Production release |
+
+**Rollback Strategy:**
+
+If published version has critical bug:
+1. Create new tag with patch version (e.g., `extension-v0.1.1`)
+2. Workflow publishes new version
+3. Chrome auto-updates users within 24 hours
+
+No way to unpublish or rollback in Chrome Web Store. Must fix forward.
+
+**Confidence:** HIGH
+- Chrome Web Store API well-documented
+- GitHub Actions marketplace has maintained chrome-extension-upload action
+- OAuth refresh token flow is standard
+- Versioning sync pattern is battle-tested
+
+### 3. Standalone Daemon Packaging
+
+**Goal:** Package wims-watcher as standalone executable for easy installation without Python setup.
+
+#### PyInstaller Packaging Architecture
+
+```
+Source Python files → PyInstaller → Platform-specific binary
+                              ↓
+                    ┌─────────┴──────────┐
+                    │                    │
+              Linux binary          macOS binary         Windows binary
+              (ELF 64-bit)          (Mach-O)            (PE .exe)
+                    │                    │                    │
+              Install to:            Install to:          Install to:
+              ~/.local/bin/          /usr/local/bin/      C:\Program Files\
+```
+
+#### PyInstaller Build Configuration
+
+```python
+# wims-watcher/wims-watcher.spec
+# -*- mode: python ; coding: utf-8 -*-
+
+block_cipher = None
+
+a = Analysis(
+    ['src/main.py'],
+    pathex=[],
+    binaries=[],
+    datas=[
+        # Include config templates
+        ('config.template.json', '.'),
+    ],
+    hiddenimports=[
+        'watchdog.observers',
+        'watchdog.events',
+        'requests',
+        'structlog',
+    ],
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=[],
+    win_no_prefer_redirects=False,
+    win_private_assemblies=False,
+    cipher=block_cipher,
+    noarchive=False,
+)
+
+pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+
+exe = EXE(
+    pyz,
+    a.scripts,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    [],
+    name='wims-watcher',
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=True,  # Compress binary
+    upx_exclude=[],
+    runtime_tmpdir=None,
+    console=True,  # CLI application
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+)
+```
+
+#### Cross-Platform Build Matrix
+
+```yaml
+# .github/workflows/build-daemon.yml
+name: Build Standalone Daemon
+
+on:
+  push:
+    tags:
+      - 'daemon-v*'
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            arch: x86_64
+            binary_name: wims-watcher
+          - os: macos-latest
+            platform: macos
+            arch: arm64
+            binary_name: wims-watcher
+          - os: windows-latest
+            platform: windows
+            arch: x86_64
+            binary_name: wims-watcher.exe
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        working-directory: ./wims-watcher
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build with PyInstaller
+        working-directory: ./wims-watcher
+        run: pyinstaller wims-watcher.spec
+
+      - name: Package binary
+        run: |
+          cd wims-watcher/dist
+          tar -czf wims-watcher-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz wims-watcher*
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wims-watcher-${{ matrix.platform }}-${{ matrix.arch }}
+          path: wims-watcher/dist/*.tar.gz
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*.tar.gz
+          generate_release_notes: true
+```
+
+#### Installation Scripts
+
+**Linux/macOS Installer:**
+
+```bash
+#!/bin/bash
+# install.sh - Downloaded by users
+
+set -e
+
+PLATFORM=$(uname -s | tr '[:upper:]' '[:lower:]')
+ARCH=$(uname -m)
+
+if [ "$ARCH" = "x86_64" ]; then
+    ARCH="x86_64"
+elif [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ]; then
+    ARCH="arm64"
+else
+    echo "Unsupported architecture: $ARCH"
+    exit 1
+fi
+
+RELEASE_URL="https://github.com/{owner}/where-is-my-shit/releases/latest/download/wims-watcher-${PLATFORM}-${ARCH}.tar.gz"
+
+echo "Downloading wims-watcher for ${PLATFORM}-${ARCH}..."
+curl -L "$RELEASE_URL" | tar -xz
+
+echo "Installing to ~/.local/bin/wims-watcher..."
+mkdir -p ~/.local/bin
+mv wims-watcher ~/.local/bin/
+chmod +x ~/.local/bin/wims-watcher
+
+# Add to PATH if not already
+if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+fi
+
+echo "✓ wims-watcher installed successfully!"
+echo "Run 'wims-watcher' to start (may need to restart shell for PATH)"
+```
+
+**Windows Installer (PowerShell):**
+
+```powershell
+# install.ps1
+
+$Platform = "windows"
+$Arch = "x86_64"
+$ReleaseUrl = "https://github.com/{owner}/where-is-my-shit/releases/latest/download/wims-watcher-$Platform-$Arch.tar.gz"
+
+Write-Host "Downloading wims-watcher..."
+Invoke-WebRequest -Uri $ReleaseUrl -OutFile "wims-watcher.tar.gz"
+
+# Extract (requires tar support in Windows 10+)
+tar -xzf wims-watcher.tar.gz
+
+# Install to Program Files
+$InstallPath = "$env:ProgramFiles\WIMSWatcher"
+New-Item -ItemType Directory -Force -Path $InstallPath
+Move-Item -Force wims-watcher.exe $InstallPath
+
+# Add to PATH
+$Path = [Environment]::GetEnvironmentVariable("Path", "User")
+if ($Path -notlike "*$InstallPath*") {
+    [Environment]::SetEnvironmentVariable("Path", "$Path;$InstallPath", "User")
+}
+
+Write-Host "✓ wims-watcher installed to $InstallPath"
+Write-Host "Restart your terminal and run 'wims-watcher.exe'"
+```
+
+#### Binary Hosting Strategy
+
+**Option A: GitHub Releases (Recommended)**
+
+Pros:
+- Free for public repos
+- No infrastructure needed
+- Built-in versioning
+- Automated via GitHub Actions
+
+Cons:
+- 2GB per file limit (not an issue for ~50MB binaries)
+- Must have GitHub account to download from web UI (API doesn't require auth)
+
+**Option B: Self-Hosted (If GitHub limits hit)**
+
+Use static file hosting:
+- Cloudflare R2 (10GB free/month)
+- AWS S3 + CloudFront
+- DigitalOcean Spaces
+
+Not needed initially. GitHub Releases sufficient for v1.
+
+#### Platform-Specific Considerations
+
+| Platform | Install Location | Daemon Setup | Notes |
+|----------|------------------|--------------|-------|
+| Linux | `~/.local/bin/wims-watcher` | systemd user service | PyInstaller requires glibc 2.17+ (Ubuntu 14.04+) |
+| macOS | `/usr/local/bin/wims-watcher` | launchd plist | Must notarize for macOS 10.15+ (Gatekeeper) |
+| Windows | `C:\Program Files\WIMSWatcher\wims-watcher.exe` | NSSM (Windows service wrapper) | May trigger SmartScreen (need code signing cert) |
+
+**macOS Code Signing (Optional but Recommended):**
+
+```bash
+# Requires Apple Developer account ($99/year)
+codesign --sign "Developer ID Application: Your Name" wims-watcher
+xcrun notarytool submit wims-watcher.zip --apple-id ... --password ...
+xcrun stapler staple wims-watcher
+```
+
+Without signing:
+- Users must right-click → Open (first run)
+- Or: System Preferences → Security & Privacy → Allow
+
+**Windows Code Signing (Optional but Recommended):**
+
+```bash
+# Requires code signing certificate (~$200/year)
+signtool sign /f certificate.pfx /p password /t http://timestamp.digicert.com wims-watcher.exe
+```
+
+Without signing:
+- Windows Defender SmartScreen warning
+- Users must click "More info" → "Run anyway"
+
+#### Integration Points
+
+**Existing Components Modified:**
+- **wims-watcher/src/main.py** - Ensure standalone mode works without dev dependencies
+- **wims-watcher/requirements.txt** - Minimal runtime dependencies only
+
+**New Components:**
+- **wims-watcher/wims-watcher.spec** - PyInstaller spec file
+- **.github/workflows/build-daemon.yml** - Build workflow
+- **install.sh** - Linux/macOS installer
+- **install.ps1** - Windows installer
+- **docs/daemon-packaging.md** - Packaging documentation
+
+**Build Flow:**
+```
+Developer creates tag: git tag daemon-v0.1.0 && git push --tags
+  ↓
+GitHub Actions matrix builds on: ubuntu-latest, macos-latest, windows-latest
+  ↓
+Each runner:
+  1. pip install pyinstaller
+  2. pyinstaller wims-watcher.spec
+  3. tar -czf wims-watcher-{platform}-{arch}.tar.gz dist/wims-watcher*
+  ↓
+Upload artifacts to workflow
+  ↓
+Release job downloads all artifacts
+  ↓
+Creates GitHub Release with 3 binaries attached
+  ↓
+Users download with curl or GitHub web UI
+  ↓
+Run install script → extracts + moves to PATH
+```
+
+**Configuration Discovery:**
+
+Standalone binary must find config without Python environment:
+
+```python
+# wims-watcher/src/config.py
+import os
+from pathlib import Path
+
+def get_config_path():
+    """
+    Find config file in order of precedence:
+    1. ~/.wims/server.json (standard location)
+    2. /etc/wims/server.json (system-wide)
+    3. ./config.json (local override)
+    """
+    search_paths = [
+        Path.home() / ".wims" / "server.json",
+        Path("/etc/wims/server.json"),
+        Path("config.json"),
+    ]
+
+    for path in search_paths:
+        if path.exists():
+            return path
+
+    raise FileNotFoundError("No WIMS config found. Run server setup first.")
+```
 
 **Confidence:** MEDIUM-HIGH
-- Metadata boosting: HIGH confidence (simple SQL)
-- Hybrid search: MEDIUM confidence (depends on FTS index setup)
-- Re-ranking: HIGH confidence (fastembed supports re-ranking models)
-
-### 4. Browse Page (Chronological View)
-
-**Backend Integration:**
-
-New endpoint: `/browse` (or extend `/search` with `browse_mode` flag)
-
-```python
-# In src/app/api/v1/endpoints/search.py
-
-class BrowseRequest(BaseModel):
-    """Browse without semantic search - chronological order."""
-    limit: int = 50
-    offset: int = 0
-    platform: str | None = None  # Filter by source
-    start_date: datetime | None = None
-    end_date: datetime | None = None
-
-@router.post("/browse", response_model=SearchResponse)
-async def browse_documents(request: BrowseRequest):
-    """
-    Browse all documents in chronological order (no vector search).
-    Supports filtering by platform and date range.
-    """
-    table = db_client.get_table("messages")
-
-    # Build query without vector search
-    query = table.search()  # No vector = full table scan
-
-    # Apply filters
-    where_clauses = []
-    if request.platform:
-        where_clauses.append(f"platform = '{request.platform}'")
-    if request.start_date:
-        where_clauses.append(f"timestamp >= '{request.start_date.isoformat()}'")
-    if request.end_date:
-        where_clauses.append(f"timestamp <= '{request.end_date.isoformat()}'")
-
-    if where_clauses:
-        query = query.where(" AND ".join(where_clauses))
-
-    # Sort by timestamp descending (most recent first)
-    query = query.select(["*"]).order_by("timestamp DESC")
-
-    # Apply pagination
-    query = query.limit(request.limit).offset(request.offset)
-
-    # Execute
-    results_list = await run_in_threadpool(query.to_list)
-
-    # Transform to SearchResult format (same as /search)
-    results = transform_to_search_results(results_list)
-
-    return SearchResponse(groups=group_by_conversation(results), count=len(results))
-```
-
-**Frontend Integration:**
-
-New page component: `ui/src/pages/BrowsePage.tsx`
-
-```typescript
-export function BrowsePage() {
-  const [selectedSources, setSelectedSources] = useState<string[]>([]);
-  const [dateRange, setDateRange] = useState<{start: Date | null, end: Date | null}>({
-    start: null,
-    end: null
-  });
-
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useBrowse({
-    platform: selectedSources[0],  // Single source for now
-    startDate: dateRange.start,
-    endDate: dateRange.end,
-  });
-
-  return (
-    <div>
-      <h1>Browse All Conversations</h1>
-
-      {/* Filter controls */}
-      <SourceFilter selectedSources={selectedSources} onChange={setSelectedSources} />
-      <DateRangePicker value={dateRange} onChange={setDateRange} />
-
-      {/* Results with infinite scroll */}
-      <div>
-        {data?.pages.map(page =>
-          page.results.map(result => <ResultCard key={result.id} result={result} />)
-        )}
-      </div>
-
-      {/* Infinite scroll trigger */}
-      {hasNextPage && <div ref={lastElementRef}>Loading...</div>}
-    </div>
-  );
-}
-```
-
-Add to `ui/src/lib/api.ts`:
-
-```typescript
-export const browse = async ({
-  platform,
-  startDate,
-  endDate,
-  limit = 20,
-  offset = 0
-}: BrowseParams): Promise<SearchResponse> => {
-  const response = await api.post<BackendSearchResponse>('/browse', {
-    platform,
-    start_date: startDate?.toISOString(),
-    end_date: endDate?.toISOString(),
-    limit,
-    offset,
-  });
-
-  // Same transformation as search
-  const results = response.data.groups.flatMap(g => g.results);
-  return {
-    results,
-    total: response.data.count,
-    has_more: offset + limit < response.data.count,
-    next_offset: offset + limit,
-  };
-}
-
-export const useBrowse = (params: BrowseParams) => {
-  return useInfiniteQuery({
-    queryKey: ['browse', params.platform, params.startDate, params.endDate],
-    queryFn: async ({ pageParam = 0 }) => browse({ ...params, offset: pageParam }),
-    getNextPageParam: (lastPage) => lastPage.has_more ? lastPage.next_offset : undefined,
-    initialPageParam: 0,
-  });
-}
-```
-
-Routing setup: Add to `ui/src/App.tsx`:
-
-```typescript
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<SearchInterface />} />
-          <Route path="/browse" element={<BrowsePage />} />
-        </Routes>
-      </BrowserRouter>
-    </QueryClientProvider>
-  );
-}
-```
-
-**Performance Consideration:** For large datasets (>10K documents), browse page needs virtual scrolling:
-
-```typescript
-import { useVirtualizer } from '@tanstack/react-virtual';
-
-function BrowsePage() {
-  const parentRef = useRef<HTMLDivElement>(null);
-
-  const virtualizer = useVirtualizer({
-    count: data?.pages.flatMap(p => p.results).length ?? 0,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 150,  // Estimated card height
-  });
-
-  return (
-    <div ref={parentRef} style={{ height: '100vh', overflow: 'auto' }}>
-      <div style={{ height: `${virtualizer.getTotalSize()}px` }}>
-        {virtualizer.getVirtualItems().map(virtualRow => {
-          const result = allResults[virtualRow.index];
-          return (
-            <div
-              key={virtualRow.key}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                transform: `translateY(${virtualRow.start}px)`,
-              }}
-            >
-              <ResultCard result={result} />
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-```
-
-**Data Model Changes:** None
-
-**Confidence:** HIGH - Browse is simpler than search (no vector embedding), uses existing pagination patterns.
-
-## Component Architecture Patterns
-
-### Pattern 1: Filter State Management
-
-**What:** Centralized filter state that affects query parameters
-
-**When to use:** Source filtering, date range filtering, any faceted search
-
-**Trade-offs:**
-- Pro: Single source of truth for filters
-- Pro: Easy to sync with URL query params
-- Con: Props drilling if deeply nested
-- Con: All components re-render on filter change
-
-**Example:**
-```typescript
-// Container component owns filter state
-function SearchContainer() {
-  const [filters, setFilters] = useState<SearchFilters>({
-    sources: [],
-    dateRange: null,
-  });
-
-  const { data } = useSearch({ query, ...filters });
-
-  return (
-    <>
-      <FilterPanel filters={filters} onChange={setFilters} />
-      <ResultsList data={data} />
-    </>
-  );
-}
-```
-
-**Alternative:** Use URL search params as state:
-
-```typescript
-function SearchContainer() {
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  const filters = {
-    sources: searchParams.getAll('source'),
-    query: searchParams.get('q') || '',
-  };
-
-  const { data } = useSearch(filters);
-
-  // Filters stored in URL automatically
-}
-```
-
-### Pattern 2: Optimistic Copy Feedback
-
-**What:** Immediate UI feedback before async operation completes
-
-**When to use:** Copy to clipboard, like/favorite actions, quick state toggles
-
-**Trade-offs:**
-- Pro: Feels instant to user
-- Pro: Works offline for most operations
-- Con: Must handle rollback if operation fails
-- Con: Can desync if multiple clients
-
-**Example:**
-```typescript
-function useCopyWithFeedback() {
-  const [copied, setCopied] = useState(false);
-
-  const copy = async (text: string) => {
-    setCopied(true);  // Optimistic update
-
-    try {
-      await navigator.clipboard.writeText(text);
-      // Success - keep showing checkmark
-      setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
-      // Rollback on failure
-      setCopied(false);
-      toast.error('Failed to copy');
-    }
-  };
-
-  return { copied, copy };
-}
-```
-
-### Pattern 3: Infinite Query Invalidation
-
-**What:** Smart cache invalidation when underlying data changes
-
-**When to use:** Real-time updates, after mutations, filter changes
-
-**Trade-offs:**
-- Pro: Always shows fresh data
-- Pro: Minimal refetch (only stale pages)
-- Con: Can cause scroll jump if not handled
-- Con: Network overhead if invalidating too often
-
-**Example:**
-```typescript
-function SearchInterface() {
-  const queryClient = useQueryClient();
-  const [query, setQuery] = useState('');
-  const [filters, setFilters] = useState({});
-
-  const { data } = useInfiniteQuery({
-    queryKey: ['search', query, filters],
-    queryFn: ({ pageParam = 0 }) => search({ query, filters, offset: pageParam }),
-  });
-
-  // When filters change, invalidate and refetch from page 0
-  useEffect(() => {
-    queryClient.invalidateQueries({ queryKey: ['search', query] });
-  }, [filters]);
-
-  return <ResultsList data={data} />;
-}
-```
-
-### Pattern 4: Virtualized Infinite Scroll
-
-**What:** Combine virtual scrolling with infinite loading for massive datasets
-
-**When to use:** Browse page with 10K+ items, chat history, logs
-
-**Trade-offs:**
-- Pro: Handles unlimited data without memory leak
-- Pro: Maintains 60fps with 100K+ items
-- Con: Complex implementation (two state machines)
-- Con: Scroll restoration tricky
-
-**Example:**
-```typescript
-function VirtualBrowseList() {
-  const { data, fetchNextPage, hasNextPage } = useInfiniteQuery({
-    queryKey: ['browse'],
-    queryFn: ({ pageParam = 0 }) => browse({ offset: pageParam }),
-  });
-
-  const allItems = data?.pages.flatMap(p => p.results) ?? [];
-
-  const parentRef = useRef<HTMLDivElement>(null);
-  const virtualizer = useVirtualizer({
-    count: hasNextPage ? allItems.length + 1 : allItems.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 150,
-    overscan: 5,
-  });
-
-  useEffect(() => {
-    const [lastItem] = [...virtualizer.getVirtualItems()].reverse();
-
-    if (!lastItem) return;
-
-    // When scrolling past 80% of loaded items, fetch next page
-    if (lastItem.index >= allItems.length - 1 && hasNextPage) {
-      fetchNextPage();
-    }
-  }, [virtualizer.getVirtualItems(), fetchNextPage, hasNextPage]);
-
-  return (
-    <div ref={parentRef} style={{ height: '100vh', overflow: 'auto' }}>
-      <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
-        {virtualizer.getVirtualItems().map(virtualRow => {
-          const isLoaderRow = virtualRow.index > allItems.length - 1;
-          const item = allItems[virtualRow.index];
-
-          return (
-            <div
-              key={virtualRow.key}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: `${virtualRow.size}px`,
-                transform: `translateY(${virtualRow.start}px)`,
-              }}
-            >
-              {isLoaderRow ? (
-                <div>Loading more...</div>
-              ) : (
-                <ResultCard result={item} />
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-```
-
-## Data Flow for New Features
-
-### Source Filtering Flow
-
-```
-User clicks "Claude" filter
-    ↓
-setSelectedSources(['claude'])
-    ↓
-TanStack Query invalidates ['search', query]
-    ↓
-useInfiniteQuery re-executes with new queryKey
-    ↓
-POST /search { query: "hello", platform: "claude", limit: 20, offset: 0 }
-    ↓
-FastAPI applies .where("platform = 'claude'")
-    ↓
-LanceDB returns filtered results
-    ↓
-Frontend renders only Claude results
-```
-
-### Copy Path Flow
-
-```
-User clicks copy button
-    ↓
-useCopyToClipboard().copy(result.meta.url)
-    ↓
-navigator.clipboard.writeText(url)
-    ↓
-setCopied(true) → UI shows checkmark
-    ↓
-setTimeout 2s → setCopied(false) → UI resets to copy icon
-```
-
-### Browse Page Flow
-
-```
-User navigates to /browse
-    ↓
-BrowsePage mounts → useBrowse() hook
-    ↓
-POST /browse { limit: 50, offset: 0 }
-    ↓
-FastAPI: table.search().order_by("timestamp DESC")
-    ↓
-LanceDB returns chronological results (no vector search)
-    ↓
-Frontend renders with infinite scroll
-    ↓
-User scrolls to bottom → Intersection Observer fires
-    ↓
-fetchNextPage() → POST /browse { limit: 50, offset: 50 }
-    ↓
-Append to existing pages
-```
-
-## Scaling Considerations
-
-| Scale | Architecture Adjustments |
-|-------|--------------------------|
-| 0-10K documents | Current architecture sufficient. Single-server FastAPI + embedded LanceDB handles well. |
-| 10K-100K documents | Add browse page virtual scrolling (@tanstack/react-virtual). Consider re-ranking for relevance. Consider database indices on platform, timestamp for faster filtering. |
-| 100K-1M documents | Move to LanceDB Cloud or self-hosted server mode (separate process). Add Redis cache for frequently accessed conversations. Implement hybrid search (vector + FTS) for better relevance. |
-| 1M+ documents | Shard by date range or platform. Implement result caching at API layer. Consider approximate nearest neighbor (ANN) index tuning. Add pagination limits (cap at 1000 results per query). |
-
-### Scaling Priorities
-
-1. **First bottleneck:** Browse page scroll performance with 10K+ items
-   - **Solution:** Virtual scrolling with @tanstack/react-virtual
-   - **When:** Immediately if dataset > 10K items
-   - **Impact:** Maintains 60fps, prevents memory bloat
-
-2. **Second bottleneck:** LanceDB file locking with multiple writers
-   - **Solution:** Move to LanceDB server mode (separate process)
-   - **When:** Multiple concurrent writers (e.g., multiple ingestion sources)
-   - **Impact:** Allows concurrent reads/writes
-
-3. **Third bottleneck:** Search relevance degrades with more data
-   - **Solution:** Hybrid search (vector + keyword) + re-ranking
-   - **When:** User feedback indicates poor results
-   - **Impact:** Better precision, slightly slower queries (100ms → 300ms)
-
-## Anti-Patterns
-
-### Anti-Pattern 1: Filtering in Frontend
-
-**What people do:** Fetch all results, filter client-side with `.filter()`
-
-**Why it's wrong:**
-- Transfers unnecessary data (bandwidth waste)
-- Breaks pagination (offset/limit meaningless)
-- Doesn't scale beyond first page
-
-**Do this instead:** Pass filters to backend as query parameters
-
-```typescript
-// ❌ BAD
-const { data } = useSearch({ query: "hello", limit: 1000 });
-const filtered = data?.results.filter(r => r.meta.source === 'claude');
-
-// ✅ GOOD
-const { data } = useSearch({ query: "hello", platform: "claude", limit: 50 });
-```
-
-### Anti-Pattern 2: Re-fetching Entire Query on Filter Change
-
-**What people do:** Invalidate all pages when filter changes
-
-**Why it's wrong:**
-- Loses scroll position
-- Wastes network fetching pages user may not scroll to
-- Poor UX (flash of empty state)
-
-**Do this instead:** Use different queryKey for each filter combination
-
-```typescript
-// ❌ BAD
-const { data } = useInfiniteQuery({ queryKey: ['search'] });
-useEffect(() => {
-  queryClient.invalidateQueries({ queryKey: ['search'] });
-}, [filters]);
-
-// ✅ GOOD
-const { data } = useInfiniteQuery({
-  queryKey: ['search', query, filters],  // Filter changes = new cache entry
-});
-```
-
-### Anti-Pattern 3: Rendering 10K+ Items Without Virtualization
-
-**What people do:** Map over all loaded items in DOM
-
-**Why it's wrong:**
-- Browser struggles with >1000 DOM nodes (scroll jank)
-- Memory usage grows unbounded
-- Slow initial render
-
-**Do this instead:** Use virtual scrolling for large lists
-
-```typescript
-// ❌ BAD
-{data?.pages.flatMap(p => p.results).map(item => <ResultCard key={item.id} result={item} />)}
-
-// ✅ GOOD (for >1000 items)
-const virtualizer = useVirtualizer({
-  count: allItems.length,
-  getScrollElement: () => parentRef.current,
-  estimateSize: () => 150,
-});
-{virtualizer.getVirtualItems().map(virtualRow => <ResultCard result={allItems[virtualRow.index]} />)}
-```
-
-### Anti-Pattern 4: Copying with execCommand
-
-**What people do:** Use deprecated `document.execCommand('copy')`
-
-**Why it's wrong:**
-- Deprecated API (may break in future browsers)
-- Requires creating temporary DOM elements
-- Doesn't work in all contexts (e.g., async functions)
-
-**Do this instead:** Use Clipboard API with fallback
-
-```typescript
-// ❌ BAD
-const textarea = document.createElement('textarea');
-textarea.value = text;
-document.body.appendChild(textarea);
-textarea.select();
-document.execCommand('copy');
-document.body.removeChild(textarea);
-
-// ✅ GOOD
-try {
-  await navigator.clipboard.writeText(text);
-} catch (err) {
-  // Fallback for older browsers
-  const textarea = document.createElement('textarea');
-  textarea.value = text;
-  document.body.appendChild(textarea);
-  textarea.select();
-  document.execCommand('copy');
-  document.body.removeChild(textarea);
-}
-```
-
-## Recommended Project Structure
-
-### Backend Structure (FastAPI)
-
-```
-src/app/
-├── api/
-│   └── v1/
-│       ├── router.py              # API router registration
-│       └── endpoints/
-│           ├── search.py          # MODIFY: Add platform filter, /browse endpoint
-│           ├── ingest.py          # UNCHANGED
-│           └── health.py          # UNCHANGED
-├── core/
-│   ├── config.py                  # UNCHANGED
-│   ├── auth.py                    # UNCHANGED
-│   └── logging.py                 # UNCHANGED
-├── db/
-│   └── client.py                  # UNCHANGED
-├── schemas/
-│   └── message.py                 # MODIFY: Add BrowseRequest, BrowseResponse
-├── services/
-│   ├── embedding.py               # UNCHANGED
-│   └── reranker.py                # NEW: Re-ranking service (optional)
-└── main.py                        # UNCHANGED
-```
-
-### Frontend Structure (React)
-
-```
-ui/src/
-├── components/
-│   ├── SearchBar.tsx              # UNCHANGED
-│   ├── ResultCard.tsx             # MODIFY: Add path display with copy button
-│   ├── SourceFilter.tsx           # NEW: Multi-select source filter
-│   ├── DateRangePicker.tsx        # NEW: Date range selector (for browse)
-│   └── Navigation.tsx             # NEW: Navigation between search/browse
-├── pages/
-│   ├── SearchPage.tsx             # EXTRACT from App.tsx
-│   └── BrowsePage.tsx             # NEW: Chronological browse view
-├── lib/
-│   ├── api.ts                     # MODIFY: Add platform param, browse(), useBrowse()
-│   └── utils.ts                   # UNCHANGED
-├── hooks/
-│   └── useCopyToClipboard.ts      # NEW: Copy functionality hook
-├── App.tsx                        # MODIFY: Add routing, extract SearchPage
-└── main.tsx                       # UNCHANGED
-```
-
-### Structure Rationale
-
-- **components/:** Reusable UI components (SourceFilter, DateRangePicker) used by multiple pages
-- **pages/:** Full page components with routing (SearchPage, BrowsePage)
-- **lib/:** API client and utilities (keeps components clean)
-- **hooks/:** Reusable stateful logic (useCopyToClipboard can be used in multiple components)
-
-**Why extract SearchPage from App.tsx?**
-- App.tsx becomes routing container
-- SearchPage and BrowsePage are sibling routes
-- Easier to share layout (Navigation component)
-
-**Why NEW services/reranker.py optional?**
-- Start simple (metadata boosting)
-- Add re-ranking only if relevance is insufficient
-- Follows progressive enhancement principle
+- PyInstaller is mature and widely used
+- GitHub Actions matrix builds are standard
+- Binary distribution via GitHub Releases well-documented
+- Cross-platform builds tested in many projects
+- Lower confidence on Windows/macOS signing (optional, costs money)
+
+## Integration Summary
+
+### New vs Modified Components
+
+| Component | Type | Integration Point | Complexity |
+|-----------|------|-------------------|------------|
+| **Dockerfile** | Modified | Existing single-stage → Multi-stage with frontend build | Medium |
+| **docker-compose.yml** | New | Orchestrates container with volumes | Low |
+| **.github/workflows/publish-extension.yml** | New | Automated extension publishing | Medium |
+| **.github/workflows/build-daemon.yml** | New | Cross-platform binary builds | Medium |
+| **wims-watcher/wims-watcher.spec** | New | PyInstaller configuration | Low |
+| **install.sh / install.ps1** | New | User installation scripts | Low |
+| **src/app/core/config.py** | Modified | Support env var overrides for Docker | Low |
+| **docs/** | New | Distribution documentation | Low |
+
+### Data Flow Changes
+
+**No changes to application data flow.** Distribution mechanisms are packaging/deployment wrappers.
+
+**New flows added:**
+
+1. **Docker data persistence flow:**
+   ```
+   LanceDB writes → /app/data/wims.lance (in container)
+                 → Mounted to wims-data volume (on host)
+                 → Persists across container restarts
+   ```
+
+2. **Extension update flow:**
+   ```
+   Developer pushes tag → GitHub Actions builds + publishes
+                       → Chrome Web Store
+                       → User's browser auto-updates (within 24h)
+   ```
+
+3. **Daemon distribution flow:**
+   ```
+   Developer pushes tag → GitHub Actions builds binaries
+                       → GitHub Release created
+                       → User downloads + runs install script
+                       → Binary in PATH, config discovered
+   ```
 
 ## Build Order and Dependencies
 
 ### Recommended Build Order
 
-**Phase 1: Source Filtering (Foundation)**
-- Backend: Modify `/search` to use existing `platform` parameter
-- Frontend: Add `SourceFilter` component
-- Frontend: Pass platform to `useSearch` hook
-- **Estimated effort:** 4 hours
-- **Dependencies:** None
-- **Blockers:** None
+**Track 1: Docker (Highest Priority)**
+- Most users want simplified deployment
+- No Python/Node.js setup needed
+- Self-contained with persistence
 
-**Phase 2: Path Display with Copy (Standalone)**
-- Frontend: Add `useCopyToClipboard` hook
-- Frontend: Modify `ResultCard` to show path with copy button
-- **Estimated effort:** 2 hours
-- **Dependencies:** None
-- **Blockers:** None
+**Dependencies:** None
+**Estimated Effort:** 6-8 hours
+**Deliverables:**
+1. Multi-stage Dockerfile
+2. docker-compose.yml (dev + prod)
+3. .dockerignore
+4. docs/docker.md
 
-**Phase 3: Search Relevance (Algorithm)**
-- Backend: Implement metadata boosting in `/search` endpoint
-- (Optional) Add re-ranking service if boosting insufficient
-- **Estimated effort:** 3-6 hours
-- **Dependencies:** None (transparent to frontend)
-- **Blockers:** None
+**Track 2: Extension Publishing (Medium Priority)**
+- Reduces friction for extension users
+- Currently requires manual "load unpacked"
 
-**Phase 4: Browse Page (Combines All)**
-- Backend: Add `/browse` endpoint
-- Frontend: Extract `SearchPage` from `App.tsx`
-- Frontend: Add routing with react-router-dom
-- Frontend: Create `BrowsePage` component
-- Frontend: Add `DateRangePicker` component
-- Frontend: Add `Navigation` component
-- Frontend: Implement `useBrowse` hook
-- (Optional) Add virtual scrolling if dataset > 10K
-- **Estimated effort:** 8 hours
-- **Dependencies:** Reuses `SourceFilter` from Phase 1
-- **Blockers:** Routing requires restructuring App.tsx
+**Dependencies:**
+- Chrome Web Store developer account
+- OAuth credentials setup (one-time)
+
+**Estimated Effort:** 4-6 hours
+**Deliverables:**
+1. .github/workflows/publish-extension.yml
+2. scripts/generate-refresh-token.sh
+3. docs/extension-publishing.md
+
+**Track 3: Daemon Packaging (Lower Priority)**
+- wims-watcher currently requires Python + pip install
+- Standalone binary removes dependency
+
+**Dependencies:** None
+**Estimated Effort:** 8-10 hours
+**Deliverables:**
+1. wims-watcher/wims-watcher.spec
+2. .github/workflows/build-daemon.yml
+3. install.sh / install.ps1
+4. docs/daemon-packaging.md
 
 ### Parallel vs Sequential
 
 **Can be built in parallel:**
-- Phase 1 (Source Filtering) + Phase 2 (Path Display)
-- Phase 3 (Relevance) independent of all others
+- All three tracks are independent
+- No shared code changes (except minor config.py tweaks)
 
-**Must be sequential:**
-- Phase 4 (Browse) should come after Phase 1 (reuses SourceFilter)
-- All phases can be deployed independently (no breaking changes)
+**Suggested order IF sequential:**
+1. Docker (biggest user impact)
+2. Extension publishing (easier, quick win)
+3. Daemon packaging (most complex, optional)
 
 ### Deployment Strategy
 
-Each phase can be deployed incrementally:
+Each distribution method is additive:
 
-1. **Source Filtering:** Backend change is backward compatible (platform already in schema), frontend adds new UI
-2. **Path Display:** Frontend-only change, no backend impact
-3. **Relevance:** Backend change is transparent (same API contract)
-4. **Browse Page:** New endpoint + new route (existing search unchanged)
+- **Existing method continues to work:** `git clone → ./setup.sh → ./start.sh`
+- **Docker adds option:** `docker compose up -d`
+- **Extension adds option:** Download from Chrome Web Store instead of manual load
+- **Daemon adds option:** Download binary instead of pip install
 
-**Recommended:** Deploy features as ready, don't wait for all four
+**No breaking changes.** Users can mix methods:
+- Run server via Docker
+- Install extension from Chrome Web Store
+- Run watcher via systemd (git clone method)
 
-## Integration Points Summary
+## Migration Concerns for Existing Users
 
-| Feature | Backend Change | Frontend Change | Data Model Change | Complexity |
-|---------|---------------|-----------------|-------------------|------------|
-| Source Filtering | Modify `/search` to use `platform` param | Add `SourceFilter` component, modify `useSearch` hook | None (field exists) | Low |
-| Path Display + Copy | None | Modify `ResultCard`, add `useCopyToClipboard` hook | None | Low |
-| Search Relevance | Add boosting/re-ranking in `/search` logic | None (transparent) | None | Medium |
-| Browse Page | Add `/browse` endpoint | Add routing, `BrowsePage`, `Navigation`, `useBrowse` | None | Medium-High |
+### Database Compatibility
+
+**Scenario:** User switches from git clone → Docker
+
+**Issue:** Database at `./data/wims.lance` not accessible in container
+
+**Solution:** Mount existing database directory
+
+```yaml
+# docker-compose.yml
+volumes:
+  - ./data:/data  # Use existing local data
+  - ~/.wims:/root/.wims  # Use existing config
+```
+
+**Migration steps:**
+1. Stop server: `Ctrl+C` in terminal
+2. Run: `docker compose up -d`
+3. Database path unchanged, container reads from host
+
+**No data migration needed.** LanceDB files are portable.
+
+### Config File Location
+
+**Scenario:** User has config at `~/.wims/server.json`, switches to Docker
+
+**Solution:** Mount config directory
+
+```yaml
+volumes:
+  - ~/.wims:/root/.wims  # Config available in container
+```
+
+**Alternative:** Use environment variables
+
+```yaml
+environment:
+  - API_KEY=sk-wims-xxxxx
+  - DB_PATH=/data/wims.lance
+```
+
+### Extension Configuration
+
+**Scenario:** Extension currently has manual load unpacked, user switches to Chrome Web Store install
+
+**Issue:** Extension settings lost (stored in Chrome's storage API, tied to extension ID)
+
+**Solution:** Extension ID remains same whether loaded unpacked or from Web Store
+
+**Mitigation:** Document export/import settings feature in extension (future enhancement)
+
+### Watcher Service
+
+**Scenario:** User has systemd service installed via `./install.sh`, switches to standalone binary
+
+**Issue:** Two watchers running (systemd + binary)
+
+**Solution:** Uninstall systemd service first
+
+```bash
+systemctl --user stop wims-watcher
+systemctl --user disable wims-watcher
+rm ~/.config/systemd/user/wims-watcher.service
+systemctl --user daemon-reload
+```
+
+**Then install standalone binary.**
+
+## Performance and Resource Considerations
+
+### Docker Resource Usage
+
+| Component | Memory | CPU | Disk |
+|-----------|--------|-----|------|
+| Base image (python:3.12-slim) | 50MB | Minimal | 200MB |
+| Embedding model (cached) | 100MB | Minimal | 500MB |
+| LanceDB (1K conversations) | 50MB | Minimal | 100MB |
+| FastAPI runtime | 200MB | 10-20% (idle) | N/A |
+| **Total (idle)** | ~400MB | <1% | ~800MB |
+| **Total (indexing)** | ~600MB | 50-100% | Growing |
+
+**Recommendation:** Minimum 1GB RAM, 2GB recommended for comfortable operation.
+
+### Binary Size
+
+| Platform | Uncompressed | Compressed (tar.gz) |
+|----------|-------------|---------------------|
+| Linux x86_64 | ~50MB | ~15MB |
+| macOS arm64 | ~55MB | ~17MB |
+| Windows x86_64 | ~48MB | ~14MB |
+
+PyInstaller bundles Python interpreter + dependencies. Size is acceptable for modern systems.
+
+### Extension Size
+
+| Component | Size |
+|-----------|------|
+| Webpack bundle (production) | ~500KB |
+| Icons | ~50KB |
+| Manifest | <1KB |
+| **Total** | ~550KB |
+
+Well within Chrome's 10MB limit. No performance concerns.
+
+## Anti-Patterns to Avoid
+
+### Docker Anti-Pattern 1: Running as Root
+
+**What people do:**
+```dockerfile
+CMD ["uvicorn", "src.app.main:app"]
+# Runs as root (UID 0)
+```
+
+**Why it's wrong:**
+- Security risk if container compromised
+- File permissions issues on bind mounts
+- Against Docker best practices
+
+**Do this instead:**
+```dockerfile
+RUN useradd -m -u 1000 wims
+USER wims
+CMD ["uvicorn", "src.app.main:app"]
+```
+
+### Docker Anti-Pattern 2: Not Using .dockerignore
+
+**What people do:** `COPY . .` without .dockerignore
+
+**Why it's wrong:**
+- Copies node_modules, .venv, .git into build context
+- Slow builds (100s of MB copied)
+- Bloats image size
+
+**Do this instead:**
+```
+# .dockerignore
+node_modules
+.venv
+.git
+__pycache__
+*.pyc
+.env
+data/
+```
+
+### Docker Anti-Pattern 3: Putting Secrets in Image
+
+**What people do:**
+```dockerfile
+ENV API_KEY=sk-wims-hardcoded-secret
+```
+
+**Why it's wrong:**
+- Secret baked into image layers
+- Anyone with image access sees secret
+- Can't change without rebuilding
+
+**Do this instead:**
+```yaml
+# docker-compose.yml
+environment:
+  - API_KEY=${API_KEY}  # From .env file or shell
+
+# Or use Docker secrets
+secrets:
+  - api_key
+```
+
+### Extension Publishing Anti-Pattern: Hardcoding Version
+
+**What people do:**
+```json
+// manifest.json
+"version": "0.1.0"  // Manually update before each release
+```
+
+**Why it's wrong:**
+- Easy to forget and publish wrong version
+- Version in git doesn't match published version
+- Manual step prone to errors
+
+**Do this instead:** Use git tags as source of truth, update manifest in workflow
+
+```yaml
+- name: Update manifest version
+  run: |
+    VERSION=${GITHUB_REF#refs/tags/extension-v}
+    jq '.version = "$VERSION"' manifest.json > manifest.tmp
+```
+
+### PyInstaller Anti-Pattern: Bundling Dev Dependencies
+
+**What people do:**
+```
+pip install -r requirements-dev.txt
+pyinstaller main.py  # Bundles pytest, black, etc.
+```
+
+**Why it's wrong:**
+- Binary size bloated (100MB → 200MB)
+- Slower startup (loading unused modules)
+- Potential security issues (dev tools in prod binary)
+
+**Do this instead:**
+```
+pip install -r requirements.txt  # Runtime deps only
+pyinstaller main.py
+```
 
 ## Sources
 
-**FastAPI Query Parameters:**
-- [FastAPI Query Parameters Documentation](https://fastapi.tiangolo.com/tutorial/query-params/)
-- [How to Use FastAPI Query Parameters Effectively](https://oneuptime.com/blog/post/2026-02-03-fastapi-query-parameters/view)
+**Docker Multi-Stage Builds:**
+- [Official Docker Multi-Stage Builds Documentation](https://docs.docker.com/build/building/multi-stage/) - HIGH confidence
+- [Best practices for writing Dockerfiles](https://docs.docker.com/develop/dev-best-practices/) - HIGH confidence
+- [FastAPI in Containers - Docker](https://fastapi.tiangolo.com/deployment/docker/) - HIGH confidence
 
-**LanceDB Filtering:**
-- [LanceDB SQL Filtering Documentation](https://lancedb.github.io/lancedb/sql/)
-- [LanceDB Metadata Filtering Guide](https://lancedb.com/docs/search/filtering/)
+**Chrome Web Store Publishing:**
+- [Chrome Web Store API Documentation](https://developer.chrome.com/docs/webstore/using_webstore_api/) - HIGH confidence
+- [chrome-webstore-upload-cli GitHub](https://github.com/fregante/chrome-webstore-upload-cli) - MEDIUM confidence (community tool)
+- [Automating Chrome Extension Publishing with GitHub Actions](https://developer.chrome.com/docs/webstore/publish/) - MEDIUM confidence
 
-**React Infinite Scroll with TanStack Query:**
-- [TanStack Query Infinite Queries Documentation](https://tanstack.com/query/latest/docs/framework/react/guides/infinite-queries)
-- [Seamless infinite scrolling: TanStack Query and Intersection Observer](https://medium.com/@sanjivjangid/seamless-infinite-scrolling-tanstack-query-and-intersection-observer-c7ec8a544c83)
+**PyInstaller:**
+- [PyInstaller Documentation](https://pyinstaller.org/en/stable/) - HIGH confidence
+- [PyInstaller Spec Files](https://pyinstaller.org/en/stable/spec-files.html) - HIGH confidence
+- [Cross-Platform Compilation with PyInstaller](https://pyinstaller.org/en/stable/usage.html#supporting-multiple-operating-systems) - HIGH confidence
 
-**Search Relevance and Re-ranking:**
-- [Optimizing RAG with Hybrid Search & Reranking - Superlinked](https://superlinked.com/vectorhub/articles/optimizing-rag-with-hybrid-search-reranking)
-- [Azure AI Search: Hybrid Retrieval and Reranking](https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/azure-ai-search-outperforming-vector-search-with-hybrid-retrieval-and-reranking/3929167)
+**GitHub Actions:**
+- [GitHub Actions: Building and Testing Python](https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python) - HIGH confidence
+- [Creating Releases with GitHub Actions](https://docs.github.com/en/actions/releasing-packages) - HIGH confidence
+- [Matrix Builds in GitHub Actions](https://docs.github.com/en/actions/using-jobs/using-a-matrix-for-your-jobs) - HIGH confidence
 
-**Copy to Clipboard:**
-- [Implementing copy-to-clipboard in React with Clipboard API](https://blog.logrocket.com/implementing-copy-clipboard-react-clipboard-api/)
-- [useCopyToClipboard Hook](https://usehooks-ts.com/react-hook/use-copy-to-clipboard)
-
-**Virtual Scrolling:**
-- [Handling Large Data With Infinite Scrolling in React](https://www.ignek.com/blog/handling-large-data-with-infinite-scrolling-in-react)
-- [How To Render Large Datasets In React](https://www.syncfusion.com/blogs/post/render-large-datasets-in-react)
+**LanceDB Persistence:**
+- [LanceDB Storage Documentation](https://lancedb.github.io/lancedb/storage/) - HIGH confidence
+- Based on existing Dockerfile analysis - HIGH confidence (already uses volume mounts)
 
 ---
-*Architecture research for: AI Conversation Search & Browse UX Enhancements*
-*Researched: 2026-02-12*
+*Architecture research for: WIMS Distribution & Packaging*
+*Researched: 2026-02-18*
+*Confidence: HIGH - All patterns are industry standard, existing codebase already demonstrates feasibility*
