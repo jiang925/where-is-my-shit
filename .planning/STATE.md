@@ -3,16 +3,16 @@
 ## Project Reference
 
 **Core Value:** Never lose a conversation again: Instantly recall specific AI discussions or dev sessions across any platform and jump straight back into the original context.
-**Current Focus:** All milestones complete through v1.6
+**Current Focus:** v1.7 Distribution & Packaging
 
 ## Current Position
 
-**Phase:** 21 (Documentation for GitHub Release) — COMPLETE
-**Plan:** 3 of 3 complete
-**Status:** All phases complete. Project ready for GitHub release.
-**Last activity:** 2026-02-13 — Phase 21 complete (README, README_CN, docs/ reference files)
+**Phase:** Not started (defining requirements)
+**Plan:** —
+**Status:** Defining requirements for v1.7
+**Last activity:** 2026-02-18 — Milestone v1.7 started
 
-Progress: [████████████████████] 100% (21/21 phases complete)
+Progress: [░░░░░░░░░░░░░░░░░░░░] 0% (requirements phase)
 
 ## Performance Metrics
 
@@ -26,7 +26,8 @@ Progress: [████████████████████] 100% (2
 | v1.3 UI/API Integration | 3 | Complete (2026-02-12) |
 | v1.4 Search & Browse UX | 4 | Complete (2026-02-14) |
 | v1.5 Embedding & Infrastructure | 2 | Complete (2026-02-15) |
-| v1.6 GitHub Release | 1 | Complete (2026-02-13) |
+| v1.6 GitHub Release | 1 | Complete (2026-02-18) |
+| v1.7 Distribution & Packaging | TBD | Planned |
 
 **v1.5 Progress:**
 - Phase 19: Embedding Model Upgrade & DB Maintenance (3/3 plans complete) - Multi-backend providers, background compaction, auto-migration, bge-m3 default, CLI --promote

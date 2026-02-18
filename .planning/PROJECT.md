@@ -6,17 +6,46 @@ A centralized indexing and retrieval system for AI interactions across fragmente
 ## Core Value
 Never lose a conversation again: Instantly recall specific AI discussions or dev sessions across any platform and jump straight back into the original context.
 
-## Current Milestone: v1.4 Search & Browse UX Polish
+## Current Milestone: v1.7 Distribution & Packaging
+
+**Goal:** Make WIMS easily installable and distributable through automated publishing of Docker images, Chrome extension, and standalone daemon installer.
+
+**Target features:**
+- **Docker Images:** Auto-publish server+UI as container images on GitHub Container Registry
+- **Chrome Extension:** Auto-publish to Chrome Web Store
+- **Standalone Daemon:** Package and distribute watcher daemon without requiring git clone
+
+**Context:** Project has complete documentation and passing CI. Ready for public distribution but lacks automated publishing workflows and easy installation paths for non-developer users.
+
+## Recent Milestone: v1.6 GitHub Release (Shipped)
+
+**Goal:** Write user-facing documentation so the project can be published on GitHub as an open-source tool.
+
+**Shipped Features:**
+- **Bilingual Documentation:** Complete English and Chinese READMEs with identical structure
+- **Reference Docs:** CLI command reference and embedding provider configuration guides
+- **MIT License:** Open-source license with clear attribution
+- **Professional Presentation:** 596-line comprehensive documentation following industry standards
+
+## Recent Milestone: v1.5 Embedding & Infrastructure (Shipped)
+
+**Goal:** Upgrade embedding model and add infrastructure for long-term database maintenance.
+
+**Shipped Features:**
+- **Multi-Backend Embeddings:** Support for sentence-transformers, fastembed, ONNX, OpenAI, Ollama
+- **Model Upgrade:** Migrated from bge-small-en-v1.5 (384d) to bge-m3 (1024d) for better multilingual search
+- **Zero-Downtime Migration:** CLI-driven re-embedding with v2 vector columns and auto-promotion
+- **Background Compaction:** Automatic LanceDB compaction after write threshold
+
+## Recent Milestone: v1.4 Search & Browse UX (Shipped)
 
 **Goal:** Transform WIMS from "it works" to "it's actually useful" by improving search quality and adding flexible browsing capabilities.
 
-**Target features:**
-- **Source Filtering:** Filter results by data source (Claude Code, ChatGPT, Gemini, etc.)
-- **Claude Code Path Fix:** Replace broken "Open" link with rendered path + copy button
-- **Search Relevance:** Research and implement better semantic search (embeddings/ranking/hybrid)
-- **Browse Page:** Chronological browsing with flexible filters and date ranges
-
-**Context:** Search works end-to-end but has usability issues: irrelevant results (0.7 score for unrelated content), noisy fragments, broken Claude Code links, no browsing capabilities.
+**Shipped Features:**
+- **Source Filtering:** Filter results by data source with URL state persistence
+- **Claude Code Path Display:** File path rendering with copy-to-clipboard
+- **Search Relevance:** Hybrid search with unified reranker, two-tier result display
+- **Browse Page:** Chronological timeline with date range filters and cursor pagination
 
 ## Recent Milestone: v1.3 UI/API Integration & Verification (Shipped)
 
@@ -49,10 +78,11 @@ Never lose a conversation again: Instantly recall specific AI discussions or dev
 
 ## Context
 
-Shipped v1.2 on 2026-02-11.
-- **Status:** Simplified, secure, "one-command" deployable system.
-- **Tech Stack:** Python (FastAPI/FastEmbed/LanceDB), TypeScript (React/Chrome Extension), uv (dependency management).
-- **Privacy:** Fully local operation (no cloud embeddings used in v1).
+Shipped v1.6 on 2026-02-18.
+- **Status:** Fully documented, CI passing (100%), ready for public distribution.
+- **Tech Stack:** Python (FastAPI/sentence-transformers/LanceDB), TypeScript (React/Chrome Extension), uv (dependency management).
+- **Distribution Ready:** Complete English+Chinese docs, reference guides, MIT license, all tests passing.
+- **Privacy:** Fully local operation with multi-backend embedding support (local or API-based).
 
 ## Constraints
 
@@ -73,4 +103,4 @@ Shipped v1.2 on 2026-02-11.
 | **uv Package Manager** | Faster, robust venv handling, prevents system breakage. | ✓ Implemented (v1.2) |
 
 ---
-*Last updated: 2026-02-12 (Start of v1.4)*
+*Last updated: 2026-02-18 (Start of v1.7)*
