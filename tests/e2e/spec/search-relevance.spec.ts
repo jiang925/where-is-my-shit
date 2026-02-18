@@ -10,7 +10,7 @@ test.describe('Search Relevance - Two-Tier Display', () => {
       headers: { 'X-API-Key': apiKey },
       data: {
         conversation_id: 'relevance-test-primary-1',
-        platform: 'integration-test',
+        platform: 'chatgpt',
         content: 'Kubernetes deployment configuration using Helm charts with custom values for production environment settings',
         role: 'user',
         timestamp: new Date().toISOString(),
@@ -73,7 +73,7 @@ test.describe('Search Relevance - Two-Tier Display', () => {
       headers: { 'X-API-Key': apiKey },
       data: {
         conversation_id: 'relevance-test-score-display',
-        platform: 'integration-test',
+        platform: 'claude',
         content: 'Docker container orchestration with detailed configuration management and deployment strategies',
         role: 'user',
         timestamp: new Date().toISOString(),

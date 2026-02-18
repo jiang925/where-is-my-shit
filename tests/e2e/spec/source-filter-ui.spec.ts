@@ -293,16 +293,17 @@ test('source filter UI: browse page filtering works correctly', async ({ page, a
   await expect(page.getByRole('button', { name: 'Claude Code' })).toBeVisible();
   console.log('Filter UI visible on Browse page with correct platform names');
 
-  // Verify instructions are displayed when no filter selected
-  await expect(page.getByText('Select sources to browse')).toBeVisible();
-  console.log('Browse instructions displayed');
+  // Phase 20: All sources are now selected by default, so results show immediately
+  // Verify platform buttons show active state (bg-green-100 when part of "All Sources")
+  const chatgptButton = page.getByRole('button', { name: 'ChatGPT' });
+  await expect(chatgptButton).toHaveClass(/bg-green-100/); // Active via All Sources preset
+  console.log('All sources selected by default in Phase 20');
 
-  // Verify hardcoded example chips have correct names
-  await expect(page.getByText('ChatGPT').nth(1)).toBeVisible(); // nth(1) for the example chip
-  await expect(page.getByText('Cursor').nth(0)).toBeVisible();
-  console.log('Example chips show correct platform names');
+  // Deselect all platforms by clicking them
+  await page.getByRole('button', { name: 'ChatGPT' }).click();
+  await page.waitForTimeout(200);
 
-  // Select a platform and verify instructions disappear
+  // Now select just ChatGPT again
   await page.getByRole('button', { name: 'ChatGPT' }).click();
   await expect(page.getByText('1 selected')).toBeVisible();
   console.log('Filter selected on Browse page');

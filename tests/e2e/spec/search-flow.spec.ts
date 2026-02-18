@@ -12,7 +12,7 @@ test('user can authenticate, search, and see results', async ({ page, apiKey, re
     },
     data: {
       conversation_id: 'integ-test-conv-1',
-      platform: 'integration-test',
+      platform: 'chatgpt',
       content: 'Setting up Kubernetes cluster with Docker containers for microservice deployment',
       role: 'user',
       timestamp: new Date().toISOString(),
@@ -29,7 +29,7 @@ test('user can authenticate, search, and see results', async ({ page, apiKey, re
     },
     data: {
       conversation_id: 'integ-test-conv-2',
-      platform: 'integration-test',
+      platform: 'claude',
       content: 'Debugging Python FastAPI application with structured logging and error handling',
       role: 'assistant',
       timestamp: new Date().toISOString(),
@@ -100,9 +100,9 @@ test('user can authenticate, search, and see results', async ({ page, apiKey, re
   console.log('Result card content validated');
 
   // Assert platform metadata is displayed if visible in card
-  const platformText = page.locator('text=integration-test');
+  const platformText = page.locator('text=chatgpt, text=claude').first();
   if (await platformText.count() > 0) {
-    await expect(platformText.first()).toBeVisible();
+    await expect(platformText).toBeVisible();
     console.log('Platform metadata displayed');
   }
 });
