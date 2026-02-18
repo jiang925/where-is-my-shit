@@ -57,19 +57,24 @@ def _check_embedding_dimension_compat(table) -> None:
                 provider_model=service.get_model_name(),
                 action="falling_back_to_fastembed_bge_small",
             )
-            print(f"\n⚠️  Dimension mismatch: DB has {db_dims}-dim vectors, "
-                  f"but configured model produces {provider_dims}-dim vectors.")
+            print(
+                f"\n⚠️  Dimension mismatch: DB has {db_dims}-dim vectors, "
+                f"but configured model produces {provider_dims}-dim vectors."
+            )
             print(f"   Falling back to fastembed/BAAI/bge-small-en-v1.5 ({db_dims}d) for compatibility.")
             print("   Run 'uv run python -m src.cli reembed' to upgrade existing vectors.\n")
 
             # Reset and reinitialize with fastembed
             EmbeddingService.reset()
             from src.app.services.embedding_provider import create_embedding_provider
+
             EmbeddingService._instance = EmbeddingService.__new__(EmbeddingService)
-            EmbeddingService._provider = create_embedding_provider({
-                "provider": "fastembed",
-                "model": "BAAI/bge-small-en-v1.5",
-            })
+            EmbeddingService._provider = create_embedding_provider(
+                {
+                    "provider": "fastembed",
+                    "model": "BAAI/bge-small-en-v1.5",
+                }
+            )
         else:
             logger.info(
                 "embedding_dimensions_ok",
@@ -97,10 +102,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # Check for incomplete migration and auto-resume in background thread
     migration_thread = threading.Thread(
-        target=auto_resume_migration,
-        args=(table,),
-        daemon=True,
-        name="MigrationResumeThread"
+        target=auto_resume_migration, args=(table,), daemon=True, name="MigrationResumeThread"
     )
     migration_thread.start()
 

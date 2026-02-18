@@ -54,6 +54,12 @@ async function globalSetup(config: FullConfig) {
     AUTH_DB_PATH: 'data/test-auth.db',
     CORS_ORIGINS: ['http://localhost', 'http://127.0.0.1'],
     EXTENSION_ID: '',
+    // Use fastembed with bge-small-en-v1.5 for tests (much smaller model ~130MB vs 2.27GB)
+    embedding: {
+      provider: 'fastembed',
+      model: 'BAAI/bge-small-en-v1.5',
+      dimensions: 384,
+    },
   };
 
   fs.writeFileSync(testConfigPath, JSON.stringify(testConfig, null, 2));

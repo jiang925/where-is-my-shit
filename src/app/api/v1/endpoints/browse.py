@@ -10,7 +10,7 @@ from src.app.db.client import db_client
 from src.app.schemas.message import BrowseItem, BrowseRequest, BrowseResponse
 
 # Whitelist of allowed platforms for security validation
-ALLOWED_PLATFORMS = ['chatgpt', 'claude', 'claude-code', 'gemini', 'perplexity', 'cursor']
+ALLOWED_PLATFORMS = ["chatgpt", "claude", "claude-code", "gemini", "perplexity", "cursor"]
 
 router = APIRouter(dependencies=[Depends(verify_api_key)])
 
@@ -143,7 +143,7 @@ async def browse_documents(request: BrowseRequest):
 
     # 7. Apply pagination (limit + 1 to check if there are more results)
     has_more = len(filtered_results) > request.limit
-    page_results = filtered_results[:request.limit]
+    page_results = filtered_results[: request.limit]
 
     # 8. Build response
     items = []
@@ -154,15 +154,17 @@ async def browse_documents(request: BrowseRequest):
             timestamp_value = datetime.fromisoformat(timestamp_value.replace("Z", "+00:00"))
         unix_timestamp = int(timestamp_value.timestamp()) if timestamp_value else 0
 
-        items.append(BrowseItem(
-            id=r.get("id", ""),
-            conversation_id=r.get("conversation_id", ""),
-            timestamp=unix_timestamp,
-            platform=r.get("platform", ""),
-            title=r.get("title", ""),
-            content=r.get("content", ""),
-            url=r.get("url", ""),
-        ))
+        items.append(
+            BrowseItem(
+                id=r.get("id", ""),
+                conversation_id=r.get("conversation_id", ""),
+                timestamp=unix_timestamp,
+                platform=r.get("platform", ""),
+                title=r.get("title", ""),
+                content=r.get("content", ""),
+                url=r.get("url", ""),
+            )
+        )
 
     # 9. Build nextCursor
     next_cursor = None
@@ -174,15 +176,12 @@ async def browse_documents(request: BrowseRequest):
         else:
             timestamp_iso = timestamp_value.isoformat()
 
-        cursor_data = {
-            "timestamp": timestamp_iso,
-            "id": last_item.get("id", "")
-        }
+        cursor_data = {"timestamp": timestamp_iso, "id": last_item.get("id", "")}
         next_cursor = base64.b64encode(json.dumps(cursor_data).encode()).decode()
 
     return BrowseResponse(
         items=items,
         nextCursor=next_cursor,
         hasMore=has_more,
-        total=len(filtered_results)  # Total matching results before pagination
+        total=len(filtered_results),  # Total matching results before pagination
     )

@@ -67,8 +67,7 @@ class DBClient:
                 # Check existing indices
                 indices = table.list_indices()
                 has_fts_index = any(
-                    idx.get("index_type") == "FTS" and "content" in str(idx.get("columns", []))
-                    for idx in indices
+                    idx.get("index_type") == "FTS" and "content" in str(idx.get("columns", [])) for idx in indices
                 )
 
                 if not has_fts_index:

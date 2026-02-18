@@ -397,7 +397,7 @@ def auto_resume_migration(table, batch_size: int = 100, delay_seconds: float = 0
             "auto_resume_migration_config",
             provider=embedding_config["provider"],
             model=provider.get_model_name(),
-            dimensions=provider.get_dimensions()
+            dimensions=provider.get_dimensions(),
         )
 
         # Get initial status
@@ -407,7 +407,7 @@ def auto_resume_migration(table, batch_size: int = 100, delay_seconds: float = 0
             total=status["total"],
             migrated=status["migrated"],
             remaining=status["remaining"],
-            percent_complete=status["percent_complete"]
+            percent_complete=status["percent_complete"],
         )
 
         # Process in batches until complete
@@ -433,14 +433,11 @@ def auto_resume_migration(table, batch_size: int = 100, delay_seconds: float = 0
                 iteration=iteration,
                 processed=processed,
                 remaining=remaining,
-                total_processed=total_processed
+                total_processed=total_processed,
             )
 
             if result["status"] == "complete":
-                logger.info(
-                    "auto_resume_migration_complete",
-                    total_processed=total_processed
-                )
+                logger.info("auto_resume_migration_complete", total_processed=total_processed)
                 break
 
             # Delay before next batch

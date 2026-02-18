@@ -71,11 +71,7 @@ class CompactionManager:
             current_count = self._write_count
 
             if current_count >= self.write_threshold:
-                logger.debug(
-                    "write_threshold_exceeded",
-                    write_count=current_count,
-                    threshold=self.write_threshold
-                )
+                logger.debug("write_threshold_exceeded", write_count=current_count, threshold=self.write_threshold)
                 # Reset counter and trigger compaction
                 self._write_count = 0
                 self._trigger_compact()
@@ -87,11 +83,7 @@ class CompactionManager:
         This method spawns a daemon thread to run compaction without blocking
         the calling thread (typically an API request handler).
         """
-        compact_thread = threading.Thread(
-            target=self._compact,
-            daemon=True,
-            name="CompactionTriggerThread"
-        )
+        compact_thread = threading.Thread(target=self._compact, daemon=True, name="CompactionTriggerThread")
         compact_thread.start()
         logger.debug("compaction_triggered", thread_name=compact_thread.name)
 
@@ -137,7 +129,7 @@ class CompactionManager:
                 "compaction_complete",
                 fragments_before=fragments_before,
                 fragments_after=fragments_after,
-                fragments_merged=fragments_merged
+                fragments_merged=fragments_merged,
             )
 
         except Exception as e:
@@ -175,11 +167,7 @@ class CompactionManager:
 
             logger.info("compaction_thread_stopped")
 
-        self._thread = threading.Thread(
-            target=background_loop,
-            daemon=True,
-            name="CompactionManagerThread"
-        )
+        self._thread = threading.Thread(target=background_loop, daemon=True, name="CompactionManagerThread")
         self._thread.start()
         logger.info("compaction_manager_started", thread_name=self._thread.name)
 

@@ -54,7 +54,7 @@ def reembed_command(args):
     print("Re-embedding Configuration:")
     print(f"  Provider: {embedding_config['provider']}")
     print(f"  Target model: {embedding_config['model']}")
-    if embedding_config['provider'] in ('ollama', 'openai'):
+    if embedding_config["provider"] in ("ollama", "openai"):
         print(f"  Base URL: {embedding_config['base_url']}")
     print(f"  Config file: {config_manager.path}\n")
 
@@ -84,7 +84,7 @@ def reembed_command(args):
             print(f"  Remaining: {status['remaining']}")
             print(f"  Progress: {status['percent_complete']:.1f}%")
 
-            if status['has_v2']:
+            if status["has_v2"]:
                 print("\n  Note: vector_v2 column exists (migration in progress)")
                 print("  Auto-promotion will occur when all documents are re-embedded.")
             else:
@@ -100,10 +100,7 @@ def reembed_command(args):
     print("Starting re-embedding process...\n")
 
     try:
-        run_full_migration(
-            batch_size=args.batch_size,
-            delay_seconds=args.delay
-        )
+        run_full_migration(batch_size=args.batch_size, delay_seconds=args.delay)
     except Exception as e:
         logger.error(f"Migration failed: {e}")
         print(f"\nError: Migration failed - {e}")

@@ -53,9 +53,7 @@ def test_default_config_creates_sentence_transformer_provider():
 
         import numpy as np
 
-        with patch(
-            "src.app.services.providers.sentence_transformer_provider.SentenceTransformer"
-        ) as mock_st:
+        with patch("src.app.services.providers.sentence_transformer_provider.SentenceTransformer") as mock_st:
             mock_model = MagicMock()
             mock_model.encode.return_value = np.array([0.1] * 1024)
             mock_st.return_value = mock_model
@@ -176,18 +174,14 @@ class TestCreateEmbeddingProvider:
 
     def test_factory_creates_sentence_transformer_provider(self):
         """Test factory creates SentenceTransformerProvider."""
-        with patch(
-            "src.app.services.providers.sentence_transformer_provider.SentenceTransformer"
-        ) as mock_st:
+        with patch("src.app.services.providers.sentence_transformer_provider.SentenceTransformer") as mock_st:
             import numpy as np
 
             mock_model = MagicMock()
             mock_model.encode.return_value = np.array([0.1] * 1024)
             mock_st.return_value = mock_model
 
-            provider = create_embedding_provider(
-                {"provider": "sentence-transformers", "model": "BAAI/bge-m3"}
-            )
+            provider = create_embedding_provider({"provider": "sentence-transformers", "model": "BAAI/bge-m3"})
             from src.app.services.providers.sentence_transformer_provider import SentenceTransformerProvider
 
             assert isinstance(provider, SentenceTransformerProvider)
@@ -205,14 +199,16 @@ class TestCreateEmbeddingProvider:
             mock_client.embeddings.create.return_value = mock_response
             mock_openai.return_value = mock_client
 
-            provider = create_embedding_provider({
-                "provider": "openai",
-                "model": "text-embedding-3-small",
-                "base_url": "https://api.openai.com/v1",
-                "api_key": "sk-test",
-                "timeout": 60,
-                "batch_size": 50,
-            })
+            provider = create_embedding_provider(
+                {
+                    "provider": "openai",
+                    "model": "text-embedding-3-small",
+                    "base_url": "https://api.openai.com/v1",
+                    "api_key": "sk-test",
+                    "timeout": 60,
+                    "batch_size": 50,
+                }
+            )
             from src.app.services.providers.external_api_provider import OpenAICompatibleProvider
 
             assert isinstance(provider, OpenAICompatibleProvider)
@@ -230,11 +226,13 @@ class TestCreateEmbeddingProvider:
             mock_client.embeddings.create.return_value = mock_response
             mock_openai.return_value = mock_client
 
-            provider = create_embedding_provider({
-                "provider": "ollama",
-                "model": "nomic-embed-text",
-                "base_url": "http://localhost:11434/v1",
-            })
+            provider = create_embedding_provider(
+                {
+                    "provider": "ollama",
+                    "model": "nomic-embed-text",
+                    "base_url": "http://localhost:11434/v1",
+                }
+            )
             from src.app.services.providers.external_api_provider import OpenAICompatibleProvider
 
             assert isinstance(provider, OpenAICompatibleProvider)

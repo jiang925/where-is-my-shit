@@ -37,10 +37,12 @@ class TestMigrationStatus:
     def test_status_with_v2_all_migrated(self):
         """Should report 100% when all rows have vector_v2."""
         table = MagicMock()
-        table.schema = pa.schema([
-            pa.field("id", pa.utf8()),
-            pa.field("vector_v2", pa.list_(pa.float32(), 384)),
-        ])
+        table.schema = pa.schema(
+            [
+                pa.field("id", pa.utf8()),
+                pa.field("vector_v2", pa.list_(pa.float32(), 384)),
+            ]
+        )
         table.count_rows.return_value = 50
 
         # Mock search chain for NULL check
@@ -64,10 +66,12 @@ class TestMigrationStatus:
     def test_status_with_v2_partial_migration(self):
         """Should calculate correct percentages for partial migration."""
         table = MagicMock()
-        table.schema = pa.schema([
-            pa.field("id", pa.utf8()),
-            pa.field("vector_v2", pa.list_(pa.float32(), 384)),
-        ])
+        table.schema = pa.schema(
+            [
+                pa.field("id", pa.utf8()),
+                pa.field("vector_v2", pa.list_(pa.float32(), 384)),
+            ]
+        )
         table.count_rows.return_value = 100
 
         # Mock 30 rows with NULL vector_v2
@@ -91,10 +95,12 @@ class TestMigrationStatus:
     def test_status_empty_table(self):
         """Should handle empty tables correctly."""
         table = MagicMock()
-        table.schema = pa.schema([
-            pa.field("id", pa.utf8()),
-            pa.field("vector_v2", pa.list_(pa.float32(), 384)),
-        ])
+        table.schema = pa.schema(
+            [
+                pa.field("id", pa.utf8()),
+                pa.field("vector_v2", pa.list_(pa.float32(), 384)),
+            ]
+        )
         table.count_rows.return_value = 0
 
         status = get_migration_status(table)
@@ -129,11 +135,13 @@ class TestAddVectorV2Column:
     def test_idempotent_when_columns_exist(self):
         """Should skip if columns already exist."""
         table = MagicMock()
-        table.schema = pa.schema([
-            pa.field("id", pa.utf8()),
-            pa.field("vector_v2", pa.list_(pa.float32(), 768)),
-            pa.field("embedding_model_v2", pa.utf8()),
-        ])
+        table.schema = pa.schema(
+            [
+                pa.field("id", pa.utf8()),
+                pa.field("vector_v2", pa.list_(pa.float32(), 768)),
+                pa.field("embedding_model_v2", pa.utf8()),
+            ]
+        )
 
         add_vector_v2_column(table, dimensions=768)
 
@@ -143,10 +151,12 @@ class TestAddVectorV2Column:
     def test_add_only_missing_column(self):
         """Should add only vector_v2 if embedding_model_v2 exists."""
         table = MagicMock()
-        table.schema = pa.schema([
-            pa.field("id", pa.utf8()),
-            pa.field("embedding_model_v2", pa.utf8()),
-        ])
+        table.schema = pa.schema(
+            [
+                pa.field("id", pa.utf8()),
+                pa.field("embedding_model_v2", pa.utf8()),
+            ]
+        )
 
         add_vector_v2_column(table, dimensions=512)
 
@@ -346,13 +356,15 @@ class TestPromoteMigration:
         table.name = "messages"
 
         # Mock schema with vector_v2
-        table.schema = pa.schema([
-            pa.field("id", pa.utf8()),
-            pa.field("content", pa.utf8()),
-            pa.field("vector", pa.list_(pa.float32(), 384)),
-            pa.field("vector_v2", pa.list_(pa.float32(), 768)),
-            pa.field("embedding_model_v2", pa.utf8()),
-        ])
+        table.schema = pa.schema(
+            [
+                pa.field("id", pa.utf8()),
+                pa.field("content", pa.utf8()),
+                pa.field("vector", pa.list_(pa.float32(), 384)),
+                pa.field("vector_v2", pa.list_(pa.float32(), 768)),
+                pa.field("embedding_model_v2", pa.utf8()),
+            ]
+        )
 
         # Mock arrow table data
         mock_arrow_table = MagicMock()
@@ -367,7 +379,7 @@ class TestPromoteMigration:
 
         mock_arrow_table.drop.side_effect = [
             mock_after_drop_vector,  # After dropping 'vector'
-            mock_final,              # After dropping migration columns
+            mock_final,  # After dropping migration columns
         ]
         mock_after_drop_vector.append_column.return_value = mock_after_append
         mock_after_append.drop.return_value = mock_final
@@ -393,10 +405,12 @@ class TestPromoteMigration:
     def test_promote_migration_no_v2_column(self):
         """Should skip promotion if no vector_v2 column exists."""
         table = MagicMock()
-        table.schema = pa.schema([
-            pa.field("id", pa.utf8()),
-            pa.field("vector", pa.list_(pa.float32(), 384)),
-        ])
+        table.schema = pa.schema(
+            [
+                pa.field("id", pa.utf8()),
+                pa.field("vector", pa.list_(pa.float32(), 384)),
+            ]
+        )
 
         result = promote_migration(table)
 
@@ -411,10 +425,12 @@ class TestIsMigrationIncomplete:
     def test_incomplete_when_v2_exists_with_nulls(self):
         """Should return True when v2 column exists with NULL rows."""
         table = MagicMock()
-        table.schema = pa.schema([
-            pa.field("id", pa.utf8()),
-            pa.field("vector_v2", pa.list_(pa.float32(), 768)),
-        ])
+        table.schema = pa.schema(
+            [
+                pa.field("id", pa.utf8()),
+                pa.field("vector_v2", pa.list_(pa.float32(), 768)),
+            ]
+        )
 
         with patch("src.app.db.migration.get_migration_status") as status_mock:
             status_mock.return_value = {"remaining": 10}
@@ -426,10 +442,12 @@ class TestIsMigrationIncomplete:
     def test_not_incomplete_when_no_v2(self):
         """Should return False when no v2 column exists."""
         table = MagicMock()
-        table.schema = pa.schema([
-            pa.field("id", pa.utf8()),
-            pa.field("vector", pa.list_(pa.float32(), 384)),
-        ])
+        table.schema = pa.schema(
+            [
+                pa.field("id", pa.utf8()),
+                pa.field("vector", pa.list_(pa.float32(), 384)),
+            ]
+        )
 
         result = is_migration_incomplete(table)
 
@@ -438,10 +456,12 @@ class TestIsMigrationIncomplete:
     def test_not_incomplete_when_all_migrated(self):
         """Should return False when all rows are migrated."""
         table = MagicMock()
-        table.schema = pa.schema([
-            pa.field("id", pa.utf8()),
-            pa.field("vector_v2", pa.list_(pa.float32(), 768)),
-        ])
+        table.schema = pa.schema(
+            [
+                pa.field("id", pa.utf8()),
+                pa.field("vector_v2", pa.list_(pa.float32(), 768)),
+            ]
+        )
 
         with patch("src.app.db.migration.get_migration_status") as status_mock:
             status_mock.return_value = {"remaining": 0}
@@ -490,7 +510,7 @@ class TestAutoResumeMigration:
                                 "total": 100,
                                 "migrated": 50,
                                 "remaining": 50,
-                                "percent_complete": 50.0
+                                "percent_complete": 50.0,
                             }
 
                             # Simulate two batches then complete

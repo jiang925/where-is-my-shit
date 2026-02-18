@@ -13,7 +13,7 @@ from src.app.services.embedding import EmbeddingService
 from src.app.services.reranker import UnifiedReranker
 
 # Whitelist of allowed platforms for security validation
-ALLOWED_PLATFORMS = ['chatgpt', 'claude', 'claude-code', 'gemini', 'perplexity', 'cursor']
+ALLOWED_PLATFORMS = ["chatgpt", "claude", "claude-code", "gemini", "perplexity", "cursor"]
 
 router = APIRouter(dependencies=[Depends(verify_api_key)])
 
@@ -67,17 +67,13 @@ async def search_documents(request: SearchRequest):
         vector_search = table.search(query_vector, query_type="vector")
         if where_clause:
             vector_search = vector_search.where(where_clause)
-        vector_results_list = await run_in_threadpool(
-            vector_search.limit(candidate_limit).to_list
-        )
+        vector_results_list = await run_in_threadpool(vector_search.limit(candidate_limit).to_list)
 
         # Execute FTS search
         fts_search = table.search(request.query, query_type="fts")
         if where_clause:
             fts_search = fts_search.where(where_clause)
-        fts_results_list = await run_in_threadpool(
-            fts_search.limit(candidate_limit).to_list
-        )
+        fts_results_list = await run_in_threadpool(fts_search.limit(candidate_limit).to_list)
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Search execution failed: {str(e)}")

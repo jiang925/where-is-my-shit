@@ -169,9 +169,7 @@ def test_browse_combined_filters(mock_settings, auth_headers, db_client, test_db
 
     # Browse with both filters
     response = client.post(
-        "/api/v1/browse",
-        json={"limit": 10, "date_range": "today", "platforms": ["chatgpt"]},
-        headers=auth_headers
+        "/api/v1/browse", json={"limit": 10, "date_range": "today", "platforms": ["chatgpt"]}, headers=auth_headers
     )
     assert response.status_code == 200
 

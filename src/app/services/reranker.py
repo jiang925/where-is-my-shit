@@ -9,6 +9,7 @@ Architecture principle:
 - Configurable weights for future model-specific tuning
 - Two-tier threshold partitioning for primary/secondary result presentation
 """
+
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -21,6 +22,7 @@ class ScoringConfig:
 
     Default values tuned for BGE-small embedding model based on Phase 17 research.
     """
+
     vector_weight: float = 0.6
     text_weight: float = 0.3
     quality_weight: float = 0.1
@@ -32,6 +34,7 @@ class ScoringConfig:
 @dataclass
 class RankedResults:
     """Reranking output with primary and secondary tiers."""
+
     primary: list[dict[str, Any]] = field(default_factory=list)
     secondary: list[dict[str, Any]] = field(default_factory=list)
     total_considered: int = 0
@@ -108,12 +111,10 @@ class UnifiedReranker:
         scored_results.sort(key=lambda r: r["final_score"], reverse=True)
 
         # Partition into primary and secondary tiers
-        primary = [
-            r for r in scored_results
-            if r["final_score"] >= self.config.primary_threshold
-        ]
+        primary = [r for r in scored_results if r["final_score"] >= self.config.primary_threshold]
         secondary = [
-            r for r in scored_results
+            r
+            for r in scored_results
             if self.config.secondary_threshold <= r["final_score"] < self.config.primary_threshold
         ]
 
@@ -123,11 +124,7 @@ class UnifiedReranker:
             total_considered=len(scored_results),
         )
 
-    def _normalize_scores(
-        self,
-        results: list[dict[str, Any]],
-        score_field: str
-    ) -> list[dict[str, Any]]:
+    def _normalize_scores(self, results: list[dict[str, Any]], score_field: str) -> list[dict[str, Any]]:
         """Normalize scores to 0-1 range using min-max scaling.
 
         Args:
@@ -185,10 +182,12 @@ class UnifiedReranker:
             doc_id = result["id"]
             if doc_id in merged_dict:
                 # Merge scores from both sources
-                merged_dict[doc_id].update({
-                    "text_score": result.get("text_score", 0.0),
-                    "text_score_norm": result.get("text_score_norm", 0.0),
-                })
+                merged_dict[doc_id].update(
+                    {
+                        "text_score": result.get("text_score", 0.0),
+                        "text_score_norm": result.get("text_score_norm", 0.0),
+                    }
+                )
             else:
                 # Text-only result
                 merged_dict[doc_id] = result.copy()

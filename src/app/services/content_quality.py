@@ -9,15 +9,13 @@ Key behaviors:
 - Short content (< 20 chars) gets quadratic penalty
 - Substantial content (>= 20 chars) gets full score (1.0)
 """
+
 import re
 
 # Filler patterns: exact matches for low-information words
 # Matches: yes, no, ok, okay, continue, proceed, alright, "got it", sure
 # Case insensitive, allows surrounding whitespace and trailing punctuation
-FILLER_PATTERN = re.compile(
-    r"^\s*(yes|no|ok|okay|continue|proceed|alright|got\s+it|sure)[.,!?]*\s*$",
-    re.IGNORECASE
-)
+FILLER_PATTERN = re.compile(r"^\s*(yes|no|ok|okay|continue|proceed|alright|got\s+it|sure)[.,!?]*\s*$", re.IGNORECASE)
 
 
 def is_low_information_content(text: str) -> bool:

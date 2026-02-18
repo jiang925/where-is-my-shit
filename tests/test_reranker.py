@@ -1,15 +1,11 @@
 """Tests for unified reranker module."""
+
 from src.app.services.reranker import RankedResults, ScoringConfig, UnifiedReranker
 
 
 def make_result(id, content, vector_score=0.0, text_score=0.0):
     """Helper to create mock search result."""
-    return {
-        "id": id,
-        "content": content,
-        "vector_score": vector_score,
-        "text_score": text_score
-    }
+    return {"id": id, "content": content, "vector_score": vector_score, "text_score": text_score}
 
 
 class TestScoringConfig:
@@ -37,7 +33,7 @@ class TestScoringConfig:
             quality_weight=0.1,
             exact_match_boost=2.0,
             primary_threshold=0.8,
-            secondary_threshold=0.7
+            secondary_threshold=0.7,
         )
         assert config.vector_weight == 0.5
         assert config.text_weight == 0.4
@@ -49,11 +45,7 @@ class TestRankedResults:
 
     def test_structure(self):
         """Test RankedResults has expected fields."""
-        results = RankedResults(
-            primary=[{"id": 1}],
-            secondary=[{"id": 2}],
-            total_considered=5
-        )
+        results = RankedResults(primary=[{"id": 1}], secondary=[{"id": 2}], total_considered=5)
         assert results.primary == [{"id": 1}]
         assert results.secondary == [{"id": 2}]
         assert results.total_considered == 5

@@ -1,4 +1,5 @@
 """Tests for content quality scoring module."""
+
 from src.app.services.content_quality import (
     calculate_content_quality_score,
     is_low_information_content,

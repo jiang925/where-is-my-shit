@@ -108,6 +108,7 @@ class SearchResponse(BaseModel):
 
 class BrowseItem(BaseModel):
     """Single item in browse results."""
+
     id: str
     conversation_id: str
     timestamp: int  # Unix timestamp
@@ -119,6 +120,7 @@ class BrowseItem(BaseModel):
 
 class BrowseRequest(BaseModel):
     """Payload for browse (chronological listing) queries."""
+
     cursor: str | None = None  # Base64-encoded JSON: {"timestamp": str, "id": str}
     limit: int = 20
     date_range: str | None = None  # "today", "this_week", "this_month", "all_time" or None
@@ -127,6 +129,7 @@ class BrowseRequest(BaseModel):
 
 class BrowseResponse(BaseModel):
     """Browse results with cursor-based pagination."""
+
     items: list[BrowseItem]
     nextCursor: str | None = None  # Base64-encoded cursor for next page
     hasMore: bool = False
