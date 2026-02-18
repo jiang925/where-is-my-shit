@@ -17,18 +17,20 @@ def mock_settings(monkeypatch, test_api_key):
     from src.app.core.config import EmbeddingConfig
     from src.app.services.embedding import EmbeddingService
 
-    # Reset embedding service singleton before patching settings
-    EmbeddingService.reset()
-
     # Use fastembed with bge-small-en-v1.5 (384 dimensions) for tests
     test_config = ServerConfig(
         api_key=test_api_key,
         embedding=EmbeddingConfig(provider="fastembed", model="BAAI/bge-small-en-v1.5", dimensions=384),
     )
+
+    # Patch settings EVERYWHERE before resetting EmbeddingService
     monkeypatch.setattr("src.app.core.auth.get_settings", lambda: test_config)
-    # Also patch the global settings object and get_settings function
     monkeypatch.setattr("src.app.core.config.settings", test_config)
     monkeypatch.setattr("src.app.core.config.get_settings", lambda: test_config)
+    monkeypatch.setattr("src.app.services.embedding.get_settings", lambda: test_config)
+
+    # NOW reset embedding service so it reinitializes with patched settings
+    EmbeddingService.reset()
 
 
 @pytest.fixture
