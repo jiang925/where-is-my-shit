@@ -82,7 +82,12 @@ test('source filter UI: platform filtering works correctly on search page', asyn
   console.log(`Search without filter returned ${data1.count} results`);
   expect(data1.count).toBeGreaterThanOrEqual(3); // At least our 3 ingested docs
 
-  // Step 5 - Click platform chip (ChatGPT), verify URL updates and ACTUAL FILTERING
+  // Step 5 - Phase 20: Clear all filters first, then select specific platform
+  await page.getByRole('button', { name: /Clear/i }).click();
+  await page.waitForTimeout(200);
+  console.log('Cleared all filters');
+
+  // Now click ChatGPT to select ONLY it, verify URL updates and ACTUAL FILTERING
   const chatgptButton = page.getByRole('button', { name: 'ChatGPT' });
   const searchResponse2 = page.waitForResponse(
     res => res.url().includes('/api/v1/search') && res.status() === 200
@@ -299,11 +304,11 @@ test('source filter UI: browse page filtering works correctly', async ({ page, a
   await expect(chatgptButton).toHaveClass(/bg-green-100/); // Active via All Sources preset
   console.log('All sources selected by default in Phase 20');
 
-  // Deselect all platforms by clicking them
-  await page.getByRole('button', { name: 'ChatGPT' }).click();
+  // Clear all filters first
+  await page.getByRole('button', { name: 'Clear' }).click();
   await page.waitForTimeout(200);
 
-  // Now select just ChatGPT again
+  // Now select just ChatGPT
   await page.getByRole('button', { name: 'ChatGPT' }).click();
   await expect(page.getByText('1 selected')).toBeVisible();
   console.log('Filter selected on Browse page');
