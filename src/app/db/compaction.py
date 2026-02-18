@@ -13,7 +13,6 @@ Features:
 """
 
 import threading
-from typing import Optional
 
 import structlog
 
@@ -44,7 +43,7 @@ class CompactionManager:
         self._counter_lock = threading.Lock()  # Protects write counter
         self._compaction_lock = threading.Lock()  # Prevents concurrent compaction
         self._stop_event = threading.Event()  # Signals thread to stop
-        self._thread: Optional[threading.Thread] = None
+        self._thread: threading.Thread | None = None
         self._table = None
 
     def set_table(self, table):

@@ -82,7 +82,9 @@ async def browse_documents(request: BrowseRequest):
                 query_builder = query_builder.where(where_clause)
 
             # Select only needed columns (exclude vector to reduce memory)
-            query_builder = query_builder.select(["id", "conversation_id", "timestamp", "platform", "title", "content", "url"])
+            query_builder = query_builder.select(
+                ["id", "conversation_id", "timestamp", "platform", "title", "content", "url"]
+            )
 
             # Fetch a large limit to get all matching records
             # We'll apply date and cursor filters in Python

@@ -29,6 +29,7 @@ export function SearchPage({ onLogout }: SearchPageProps) {
       const platforms = platformsFromUrl.split(',').filter((p): p is PlatformId =>
         AVAILABLE_PLATFORMS.some(ap => ap.id === p)
       );
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedPlatforms(platforms);
     }
   }, [searchParams]);
@@ -81,6 +82,7 @@ export function SearchPage({ onLogout }: SearchPageProps) {
 
     // Auto-expand if no primary results but secondary results exist
     if (primaryCount === 0 && hasSecondary) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowSecondary(true);
     } else if (primaryCount > 0) {
       // Reset when primary results appear

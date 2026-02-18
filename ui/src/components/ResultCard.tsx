@@ -1,7 +1,8 @@
 import { ExternalLink, MessageSquare, Terminal, FileCode } from 'lucide-react';
 import type { SearchResult } from '../lib/api';
 import { cn } from '../lib/utils';
-import { CopyablePath, isFilePath } from './CopyablePath';
+import { CopyablePath } from './CopyablePath';
+import { isFilePath } from '../utils/pathUtils';
 
 interface ResultCardProps {
   result: SearchResult;

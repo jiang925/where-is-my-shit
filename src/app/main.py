@@ -60,7 +60,7 @@ def _check_embedding_dimension_compat(table) -> None:
             print(f"\n⚠️  Dimension mismatch: DB has {db_dims}-dim vectors, "
                   f"but configured model produces {provider_dims}-dim vectors.")
             print(f"   Falling back to fastembed/BAAI/bge-small-en-v1.5 ({db_dims}d) for compatibility.")
-            print(f"   Run 'uv run python -m src.cli reembed' to upgrade existing vectors.\n")
+            print("   Run 'uv run python -m src.cli reembed' to upgrade existing vectors.\n")
 
             # Reset and reinitialize with fastembed
             EmbeddingService.reset()

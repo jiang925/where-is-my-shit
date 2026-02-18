@@ -6,7 +6,6 @@ embedding models. It uses a second vector column (vector_v2) approach to
 enable zero-downtime migration.
 """
 
-import logging
 import time
 from typing import Any
 
@@ -321,7 +320,7 @@ def run_full_migration(batch_size: int = 100, delay_seconds: float = 0.5) -> Non
 
     # Check initial status
     status = get_migration_status(table)
-    print(f"\nMigration status:")
+    print("\nMigration status:")
     print(f"  Total documents: {status['total']}")
     print(f"  Already migrated: {status['migrated']}")
     print(f"  Remaining: {status['remaining']}")
@@ -362,7 +361,7 @@ def run_full_migration(batch_size: int = 100, delay_seconds: float = 0.5) -> Non
 
     # Final status
     final_status = get_migration_status(table)
-    print(f"\nFinal migration status:")
+    print("\nFinal migration status:")
     print(f"  Total: {final_status['total']}")
     print(f"  Migrated: {final_status['migrated']}")
     print(f"  Progress: {final_status['percent_complete']:.1f}%")

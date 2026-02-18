@@ -48,7 +48,7 @@ class DBClient:
                 print(f"Created FTS index on 'content' field for new table '{table_name}'")
             except Exception as e:
                 print(f"Warning: Failed to create FTS index on new table: {e}")
-                print(f"  FTS index will be created when data is present")
+                print("  FTS index will be created when data is present")
         else:
             # If table exists, open it and cache the handle
             table = self.get_table(table_name)
@@ -74,12 +74,12 @@ class DBClient:
                 if not has_fts_index:
                     print(f"FTS index missing on existing table '{table_name}', creating...")
                     table.create_fts_index("content", replace=True)
-                    print(f"Created FTS index on 'content' field for existing table")
+                    print("Created FTS index on 'content' field for existing table")
                 else:
-                    print(f"FTS index already exists on 'content' field")
+                    print("FTS index already exists on 'content' field")
             except Exception as e:
                 print(f"Warning: Failed to verify/create FTS index on existing table: {e}")
-                print(f"  Hybrid search may fall back to vector-only mode")
+                print("  Hybrid search may fall back to vector-only mode")
 
     def get_table(self, table_name: str = "messages") -> lancedb.table.Table:
         if table_name not in self._tables:

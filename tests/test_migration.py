@@ -5,7 +5,6 @@ Tests for database migration functionality.
 from unittest.mock import MagicMock, patch
 
 import pyarrow as pa
-import pytest
 
 from src.app.db.migration import (
     add_vector_v2_column,
@@ -278,7 +277,7 @@ class TestReembedBatch:
         with patch("src.app.db.migration.get_migration_status") as status_mock:
             status_mock.return_value = {"remaining": 0}
 
-            result = reembed_batch(table, provider, batch_size=10, model_name="custom-model-v2")
+            _result = reembed_batch(table, provider, batch_size=10, model_name="custom-model-v2")
 
         # Verify custom model name was used
         updates = table.merge.call_args[0][0]

@@ -4,9 +4,7 @@ Tests for LanceDB compaction manager.
 
 import threading
 import time
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import MagicMock
 
 from src.app.db.compaction import CompactionManager
 

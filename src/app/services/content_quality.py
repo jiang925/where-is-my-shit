@@ -11,7 +11,6 @@ Key behaviors:
 """
 import re
 
-
 # Filler patterns: exact matches for low-information words
 # Matches: yes, no, ok, okay, continue, proceed, alright, "got it", sure
 # Case insensitive, allows surrounding whitespace and trailing punctuation

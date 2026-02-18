@@ -1,6 +1,5 @@
 """Tests for unified reranker module."""
-import pytest
-from src.app.services.reranker import UnifiedReranker, ScoringConfig, RankedResults
+from src.app.services.reranker import RankedResults, ScoringConfig, UnifiedReranker
 
 
 def make_result(id, content, vector_score=0.0, text_score=0.0):

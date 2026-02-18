@@ -1,5 +1,3 @@
-import base64
-import json
 from datetime import datetime, timedelta
 
 import pytest
@@ -56,9 +54,9 @@ def test_browse_returns_conversations_newest_first(mock_settings, auth_headers, 
 
     # Ingest 3 messages with different timestamps
     now = datetime.now()
-    msg1 = ingest_test_message("Oldest message", "chatgpt", now - timedelta(hours=2), "conv1", auth_headers)
-    msg2 = ingest_test_message("Middle message", "claude", now - timedelta(hours=1), "conv2", auth_headers)
-    msg3 = ingest_test_message("Newest message", "gemini", now, "conv3", auth_headers)
+    _msg1 = ingest_test_message("Oldest message", "chatgpt", now - timedelta(hours=2), "conv1", auth_headers)
+    _msg2 = ingest_test_message("Middle message", "claude", now - timedelta(hours=1), "conv2", auth_headers)
+    _msg3 = ingest_test_message("Newest message", "gemini", now, "conv3", auth_headers)
 
     # Browse without filters
     response = client.post("/api/v1/browse", json={"limit": 10}, headers=auth_headers)

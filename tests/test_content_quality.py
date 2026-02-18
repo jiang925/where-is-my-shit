@@ -1,8 +1,7 @@
 """Tests for content quality scoring module."""
-import pytest
 from src.app.services.content_quality import (
-    is_low_information_content,
     calculate_content_quality_score,
+    is_low_information_content,
 )
 
 

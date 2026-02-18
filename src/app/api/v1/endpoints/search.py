@@ -119,8 +119,9 @@ async def search_documents(request: SearchRequest):
     # 5. Build two-tier response
     def build_search_result(result_dict: dict) -> SearchResult:
         """Convert reranker result dict to SearchResult."""
-        from src.app.schemas.message import SearchResultMeta
         from datetime import datetime
+
+        from src.app.schemas.message import SearchResultMeta
 
         # Convert timestamp to unix timestamp
         timestamp_value = result_dict.get("timestamp")
