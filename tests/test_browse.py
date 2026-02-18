@@ -16,11 +16,17 @@ def test_api_key():
 
 @pytest.fixture
 def mock_settings(monkeypatch, test_api_key):
-    """Mock settings to return a test API key."""
-    monkeypatch.setattr(
-        "src.app.core.auth.get_settings",
-        lambda: ServerConfig(api_key=test_api_key),
+    """Mock settings to return a test API key and small embedding model."""
+    from src.app.core.config import EmbeddingConfig
+
+    # Use fastembed with bge-small-en-v1.5 (384 dimensions) for tests
+    test_config = ServerConfig(
+        api_key=test_api_key,
+        embedding=EmbeddingConfig(provider="fastembed", model="BAAI/bge-small-en-v1.5", dimensions=384),
     )
+    monkeypatch.setattr("src.app.core.auth.get_settings", lambda: test_config)
+    # Also patch the global settings object
+    monkeypatch.setattr("src.app.core.config.settings", test_config)
 
 
 @pytest.fixture
