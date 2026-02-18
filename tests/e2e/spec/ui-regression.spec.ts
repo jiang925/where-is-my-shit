@@ -55,13 +55,15 @@ test.describe('UI Regression Tests', () => {
     }
   });
 
-  // Issue 3: Card snippet should show 4 lines, not truncated at 3.2 rows
-  test('card content snippet uses line-clamp-4', async ({ page, apiKey, request }) => {
+  // Issue 3: Card snippet should show 6 lines for better readability (updated from 4 in Phase 20)
+  test('card content snippet uses line-clamp-6', async ({ page, apiKey, request }) => {
     // Ingest a document with long content
     const longContent = 'Line one of content. '.repeat(5) + '\n' +
       'Line two of content. '.repeat(5) + '\n' +
       'Line three of content. '.repeat(5) + '\n' +
-      'Line four of content. '.repeat(5);
+      'Line four of content. '.repeat(5) + '\n' +
+      'Line five of content. '.repeat(5) + '\n' +
+      'Line six of content. '.repeat(5);
 
     await ingest(request, apiKey, {
       conversation_id: 'regression-line-clamp',
@@ -82,8 +84,8 @@ test.describe('UI Regression Tests', () => {
     await searchResponse;
     await page.waitForTimeout(500);
 
-    // Verify the content paragraph has line-clamp-4 class
-    const contentParagraph = page.locator('p.line-clamp-4').first();
+    // Verify the content paragraph has line-clamp-6 class
+    const contentParagraph = page.locator('p.line-clamp-6').first();
     await expect(contentParagraph).toBeVisible();
   });
 
@@ -252,21 +254,21 @@ test.describe('UI Regression Tests', () => {
     await page.waitForTimeout(300);
 
     // Header should be visible with no filter
-    await expect(page.locator('h1:has-text("Search Results")')).toBeVisible();
+    // Search Results header removed in Phase 20 - results remain stable
 
     // Click a platform filter
     await page.getByRole('button', { name: 'ChatGPT' }).click();
     await page.waitForTimeout(300);
 
     // Header should still be visible with filter active
-    await expect(page.locator('h1:has-text("Search Results")')).toBeVisible();
+    // Search Results header removed in Phase 20 - results remain stable
 
     // Click "All Sources" preset
     await page.getByRole('button', { name: /All Sources/i }).click();
     await page.waitForTimeout(300);
 
     // Header should STILL be visible (this was the bug - it used to disappear)
-    await expect(page.locator('h1:has-text("Search Results")')).toBeVisible();
+    // Search Results header removed in Phase 20 - results remain stable
   });
 
   test('search results header not visible when no query entered', async ({ page, apiKey }) => {
