@@ -8,8 +8,18 @@ and this project uses Calendar Versioning (CalVer) with YYYY.MM.DD format.
 ## [Unreleased]
 
 ### Added
+- TBD
+
+## [2026.02.19] - 2026-02-19
+
+### Added
 - Version management foundation with CHANGELOG and Docker OCI labels
 - CalVer-based versioning system (YYYY.MM.DD format)
+- Automated release workflow with version synchronization
+- Docker multi-platform images (AMD64, ARM64)
+- Docker image variants: full (pre-downloaded models) and slim (runtime download)
+- GitHub Container Registry publishing
+- docker-compose.yml deployment template
 
 ## [2026.02.18] - 2026-02-18
 
