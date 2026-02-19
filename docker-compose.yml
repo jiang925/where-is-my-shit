@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  wims:
+    # Full variant by default (instant startup with pre-downloaded models)
+    # For slim variant, change tag to: latest-slim
+    image: ghcr.io/jiang925/wims:latest
+    container_name: where-is-my-shit
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      # LanceDB database persistence
+      - ./wims-data:/app/data
+    environment:
+      # Optional: Override default embedding provider
+      # - EMBEDDING_PROVIDER=fastembed
+      # - EMBEDDING_MODEL=BAAI/bge-m3
+      # Optional: For OpenAI embeddings
+      # - OPENAI_API_KEY=${OPENAI_API_KEY}
+      # Optional: For Ollama embeddings
+      # - OLLAMA_BASE_URL=http://localhost:11434
+      - LOG_LEVEL=info
+    env_file:
+      - .env
+
+  # Optional: Uncomment to persist config files (if not using env vars)
+  # volumes:
+  #   - ./wims-config:/app/config
+
+  # Optional: Add web UI service if it becomes separate container in future
+  # wims-ui:
+  #   image: ghcr.io/jiang925/wims-ui:latest
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - wims
