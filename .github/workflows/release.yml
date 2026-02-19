@@ -152,29 +152,14 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push full image
+      - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          build-args: DOWNLOAD_MODELS=true
           tags: |
             ghcr.io/jiang925/wims:${{ github.ref_name }}
-            ghcr.io/jiang925/wims:${{ github.ref_name }}-full
             ghcr.io/jiang925/wims:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build and push slim image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          build-args: DOWNLOAD_MODELS=false
-          tags: |
-            ghcr.io/jiang925/wims:${{ github.ref_name }}-slim
-            ghcr.io/jiang925/wims:latest-slim
           cache-from: type=gha
           cache-to: type=gha,mode=max

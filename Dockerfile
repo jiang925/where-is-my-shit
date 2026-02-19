@@ -32,16 +32,9 @@ RUN uv sync --frozen --no-install-project --no-dev
 # Add .venv to PATH
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Build argument to control model download (default: full variant)
-ARG DOWNLOAD_MODELS=true
-
-# Conditionally pre-download embedding models for full variant
-RUN if [ "$DOWNLOAD_MODELS" = "true" ]; then \
-      echo "Downloading models for full build..." && \
-      python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('BAAI/bge-m3')"; \
-    else \
-      echo "Skipping model download for slim build."; \
-    fi
+# NOTE: Models (bge-m3, ~2GB) download automatically on first run
+# Pre-downloading in Docker image causes disk space issues in CI (~14GB runner limit)
+# Runtime download is acceptable for self-hosted tool
 
 # Copy application code
 COPY src ./src
