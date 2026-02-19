@@ -1,25 +1,61 @@
-__pycache__
-*.pyc
-*.pyo
-*.pyd
-.Python
-env/
-venv/
-.env
-.venv
-pip-log.txt
-pip-delete-this-directory.txt
-.tox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.log
+# Git
 .git
 .gitignore
+.gitattributes
+
+# Planning and documentation
 .planning
-data/
-scripts/
+*.md
+!README.md
+docs/
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache
+.coverage
+htmlcov/
+.venv
+venv/
+ENV/
+
+# Node.js (frontend)
+node_modules/
+npm-debug.log
+yarn-error.log
+.next/
+out/
+dist/
+
+# Data and logs
+*.log
+*.sqlite
+*.db
+wims-data/
+logs/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+Dockerfile.dev
+
+# Test and scripts
 tests/
+scripts/
