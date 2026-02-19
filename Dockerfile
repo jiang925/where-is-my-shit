@@ -32,8 +32,16 @@ RUN uv sync --frozen --no-install-project --no-dev
 # Add .venv to PATH
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Pre-download the embedding model to cache it in the image
-RUN python -c "from fastembed import TextEmbedding; TextEmbedding(model_name='BAAI/bge-small-en-v1.5')"
+# Build argument to control model download (default: full variant)
+ARG DOWNLOAD_MODELS=true
+
+# Conditionally pre-download embedding models for full variant
+RUN if [ "$DOWNLOAD_MODELS" = "true" ]; then \
+      echo "Downloading models for full build..." && \
+      python -c "from fastembed import TextEmbedding; TextEmbedding(model_name='BAAI/bge-m3')"; \
+    else \
+      echo "Skipping model download for slim build."; \
+    fi
 
 # Copy application code
 COPY src ./src
