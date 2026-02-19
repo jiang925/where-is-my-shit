@@ -1,5 +1,10 @@
 FROM python:3.12-slim
 
+# Build arguments for version metadata
+ARG VERSION=dev
+ARG BUILD_DATE
+ARG VCS_REF
+
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
@@ -38,6 +43,14 @@ RUN mkdir -p data
 
 # Expose port
 EXPOSE 8000
+
+# OCI image metadata labels
+LABEL org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.source="https://github.com/tianjiang/where-is-my-shit" \
+      org.opencontainers.image.title="Where Is My Shit" \
+      org.opencontainers.image.description="AI-powered search for chat messages across platforms"
 
 # Run the application
 CMD ["uvicorn", "src.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
