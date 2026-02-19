@@ -36,7 +36,7 @@ Requirements for Distribution & Packaging milestone. Each maps to roadmap phases
 
 - [x] **VER-01**: pyproject.toml as single source of truth
 - [x] **VER-02**: CI validates version consistency across all artifacts
-- [ ] **VER-03**: Git tags trigger all publishing workflows
+- [x] **VER-03**: Git tags trigger all publishing workflows
 
 ## v1.8 Requirements
 
