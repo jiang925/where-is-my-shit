@@ -1,12 +1,12 @@
 # Phase 23: Docker Publishing - Context
 
-**Gathered:** 2026-02-18
-**Status:** Ready for planning
+**Gathered:** 2026-02-19
+**Status:** Automated publishing deferred
 
 <domain>
 ## Phase Boundary
 
-Auto-publish multi-platform Docker images to GitHub Container Registry when CalVer tags are pushed. Extends the release.yml workflow from Phase 22 with Docker build and push steps.
+Provide Docker deployment option for WIMS. Dockerfile and docker-compose.yml for manual builds. Automated publishing to container registries deferred due to infrastructure constraints.
 
 </domain>
 
@@ -14,46 +14,50 @@ Auto-publish multi-platform Docker images to GitHub Container Registry when CalV
 ## Implementation Decisions
 
 ### Image Optimization
-- **Two image variants:** full (pre-downloaded models) and slim (download at runtime)
-- **Full variant:** ~800MB, embedding models pre-downloaded, instant startup
-- **Slim variant:** ~200MB, models download on first run, smaller footprint
-- **Tags:** 2026.02.18-full, 2026.02.18-slim, 2026.02.18 (alias for -full), latest, latest-slim
-- **Implementation:** Single Dockerfile with ARG DOWNLOAD_MODELS build argument
+- **Single slim image:** ~200MB base, models download at runtime
+- **No pre-download:** Avoids GitHub Actions disk space issues
+- **Runtime model download:** ~2GB on first startup (acceptable for self-hosted tool)
 
 ### Registry Strategy
-- **GitHub Container Registry (GHCR) only:** ghcr.io/jiang925/wims
-- **No Docker Hub:** Simpler, no separate account/tokens needed
-- **Visibility:** Inherits from repo (private now, public when repo goes public)
-- **Naming:** ghcr.io/jiang925/wims:[tag]
+- **Manual publishing only:** GitHub Actions 14GB disk limit prevents automated builds
+- **Dockerfile provided:** Users can build locally with `docker build -t wims .`
+- **Future:** Can add automation with self-hosted runner or alternative CI
 
 ### docker-compose.yml Design
-- **Claude's Discretion:** Structure, environment variables, volume configuration
-- Should include practical examples for common use cases
+- **Claude's Discretion:** Practical deployment example with volume mounts and environment overrides
 
 ### Multi-platform Builds
-- **linux/amd64:** Intel/AMD servers (required)
-- **linux/arm64:** Apple Silicon, ARM servers (required)
-- **No ARM v7:** Skip Raspberry Pi 3/older embedded (niche)
+- **linux/amd64 only:** Covers 90%+ of servers
+- **No ARM64:** GitHub Actions disk space constraints
+- **Future:** Can add ARM64 with self-hosted runner
+
+### Automated Publishing Status
+- **Deferred:** Tested extensively but GitHub Actions runners (14GB) insufficient for PyTorch/transformers builds
+- **Manual workaround:** Dockerfile functional, users build themselves
+- **Revisit:** Phase 23.1 or later with self-hosted runner
 
 </decisions>
 
 <specifics>
 ## Specific Ideas
 
-- Two variants give users real choice (size vs speed)
-- Default tag (2026.02.18) should be the full variant for better UX
-- Build time ~20 min total (buildx builds variants in parallel)
+- Dockerfile works - validated locally
+- docker-compose.yml provides one-command deployment
+- Automation blocked by infrastructure, not code quality
 
 </specifics>
 
 <deferred>
 ## Deferred Ideas
 
-None — discussion stayed within phase scope
+- Automated GHCR publishing - needs self-hosted runner or lighter dependencies
+- Multi-platform builds (ARM64) - same infrastructure constraints
+- Multiple image variants (full/slim) - disk space issues
 
 </deferred>
 
 ---
 
 *Phase: 23-docker-publishing*
-*Context gathered: 2026-02-18*
+*Context gathered: 2026-02-19*
+*Status: Automation deferred to future phase*
