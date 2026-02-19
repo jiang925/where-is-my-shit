@@ -6,9 +6,10 @@
 - ✅ **v1.1 Security & Hardening** - Phases 5-7 (shipped 2026-02-07)
 - ✅ **v1.2 Simplify & Deploy** - Phases 8-11 (shipped 2026-02-11)
 - ✅ **v1.3 UI/API Integration & Verification** - Phases 12-14 (shipped 2026-02-12)
-- ✅ **v1.4 Search & Browse UX Polish** - Phases 15-18 (shipped 2026-02-14)
+- ✅ **v1.4 Search & Browse UX** - Phases 15-18 (shipped 2026-02-14)
 - ✅ **v1.5 Embedding & Infrastructure** - Phases 19-20 (shipped 2026-02-15)
-- ✅ **v1.6 GitHub Release** - Phase 21 (shipped 2026-02-13)
+- ✅ **v1.6 GitHub Release** - Phase 21 (shipped 2026-02-18)
+- 🚧 **v1.7 Distribution & Packaging** - Phases 22-25 (in progress)
 
 ## Phases
 
@@ -147,79 +148,161 @@ Plans:
 
 </details>
 
-### v1.4 Search & Browse UX Polish
+<details>
+<summary>✅ v1.4 Search & Browse UX (Phases 15-18) - SHIPPED 2026-02-14</summary>
 
-**Milestone Goal:** Transform WIMS from "it works" to "it's actually useful" by improving search quality and adding flexible browsing capabilities.
-
-#### Phase 15: Source Filtering
+### Phase 15: Source Filtering
 **Goal**: Users can filter search results by data source
-**Depends on**: Phase 14
 **Requirements**: FILT-01, FILT-02, FILT-03
-**Success Criteria** (what must be TRUE):
-  1. User can select one or more platforms using checkboxes and see filtered results
-  2. User can share a search with filters via URL (filter state persists in query parameters)
-  3. User can apply quick filter presets with one click (e.g., "Web Chats Only", "Dev Sessions Only")
-  4. User sees result counts update in real-time as filters are applied
 **Plans**: 4 plans
 
 Plans:
-- [x] 15-01-PLAN.md — Backend platform filtering (schema + endpoint + backend tests)
-- [x] 15-02-PLAN.md — URL state management (React Router + API integration)
-- [x] 15-03-PLAN.md — Filter UI components and E2E tests
-- [x] 15-04-PLAN.md — Gap closure: fix useSearch bug, align platform names, add preset buttons
+- [x] 15-01: Backend platform filtering
+- [x] 15-02: URL state management
+- [x] 15-03: Filter UI components and E2E tests
+- [x] 15-04: Gap closure and preset buttons
 
-#### Phase 16: Claude Code Path Display
-**Goal**: Users see file paths for Claude Code conversations instead of broken "Open" links
-**Depends on**: Phase 14 (independent of Phase 15)
+### Phase 16: Claude Code Path Display
+**Goal**: Users see file paths for Claude Code conversations
 **Requirements**: PATH-01, PATH-02, PATH-03, PATH-04
-**Success Criteria** (what must be TRUE):
-  1. User sees file path for Claude Code conversations in result cards
-  2. User can copy file path to clipboard with one click and sees "Copied!" feedback
-  3. User sees readable paths even for long file paths (truncated with ellipsis)
-  4. System correctly displays both Windows (C:\...) and Unix (/...) path formats
 **Plans**: 1 plan
 
 Plans:
-- [x] 16-01-PLAN.md — CopyablePath component, ResultCard update, and E2E tests
+- [x] 16-01: CopyablePath component and E2E tests
 
-#### Phase 17: Search Relevance Improvements
+### Phase 17: Search Relevance Improvements
 **Goal**: Search returns more relevant results with better ranking
-**Depends on**: Phase 14 (independent of Phases 15-16)
 **Requirements**: REL-01, REL-02, REL-03, REL-04
-**Success Criteria** (what must be TRUE):
-  1. Search results use improved e5-small-v2 embedding model for better semantic matching
-  2. Short fragments (e.g., "proceed", "continue") are deprioritized in search results
-  3. Irrelevant results below minimum relevance threshold (0.5-0.6) are filtered out
-  4. User can find content using both semantic concepts and exact keywords (hybrid search)
 **Plans**: 5 plans
 
 Plans:
-- [x] 17-01-PLAN.md — Configurable embedding provider (FastEmbed + Ollama + config)
-- [x] 17-02-PLAN.md — Content quality scorer and unified reranker (TDD)
-- [x] 17-03-PLAN.md — Hybrid search integration and two-tier API response
-- [x] 17-04-PLAN.md — Schema evolution and CLI re-embedding migration
-- [x] 17-05-PLAN.md — Frontend two-tier results with collapsible secondary section
+- [x] 17-01: Configurable embedding provider
+- [x] 17-02: Content quality scorer and unified reranker
+- [x] 17-03: Hybrid search integration and two-tier API
+- [x] 17-04: Schema evolution and CLI re-embedding
+- [x] 17-05: Frontend two-tier results
 
-#### Phase 18: Browse Page with Timeline
-**Goal**: Users can browse all conversations chronologically with flexible filters
-**Depends on**: Phase 15 (reuses SourceFilter component)
+### Phase 18: Browse Page with Timeline
+**Goal**: Users can browse all conversations chronologically
 **Requirements**: BROWSE-01, BROWSE-02, BROWSE-03, BROWSE-04
-**Success Criteria** (what must be TRUE):
-  1. User can browse all conversations in chronological order (newest first) without searching
-  2. User can filter browse results by date range (Today, This Week, Custom Range)
-  3. User sees grouped timeline sections (Today, Yesterday, This Week) for easy scanning
-  4. Pagination works correctly even when new conversations are added (no duplicates or gaps)
 **Plans**: 3 plans
 
 Plans:
-- [x] 18-01-PLAN.md -- Backend browse API endpoint with cursor pagination, date range and platform filtering
-- [x] 18-02-PLAN.md -- Frontend browse infrastructure (date-fns, useBrowse hook, DateRangeFilter, TimelineSection)
-- [x] 18-03-PLAN.md -- BrowsePage rewrite with timeline layout and E2E tests
+- [x] 18-01: Backend browse API with cursor pagination
+- [x] 18-02: Frontend browse infrastructure
+- [x] 18-03: BrowsePage rewrite with timeline layout
+
+</details>
+
+<details>
+<summary>✅ v1.5 Embedding & Infrastructure (Phases 19-20) - SHIPPED 2026-02-15</summary>
+
+### Phase 19: Embedding Model Upgrade & DB Maintenance
+**Goal**: Upgrade embedding model to bge-m3 with multiple backend support
+**Requirements**: EMB-01, EMB-02, EMB-03, EMB-04, EMB-05, EMB-06
+**Plans**: 3 plans
+
+Plans:
+- [x] 19-01: Multi-backend embedding providers
+- [x] 19-02: LanceDB compaction manager and migration
+- [x] 19-03: Default model upgrade to bge-m3
+
+### Phase 20: Deployment Bugfixes (Retroactive)
+**Goal**: Fix runtime bugs found during deployment
+**Plans**: Retroactive fixes (8 fixes)
+
+Fixes:
+- [x] LanceDB compaction API mismatch
+- [x] Embedding dimension mismatch auto-fallback
+- [x] Schema evolution: add missing embedding_model column
+- [x] "All Sources" preset toggle stuck in loop
+- [x] "Search Results for X" layout shift
+- [x] Initial state: all source buttons unlit
+- [x] "Showing results from: ..." layout shift
+- [x] Content snippet truncation
+
+</details>
+
+<details>
+<summary>✅ v1.6 GitHub Release (Phase 21) - SHIPPED 2026-02-18</summary>
+
+### Phase 21: Documentation for GitHub Release
+**Goal**: Write user-facing documentation for open-source publication
+**Requirements**: DOC-01, DOC-02, DOC-03, DOC-04
+**Plans**: 3 plans
+
+Plans:
+- [x] 21-01: English README.md and LICENSE file
+- [x] 21-02: Chinese README_CN.md (translation)
+- [x] 21-03: docs/ reference files (CLI reference, embedding providers)
+
+</details>
+
+### 🚧 v1.7 Distribution & Packaging (In Progress)
+
+**Milestone Goal:** Make WIMS easily installable through automated publishing of Docker images, Chrome extension, and standalone daemon installer.
+
+#### Phase 22: Version Management & Foundation
+**Goal**: Establish single source of truth for version synchronization across all distribution artifacts
+**Depends on**: Phase 21
+**Requirements**: VER-01, VER-02, VER-03
+**Success Criteria** (what must be TRUE):
+  1. pyproject.toml serves as single source of truth for version number
+  2. CI validates version consistency across manifest.json, Docker labels, and git tags before publishing
+  3. Git tags trigger automated publishing workflows with matching versions
+**Plans**: TBD
+
+Plans:
+- [ ] 22-01: TBD
+
+#### Phase 23: Docker Publishing
+**Goal**: Auto-publish multi-platform Docker images to GitHub Container Registry
+**Depends on**: Phase 22
+**Requirements**: DOCK-01, DOCK-02, DOCK-03, DOCK-04, DOCK-05, DOCK-06
+**Success Criteria** (what must be TRUE):
+  1. User can run `docker compose up -d` to deploy WIMS server and UI
+  2. Docker images work on both AMD64 and ARM64 platforms without emulation
+  3. Database and config persist across container restarts via volume mounts
+  4. New version tags automatically publish to GitHub Container Registry
+  5. Images are tagged with semantic versions (v1.7.0, v1.7, v1, latest)
+**Plans**: TBD
+
+Plans:
+- [ ] 23-01: TBD
+
+#### Phase 24: Chrome Extension Automation
+**Goal**: Auto-publish extension to Chrome Web Store on version tags
+**Depends on**: Phase 22
+**Requirements**: EXT-01, EXT-02, EXT-03, EXT-04
+**Success Criteria** (what must be TRUE):
+  1. Users can install WIMS extension directly from Chrome Web Store
+  2. Extension version in manifest.json matches git tag automatically
+  3. GitHub Actions publishes new versions to Web Store on extension-v* tags
+  4. Privacy policy page is accessible and compliant with Web Store requirements
+**Plans**: TBD
+
+Plans:
+- [ ] 24-01: TBD
+
+#### Phase 25: Daemon Distribution
+**Goal**: Package and distribute standalone watcher daemon without requiring git clone
+**Depends on**: Phase 22
+**Requirements**: DAEMON-01, DAEMON-02, DAEMON-03, DAEMON-04, DAEMON-05, DAEMON-06
+**Success Criteria** (what must be TRUE):
+  1. User can install watcher daemon with one-liner curl script
+  2. Install script auto-installs uv if not present, then uses uv to manage dependencies
+  3. Installation automatically sets up systemd (Linux) or launchd (macOS) service
+  4. Daemon auto-updates when new releases are available (with user confirmation)
+  5. User can cleanly uninstall daemon with provided script
+**Plans**: TBD
+
+Plans:
+- [ ] 25-01: TBD
 
 ## Progress
 
 **Execution Order:**
-Phases 15-16-17 can be built in parallel (independent), then Phase 18 (depends on 15).
+Phases execute in numeric order: 22 → 23 → 24 → 25
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -237,62 +320,14 @@ Phases 15-16-17 can be built in parallel (independent), then Phase 18 (depends o
 | 12. UI/API Connectivity | v1.3 | 1/1 | Complete | 2026-02-12 |
 | 13. Test Infrastructure Setup | v1.3 | 2/2 | Complete | 2026-02-12 |
 | 14. Core Integration Tests | v1.3 | 1/1 | Complete | 2026-02-12 |
-| 15. Source Filtering | v1.4 | 4/4 | Complete | 2026-02-13 |
-| 16. Claude Code Path Display | v1.4 | 1/1 | Complete | 2026-02-13 |
-| 17. Search Relevance Improvements | v1.4 | 5/5 | Complete | 2026-02-13 |
-| 18. Browse Page with Timeline | v1.4 | 3/3 | Complete | 2026-02-14 |
-| 19. Embedding Model Upgrade | v1.5 | 3/3 | Complete | 2026-02-15 |
+| 15. Source Filtering | v1.4 | 4/4 | Complete | 2026-02-14 |
+| 16. Claude Code Path Display | v1.4 | 1/1 | Complete | 2026-02-14 |
+| 17. Search Relevance | v1.4 | 5/5 | Complete | 2026-02-14 |
+| 18. Browse Page Timeline | v1.4 | 3/3 | Complete | 2026-02-14 |
+| 19. Embedding Upgrade | v1.5 | 3/3 | Complete | 2026-02-15 |
 | 20. Deployment Bugfixes | v1.5 | retroactive | Complete | 2026-02-15 |
-| 21. Documentation for GitHub Release | v1.6 | 3/3 | Complete | 2026-02-13 |
-
-### Phase 19: Embedding Model Upgrade & DB Maintenance
-
-**Goal:** Upgrade embedding model to bge-m3 with multiple backend support (sentence-transformers, ONNX, OpenAI-compatible API), add periodic LanceDB compaction, and improve migration system for reusable model transitions
-**Depends on:** Phase 18
-**Requirements**: EMB-01, EMB-02, EMB-03, EMB-04, EMB-05, EMB-06
-**Success Criteria** (what must be TRUE):
-  1. New embedding providers (SentenceTransformerProvider, OnnxProvider) can load bge-m3 from HuggingFace with unit tests
-  2. External API provider abstracted as ExternalAPIProvider base with OpenAICompatibleProvider implementation (replacing OllamaProvider)
-  3. LanceDB periodic compaction runs safely with concurrency guards (no duplicate compactions)
-  4. Migration system is reusable: promotes v2→v1 after completion (not v3/v4/v5 increments)
-  5. Default embedding model upgraded from bge-small-en-v1.5 to bge-m3
-  6. Re-embedding CLI supports rate limiting via --delay flag for remote API providers
-**Plans:** 3 plans
-
-Plans:
-- [x] 19-01-PLAN.md — Multi-backend embedding providers (SentenceTransformer, ONNX, OpenAI-compatible)
-- [x] 19-02-PLAN.md — LanceDB compaction manager and migration auto-promotion
-- [x] 19-03-PLAN.md — Default model upgrade to bge-m3 and final integration
-
-### Phase 20: Deployment Bugfixes (Retroactive)
-
-**Goal:** Fix runtime bugs found during first real deployment and UI testing
-**Depends on:** Phase 19
-**Status:** Complete (retroactive — 8 fixes across backend and frontend)
-
-Fixes:
-- [x] LanceDB compaction API mismatch (list_fragments → stats)
-- [x] Embedding dimension mismatch auto-fallback on startup
-- [x] Schema evolution: add missing embedding_model column
-- [x] "All Sources" preset toggle stuck in loop
-- [x] "Search Results for X" layout shift
-- [x] Initial state: all source buttons unlit
-- [x] "Showing results from: ..." layout shift
-- [x] Content snippet truncation (line-clamp + word breaking)
-
-### Phase 21: Documentation for GitHub Release
-
-**Goal:** Write user-facing documentation so the project can be published on GitHub as an open-source tool
-**Depends on:** Phase 20
-**Requirements**: DOC-01, DOC-02, DOC-03, DOC-04
-**Success Criteria** (what must be TRUE):
-  1. README.md provides clear project overview, screenshots/demo, and quick-start instructions
-  2. Setup/installation guide covers all three components (server, extension, watcher)
-  3. Configuration reference documents all server.json options and embedding providers
-  4. Architecture overview explains system components and data flow for contributors
-**Plans:** 3 plans
-
-Plans:
-- [ ] 21-01-PLAN.md — English README.md and LICENSE file
-- [ ] 21-02-PLAN.md — Chinese README_CN.md (translation)
-- [ ] 21-03-PLAN.md — docs/ reference files (CLI reference, embedding providers)
+| 21. Documentation | v1.6 | 3/3 | Complete | 2026-02-18 |
+| 22. Version Management | v1.7 | 0/1 | Not started | - |
+| 23. Docker Publishing | v1.7 | 0/1 | Not started | - |
+| 24. Extension Automation | v1.7 | 0/1 | Not started | - |
+| 25. Daemon Distribution | v1.7 | 0/1 | Not started | - |

@@ -72,13 +72,31 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (empty - populated during roadmap creation) | | |
+| VER-01 | Phase 22 | Not started |
+| VER-02 | Phase 22 | Not started |
+| VER-03 | Phase 22 | Not started |
+| DOCK-01 | Phase 23 | Not started |
+| DOCK-02 | Phase 23 | Not started |
+| DOCK-03 | Phase 23 | Not started |
+| DOCK-04 | Phase 23 | Not started |
+| DOCK-05 | Phase 23 | Not started |
+| DOCK-06 | Phase 23 | Not started |
+| EXT-01 | Phase 24 | Not started |
+| EXT-02 | Phase 24 | Not started |
+| EXT-03 | Phase 24 | Not started |
+| EXT-04 | Phase 24 | Not started |
+| DAEMON-01 | Phase 25 | Not started |
+| DAEMON-02 | Phase 25 | Not started |
+| DAEMON-03 | Phase 25 | Not started |
+| DAEMON-04 | Phase 25 | Not started |
+| DAEMON-05 | Phase 25 | Not started |
+| DAEMON-06 | Phase 25 | Not started |
 
 **Coverage:**
 - v1.7 requirements: 19 total
-- Mapped to phases: 0
-- Unmapped: 19 ⚠️
+- Mapped to phases: 19
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-02-18*
-*Last updated: 2026-02-18 after initial definition*
+*Last updated: 2026-02-18 after roadmap creation*
