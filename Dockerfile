@@ -38,7 +38,7 @@ ARG DOWNLOAD_MODELS=true
 # Conditionally pre-download embedding models for full variant
 RUN if [ "$DOWNLOAD_MODELS" = "true" ]; then \
       echo "Downloading models for full build..." && \
-      python -c "from fastembed import TextEmbedding; TextEmbedding(model_name='BAAI/bge-m3')"; \
+      python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('BAAI/bge-m3')"; \
     else \
       echo "Skipping model download for slim build."; \
     fi
