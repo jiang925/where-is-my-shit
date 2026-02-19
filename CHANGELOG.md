@@ -10,6 +10,14 @@ and this project uses Calendar Versioning (CalVer) with YYYY.MM.DD format.
 ### Added
 - TBD
 
+## [2026.02.19.2] - 2026-02-19
+
+### Fixed
+- Playwright browsers installation in release workflow
+- uv.lock regenerated with public PyPI (removed CodeArtifact URLs)
+- Dockerfile model download using sentence-transformers (not fastembed)
+- Simplified Docker to single image without model pre-download (fixes CI disk space)
+
 ## [2026.02.19] - 2026-02-19
 
 ### Added
