@@ -243,17 +243,18 @@ Plans:
 **Milestone Goal:** Make WIMS easily installable through automated publishing of Docker images, Chrome extension, and standalone daemon installer.
 
 #### Phase 22: Version Management & Foundation
-**Goal**: Establish single source of truth for version synchronization across all distribution artifacts
+**Goal**: Establish CalVer-based version synchronization across all distribution artifacts
 **Depends on**: Phase 21
 **Requirements**: VER-01, VER-02, VER-03
 **Success Criteria** (what must be TRUE):
   1. pyproject.toml serves as single source of truth for version number
   2. CI validates version consistency across manifest.json, Docker labels, and git tags before publishing
   3. Git tags trigger automated publishing workflows with matching versions
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 22-01: TBD
+- [ ] 22-01-PLAN.md — CHANGELOG and Docker version labels
+- [ ] 22-02-PLAN.md — GitHub Actions release workflow with validation
 
 #### Phase 23: Docker Publishing
 **Goal**: Auto-publish multi-platform Docker images to GitHub Container Registry
@@ -327,7 +328,7 @@ Phases execute in numeric order: 22 → 23 → 24 → 25
 | 19. Embedding Upgrade | v1.5 | 3/3 | Complete | 2026-02-15 |
 | 20. Deployment Bugfixes | v1.5 | retroactive | Complete | 2026-02-15 |
 | 21. Documentation | v1.6 | 3/3 | Complete | 2026-02-18 |
-| 22. Version Management | v1.7 | 0/1 | Not started | - |
+| 22. Version Management | v1.7 | 0/2 | Not started | - |
 | 23. Docker Publishing | v1.7 | 0/1 | Not started | - |
 | 24. Extension Automation | v1.7 | 0/1 | Not started | - |
 | 25. Daemon Distribution | v1.7 | 0/1 | Not started | - |
