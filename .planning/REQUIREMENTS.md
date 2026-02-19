@@ -1,60 +1,58 @@
-# Requirements: Where Is My Shit (WIMS) v1.4
+# Requirements: Where Is My Shit (WIMS)
 
-**Defined:** 2026-02-12
+**Defined:** 2026-02-18
 **Core Value:** Never lose a conversation again: Instantly recall specific AI discussions or dev sessions across any platform and jump straight back into the original context.
 
-## v1.4 Requirements
+## v1.7 Requirements
 
-Requirements for Search & Browse UX Polish milestone. Each maps to roadmap phases.
+Requirements for Distribution & Packaging milestone. Each maps to roadmap phases.
 
-### Filtering
+### Docker Publishing
 
-- [ ] **FILT-01**: User can filter search results by one or more platforms using checkboxes
-- [ ] **FILT-02**: User can share filter selections via URL (filter state persisted in query parameters)
-- [ ] **FILT-03**: User can apply quick filter presets (e.g., "Web Chats Only", "Dev Sessions Only")
+- [ ] **DOCK-01**: Multi-platform Docker images (AMD64, ARM64)
+- [ ] **DOCK-02**: Auto-publish to GitHub Container Registry on version tags
+- [ ] **DOCK-03**: Auto-publish to Docker Hub on version tags
+- [ ] **DOCK-04**: Semantic version tags (v1.7.0, latest, v1)
+- [ ] **DOCK-05**: docker-compose.yml template for users
+- [ ] **DOCK-06**: Volume mounts for database and config persistence
 
-### Path Display
+### Chrome Extension
 
-- [ ] **PATH-01**: User sees file path for Claude Code conversations (replaces broken "Open" button)
-- [ ] **PATH-02**: User can copy file path to clipboard with one click and sees "Copied!" feedback
-- [ ] **PATH-03**: User sees truncated paths for long file paths (e.g., ".../path/file.txt") for readability
-- [ ] **PATH-04**: System correctly handles both Windows (C:\...) and Unix (/...) path formats
+- [ ] **EXT-01**: Publish extension to Chrome Web Store
+- [ ] **EXT-02**: Automated publishing from GitHub Actions
+- [ ] **EXT-03**: Privacy policy page (Web Store requirement)
+- [ ] **EXT-04**: Version sync from git tag to manifest.json
 
-### Search Relevance
+### Daemon Distribution
 
-- [ ] **REL-01**: System uses e5-small-v2 embedding model for improved semantic search quality
-- [ ] **REL-02**: System deprioritizes short fragments in relevance scoring (without filtering them completely)
-- [ ] **REL-03**: System filters results below relevance threshold (0.5-0.6 minimum similarity score)
-- [ ] **REL-04**: System provides hybrid search combining semantic (vector) and keyword (BM25) matching
+- [ ] **DAEMON-01**: One-liner install script (curl | bash)
+- [ ] **DAEMON-02**: Auto-install uv if not present on system
+- [ ] **DAEMON-03**: Download watcher from GitHub Releases
+- [ ] **DAEMON-04**: Setup systemd (Linux) and launchd (macOS) service
+- [ ] **DAEMON-05**: Auto-update mechanism (check releases, prompt user)
+- [ ] **DAEMON-06**: Uninstall script for clean removal
 
-### Browse & Timeline
+### Version Management
 
-- [ ] **BROWSE-01**: User can browse all conversations in chronological order (newest first)
-- [ ] **BROWSE-02**: User can filter browse results by date range (Today, This Week, Custom Range)
-- [ ] **BROWSE-03**: User sees grouped timeline sections (Today, Yesterday, This Week, etc.) in browse view
-- [ ] **BROWSE-04**: System provides stable pagination using cursor-based approach (prevents duplicates/gaps)
+- [ ] **VER-01**: pyproject.toml as single source of truth
+- [ ] **VER-02**: CI validates version consistency across all artifacts
+- [ ] **VER-03**: Git tags trigger all publishing workflows
 
-## v2 Requirements
+## v1.8 Requirements
 
-Deferred to future releases. Tracked but not in current roadmap.
+Deferred to future release. Tracked but not in current roadmap.
 
-### Filtering Enhancements
-- **FILT-04**: Active filter visibility with removable chips and per-filter result counts
-- **FILT-05**: Filter combination validation (detect contradictory filters)
+### Code Signing
+- **SIGN-01**: macOS daemon code signing ($99/year Apple Developer Program)
+- **SIGN-02**: Windows daemon code signing (~$200/year certificate)
 
-### Search Relevance Advanced
-- **REL-05**: Semantic re-ranking for improved result ordering
-- **REL-06**: Context-aware chunk display (expand to show surrounding messages)
-- **REL-07**: Metadata boosting for recency and conversation length
+### Package Managers
+- **PKG-01**: Homebrew tap for daemon installation
+- **PKG-02**: APT repository for Debian/Ubuntu
 
-### Browse & Timeline Advanced
-- **BROWSE-05**: Virtual scrolling for datasets exceeding 10K conversations
-- **BROWSE-06**: Advanced time filter shortcuts ("Last 7 days", "Last month")
-- **BROWSE-07**: Source statistics dashboard (activity heatmaps, usage metrics)
-
-### Content Quality
-- **CONTENT-01**: Minimum content length filtering for ingestion (prevent noise at source)
-- **CONTENT-02**: Conversation thread reconstruction from chunks
+### Distribution Enhancements
+- **DIST-01**: Extension beta distribution channel for testing
+- **DIST-02**: Docker Hub secondary registry mirror
 
 ## Out of Scope
 
@@ -62,12 +60,11 @@ Explicitly excluded to prevent scope creep.
 
 | Feature | Reason |
 |---------|--------|
-| Infinite scroll for browse page | Research shows breaks bookmarking, prevents footer access, causes performance issues |
-| Complex Boolean search (AND/OR/NOT operators) | Steep learning curve, semantic search already handles concept matching effectively |
-| Separate reranker infrastructure (Cohere, Jina) | LanceDB has built-in LinearCombinationReranker, avoids external dependencies |
-| Real-time live updates | High resource cost for marginal value in personal search tool, polling sufficient |
-| Conversation export/import | Not core to "never lose a conversation" value, can be added later if needed |
-| Multi-user support | Local-only tool with single API key, no collaboration features needed |
+| PyPI publication | Avoid PyPI complexity and bureaucracy, use GitHub Releases for daemon distribution instead |
+| Binary daemon (PyInstaller) | Script-based approach simpler and faster, target users have Python already |
+| Auto-update without user prompt | Security risk, all updates require explicit user approval |
+| Publishing every commit | Rate limits and noise, only publish on version tags |
+| Automated rollback | Manual intervention acceptable for v1, add if production issues arise |
 
 ## Traceability
 
@@ -75,33 +72,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FILT-01 | Phase 15 | Pending |
-| FILT-02 | Phase 15 | Pending |
-| FILT-03 | Phase 15 | Pending |
-| PATH-01 | Phase 16 | Pending |
-| PATH-02 | Phase 16 | Pending |
-| PATH-03 | Phase 16 | Pending |
-| PATH-04 | Phase 16 | Pending |
-| REL-01 | Phase 17 | Pending |
-| REL-02 | Phase 17 | Pending |
-| REL-03 | Phase 17 | Pending |
-| REL-04 | Phase 17 | Pending |
-| BROWSE-01 | Phase 18 | Pending |
-| BROWSE-02 | Phase 18 | Pending |
-| BROWSE-03 | Phase 18 | Pending |
-| BROWSE-04 | Phase 18 | Pending |
+| (empty - populated during roadmap creation) | | |
 
 **Coverage:**
-- v1.4 requirements: 15 total
-- Mapped to phases: 15 (100% coverage)
-- Unmapped: 0
-
-**Coverage by Phase:**
-- Phase 15 (Source Filtering): 3 requirements (FILT-01, FILT-02, FILT-03)
-- Phase 16 (Claude Code Path Display): 4 requirements (PATH-01, PATH-02, PATH-03, PATH-04)
-- Phase 17 (Search Relevance Improvements): 4 requirements (REL-01, REL-02, REL-03, REL-04)
-- Phase 18 (Browse Page with Timeline): 4 requirements (BROWSE-01, BROWSE-02, BROWSE-03, BROWSE-04)
+- v1.7 requirements: 19 total
+- Mapped to phases: 0
+- Unmapped: 19 ⚠️
 
 ---
-*Requirements defined: 2026-02-12*
-*Last updated: 2026-02-12 after roadmap creation - 100% coverage achieved*
+*Requirements defined: 2026-02-18*
+*Last updated: 2026-02-18 after initial definition*
