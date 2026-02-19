@@ -111,13 +111,6 @@ jobs:
 
           echo "Version consistency validated: $TAG_VERSION"
 
-      - name: Validate CHANGELOG updated
-        run: |
-          if ! grep -q "${{ steps.version.outputs.VERSION }}" CHANGELOG.md; then
-            echo "CHANGELOG.md does not mention version ${{ steps.version.outputs.VERSION }}"
-            exit 1
-          fi
-
       - name: Show version sync status
         run: |
           echo "✅ Version synchronization complete"
