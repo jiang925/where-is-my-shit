@@ -10,6 +10,16 @@ and this project uses Calendar Versioning (CalVer) with YYYY.MM.DD format.
 ### Added
 - TBD
 
+## [2026.02.19.3] - 2026-02-19
+
+### Changed
+- Docker builds AMD64 only (removed ARM64 to fit GitHub Actions 14GB disk limit)
+- Single Docker image variant (no full/slim split)
+- Models download at runtime (~2GB, one-time download)
+
+### Fixed
+- GitHub Actions runner disk space issues during Docker multi-platform builds
+
 ## [2026.02.19.2] - 2026-02-19
 
 ### Fixed
