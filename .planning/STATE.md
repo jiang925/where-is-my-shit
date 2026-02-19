@@ -9,9 +9,9 @@
 
 **Milestone:** v1.7 Distribution & Packaging
 **Phase:** 22 of 25 (Version Management & Foundation)
-**Plan:** Ready to plan
-**Status:** Not started
-**Last activity:** 2026-02-18 — v1.7 roadmap created
+**Plan:** 1 of 2
+**Status:** In progress
+**Last activity:** 2026-02-18 — Plan 22-01 completed (version foundation)
 
 Progress: [████████████████████░░] 84% (21/25 phases complete)
 
@@ -41,13 +41,17 @@ Progress: [████████████████████░░] 8
 - Trend: Focused execution, high quality
 
 *Updated: 2026-02-18*
+| Phase 22 P01 | 1 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
 ### Decisions
 
-Recent decisions from v1.5-v1.6 affecting current milestone:
+Recent decisions from v1.5-v1.7 affecting current milestone:
 
+- **CalVer Versioning Format (v1.7)**: YYYY.MM.DD format without v-prefix for git tags and releases
+- **Docker Labels at End (v1.7)**: Position OCI labels at end of Dockerfile for optimal layer caching
+- **Version Build Arg Default (v1.7)**: Default VERSION=dev for local builds without version specification
 - **Multi-Backend Embeddings (v1.5)**: Support for sentence-transformers, fastembed, ONNX, OpenAI, Ollama
 - **Default Model bge-m3 (v1.5)**: Upgraded from 384d to 1024d for better multilingual search
 - **Natural Chinese Translation (v1.6)**: Structural parity with English docs for bilingual users
@@ -66,6 +70,6 @@ None yet (new milestone).
 
 ## Session Continuity
 
-**Last session:** 2026-02-19T02:49:49.518Z
-**Stopped at:** Phase 22 context gathered
-**Resume file:** .planning/phases/22-version-management-foundation/22-CONTEXT.md
+**Last session:** 2026-02-19T03:07:53Z
+**Stopped at:** Completed 22-01-PLAN.md (Version Management Foundation)
+**Resume file:** .planning/phases/22-version-management-foundation/22-01-SUMMARY.md
