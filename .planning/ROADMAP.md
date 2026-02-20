@@ -284,7 +284,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 24-01-PLAN.md — Privacy policy page and Chrome Web Store publishing automation
+- [x] 24-01-PLAN.md — Privacy policy page and Chrome Web Store publishing automation
 
 #### Phase 25: Daemon Distribution
 **Goal**: Package and distribute standalone watcher daemon without requiring git clone
@@ -331,5 +331,5 @@ Phases execute in numeric order: 22 → 23 → 24 → 25
 | 21. Documentation | v1.6 | 3/3 | Complete | 2026-02-18 |
 | 22. Version Management | 2/2 | Complete    | 2026-02-19 | - |
 | 23. Docker Publishing | 2/2 | Complete   | 2026-02-19 | - |
-| 24. Extension Automation | v1.7 | 1/1 | Ready | - |
+| 24. Extension Automation | v1.7 | 1/1 | Complete | 2026-02-20 |
 | 25. Daemon Distribution | v1.7 | 0/1 | Not started | - |
