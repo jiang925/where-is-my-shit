@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WIMS Privacy Policy</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      color: #333;
+    }
+    h1 {
+      color: #2c3e50;
+      border-bottom: 2px solid #3498db;
+      padding-bottom: 10px;
+    }
+    h2 {
+      color: #34495e;
+      margin-top: 30px;
+    }
+    p {
+      margin: 15px 0;
+    }
+    .highlight {
+      background-color: #f8f9fa;
+      border-left: 4px solid #3498db;
+      padding: 15px;
+      margin: 20px 0;
+    }
+    .contact {
+      margin-top: 40px;
+      padding: 20px;
+      background-color: #ecf0f1;
+      border-radius: 5px;
+    }
+    a {
+      color: #3498db;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    .last-updated {
+      color: #7f8c8d;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <h1>WIMS Privacy Policy</h1>
+  <p class="last-updated"><strong>Last updated:</strong> February 20, 2026</p>
+
+  <div class="highlight">
+    <p><strong>Summary:</strong> WIMS (Where Is My Shit) is a privacy-first extension that keeps all your data local. We don't collect, transmit, or share any personal information. Everything stays on your computer.</p>
+  </div>
+
+  <h2>What WIMS Does</h2>
+  <p>WIMS Capture is a Chrome extension that helps you search through your AI chat conversations. It works with:</p>
+  <ul>
+    <li>ChatGPT (chatgpt.com)</li>
+    <li>Google Gemini (gemini.google.com)</li>
+    <li>Perplexity AI (perplexity.ai)</li>
+  </ul>
+  <p>The extension captures conversation content from these sites and sends it to your local WIMS server for indexing and search.</p>
+
+  <h2>Data Collection</h2>
+  <p><strong>WIMS does not collect any personal data.</strong></p>
+  <p>The extension accesses:</p>
+  <ul>
+    <li>AI chat conversation content on supported platforms (chatgpt.com, gemini.google.com, perplexity.ai)</li>
+    <li>Page titles and URLs of conversations</li>
+    <li>Timestamps of when conversations were accessed</li>
+  </ul>
+  <p><strong>This data is never transmitted to external servers.</strong> It is only sent to your local WIMS server running on your own computer (localhost or 127.0.0.1).</p>
+
+  <h2>Data Storage</h2>
+  <p>All data captured by WIMS is stored locally:</p>
+  <ul>
+    <li><strong>Browser storage:</strong> Extension settings (like your WIMS server URL and API key) are stored in Chrome's local storage on your device</li>
+    <li><strong>Local WIMS server:</strong> Conversation content is stored in a local database on your computer, managed by the WIMS server application</li>
+  </ul>
+  <p>No data is transmitted to external servers, cloud services, or third parties.</p>
+
+  <h2>Third-Party Services</h2>
+  <p><strong>WIMS does not use any third-party services.</strong></p>
+  <p>The extension only communicates with:</p>
+  <ul>
+    <li>Your local WIMS server (localhost or 127.0.0.1)</li>
+    <li>The AI chat platforms you visit (chatgpt.com, gemini.google.com, perplexity.ai) - only to read conversation content from the page</li>
+  </ul>
+
+  <h2>Permissions</h2>
+  <p>WIMS requests the following Chrome permissions:</p>
+  <ul>
+    <li><strong>storage:</strong> To save your extension settings (server URL and API key) locally</li>
+    <li><strong>alarms:</strong> To periodically sync conversations from supported platforms</li>
+    <li><strong>host_permissions (localhost):</strong> To communicate with your local WIMS server</li>
+  </ul>
+  <p>WIMS does not request access to browse your entire browsing history or access other websites beyond the specific AI chat platforms.</p>
+
+  <h2>User Control</h2>
+  <p>You have complete control over your data:</p>
+  <ul>
+    <li><strong>Stop capturing:</strong> Disable or uninstall the extension at any time through Chrome's extension settings</li>
+    <li><strong>Delete stored data:</strong> Delete conversation data through the WIMS server interface or by removing the WIMS database files on your computer</li>
+    <li><strong>Clear extension settings:</strong> Clear extension settings by uninstalling the extension or clearing Chrome's local storage</li>
+  </ul>
+
+  <h2>Data Security</h2>
+  <p>Since all data stays on your local computer:</p>
+  <ul>
+    <li>You control physical and network access to your data</li>
+    <li>WIMS server uses API key authentication to protect access to your local data</li>
+    <li>No data is exposed to external networks or cloud services</li>
+  </ul>
+
+  <h2>Changes to This Policy</h2>
+  <p>We may update this privacy policy occasionally. Changes will be posted on this page with an updated "Last updated" date.</p>
+
+  <h2>Open Source</h2>
+  <p>WIMS is open source software. You can review the complete source code, including the extension code, at:</p>
+  <p><a href="https://github.com/jiang925/wims" target="_blank">https://github.com/jiang925/wims</a></p>
+  <p>The published extension code matches the open source repository, ensuring full transparency.</p>
+
+  <div class="contact">
+    <h2>Contact</h2>
+    <p>If you have questions or concerns about this privacy policy or how WIMS handles data, please:</p>
+    <ul>
+      <li>Open an issue on GitHub: <a href="https://github.com/jiang925/wims/issues" target="_blank">https://github.com/jiang925/wims/issues</a></li>
+      <li>Email: (GitHub profile contact information)</li>
+    </ul>
+  </div>
+
+  <footer style="margin-top: 50px; padding-top: 20px; border-top: 1px solid #ccc; color: #7f8c8d; text-align: center;">
+    <p>WIMS - Where Is My Shit | Privacy-first conversation search</p>
+  </footer>
+</body>
+</html>

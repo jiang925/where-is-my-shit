@@ -123,3 +123,106 @@ jobs:
           echo "Note: Automated Docker publishing deferred due to GitHub Actions"
           echo "disk space limits (~14GB). Dockerfile and docker-compose.yml work"
           echo "for manual builds. Will revisit automation with self-hosted runner."
+
+  publish-extension:
+    needs: version-sync
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: 'npm'
+          cache-dependency-path: extension/package-lock.json
+
+      - name: Install extension dependencies
+        run: cd extension && npm ci
+
+      - name: Build extension
+        run: cd extension && npm run build
+
+      - name: Validate manifest.json exists
+        run: |
+          if [ ! -f extension/dist/manifest.json ]; then
+            echo "Error: extension/dist/manifest.json not found after build"
+            exit 1
+          fi
+          echo "✓ manifest.json exists"
+
+      - name: Validate manifest.json is valid JSON
+        run: |
+          if ! jq empty extension/dist/manifest.json 2>/dev/null; then
+            echo "Error: extension/dist/manifest.json is not valid JSON"
+            exit 1
+          fi
+          echo "✓ manifest.json is valid JSON"
+
+      - name: Validate manifest.json version matches tag
+        run: |
+          TAG_VERSION="${{ github.ref_name }}"
+          MANIFEST_VERSION=$(jq -r '.version' extension/dist/manifest.json)
+
+          if [ "$MANIFEST_VERSION" != "$TAG_VERSION" ]; then
+            echo "Error: manifest.json version ($MANIFEST_VERSION) does not match tag ($TAG_VERSION)"
+            exit 1
+          fi
+          echo "✓ manifest.json version matches tag: $TAG_VERSION"
+
+      - name: Validate required manifest fields
+        run: |
+          set -e
+          echo "Validating required manifest.json fields..."
+
+          # Check required fields exist and are non-empty
+          jq -e '.name' extension/dist/manifest.json > /dev/null || { echo "Error: Missing 'name' field"; exit 1; }
+          jq -e '.version' extension/dist/manifest.json > /dev/null || { echo "Error: Missing 'version' field"; exit 1; }
+          jq -e '.manifest_version' extension/dist/manifest.json > /dev/null || { echo "Error: Missing 'manifest_version' field"; exit 1; }
+          jq -e '.description' extension/dist/manifest.json > /dev/null || { echo "Error: Missing 'description' field"; exit 1; }
+          jq -e '.icons' extension/dist/manifest.json > /dev/null || { echo "Error: Missing 'icons' field"; exit 1; }
+          jq -e '.permissions' extension/dist/manifest.json > /dev/null || { echo "Error: Missing 'permissions' field"; exit 1; }
+
+          echo "✓ All required manifest fields present"
+
+      - name: Create extension zip
+        run: |
+          cd extension/dist
+          zip -r ../../extension.zip . -x "*.DS_Store"
+          cd ../..
+          echo "✓ Created extension.zip"
+
+      - name: Verify zip contents
+        run: |
+          if ! zipinfo extension.zip manifest.json > /dev/null 2>&1; then
+            echo "Error: extension.zip does not contain manifest.json"
+            exit 1
+          fi
+          echo "✓ extension.zip contains manifest.json"
+          echo ""
+          echo "Zip contents:"
+          zipinfo -1 extension.zip | head -20
+
+      - name: Upload to Chrome Web Store
+        run: |
+          echo "Uploading extension to Chrome Web Store..."
+          npx chrome-webstore-upload-cli upload \
+            --extension-id ${{ secrets.CHROME_EXTENSION_ID }} \
+            --client-id ${{ secrets.CHROME_CLIENT_ID }} \
+            --client-secret ${{ secrets.CHROME_CLIENT_SECRET }} \
+            --refresh-token ${{ secrets.CHROME_REFRESH_TOKEN }} \
+            --source extension.zip \
+            --auto-publish
+
+      - name: Display success message
+        run: |
+          echo ""
+          echo "✅ Extension published successfully"
+          echo "Extension ID: ${{ secrets.CHROME_EXTENSION_ID }}"
+          echo "Version: ${{ github.ref_name }}"
+          echo ""
+          echo "The extension has been submitted to Chrome Web Store for review."
+          echo "Review typically takes 24-48 hours."
+          echo ""
+          echo "Check status at: https://chrome.google.com/webstore/devconsole"
