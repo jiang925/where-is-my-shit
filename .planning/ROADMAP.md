@@ -266,10 +266,11 @@ Plans:
   3. Database and config persist across container restarts via volume mounts
   4. New version tags automatically publish to GitHub Container Registry
   5. Images are tagged with semantic versions (v1.7.0, v1.7, v1, latest)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 23-01: TBD
+- [ ] 23-01-PLAN.md — Dockerfile variants and docker-compose template
+- [ ] 23-02-PLAN.md — GitHub Actions multi-platform publishing workflow
 
 #### Phase 24: Chrome Extension Automation
 **Goal**: Auto-publish extension to Chrome Web Store on version tags
@@ -280,10 +281,10 @@ Plans:
   2. Extension version in manifest.json matches git tag automatically
   3. GitHub Actions publishes new versions to Web Store on extension-v* tags
   4. Privacy policy page is accessible and compliant with Web Store requirements
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 24-01: TBD
+- [ ] 24-01-PLAN.md — Privacy policy page and Chrome Web Store publishing automation
 
 #### Phase 25: Daemon Distribution
 **Goal**: Package and distribute standalone watcher daemon without requiring git clone
@@ -329,6 +330,6 @@ Phases execute in numeric order: 22 → 23 → 24 → 25
 | 20. Deployment Bugfixes | v1.5 | retroactive | Complete | 2026-02-15 |
 | 21. Documentation | v1.6 | 3/3 | Complete | 2026-02-18 |
 | 22. Version Management | 2/2 | Complete    | 2026-02-19 | - |
-| 23. Docker Publishing | v1.7 | 0/1 | Not started | - |
-| 24. Extension Automation | v1.7 | 0/1 | Not started | - |
+| 23. Docker Publishing | 2/2 | Complete   | 2026-02-19 | - |
+| 24. Extension Automation | v1.7 | 1/1 | Ready | - |
 | 25. Daemon Distribution | v1.7 | 0/1 | Not started | - |
