@@ -1,0 +1,16 @@
+[Unit]
+Description=WIMS Watcher Service
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/.local/bin/wims-watcher
+ExecStart=%h/.local/bin/wims-watcher/.venv/bin/python src/main.py
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+StandardOutput=append:%h/.wims/watcher.log
+StandardError=append:%h/.wims/watcher.log
+
+[Install]
+WantedBy=default.target

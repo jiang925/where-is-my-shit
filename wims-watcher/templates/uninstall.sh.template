@@ -1,0 +1,60 @@
+#!/bin/bash
+set -e
+
+echo "WIMS Watcher Uninstall"
+echo "======================"
+echo ""
+
+# Confirmation
+read -p "Are you sure you want to uninstall WIMS Watcher? (y/n) " -r
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo "Uninstall cancelled."
+    exit 0
+fi
+
+echo ""
+echo "Uninstalling..."
+
+# Stop and disable service
+echo "→ Stopping service..."
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    launchctl bootout gui/$(id -u)/com.wims.watcher 2>/dev/null || true
+    rm -f ~/Library/LaunchAgents/com.wims.watcher.plist
+    echo "✓ Stopped launchd service"
+else
+    systemctl --user stop wims-watcher.service 2>/dev/null || true
+    systemctl --user disable wims-watcher.service 2>/dev/null || true
+    rm -f ~/.config/systemd/user/wims-watcher.service
+    systemctl --user daemon-reload 2>/dev/null || true
+    echo "✓ Stopped systemd service"
+fi
+
+# Remove daemon files
+echo "→ Removing daemon files..."
+rm -rf ~/.local/bin/wims-watcher
+rm -f ~/.wims/.watcher-version
+echo "✓ Daemon removed"
+
+# Prompt for config/database removal
+echo ""
+echo "The following files remain:"
+echo "  - ~/.wims/server.json (config file)"
+echo "  - ~/.wims/*.lance (database files)"
+echo "  - ~/.wims/watcher.log (log file)"
+echo ""
+read -p "Remove these files? (y/n) " -r
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    rm -f ~/.wims/server.json
+    rm -f ~/.wims/watcher.log
+    rm -rf ~/.wims/*.lance
+    # Remove directory if empty
+    if [ -d ~/.wims ] && [ -z "$(ls -A ~/.wims)" ]; then
+        rmdir ~/.wims
+    fi
+    echo "✓ Config and database removed"
+else
+    echo "✓ Config and database preserved"
+fi
+
+echo ""
+echo "✓ Uninstall complete"

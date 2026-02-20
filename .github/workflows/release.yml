@@ -226,3 +226,107 @@ jobs:
           echo "Review typically takes 24-48 hours."
           echo ""
           echo "Check status at: https://chrome.google.com/webstore/devconsole"
+
+  publish-watcher:
+    needs: version-sync
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+
+      - name: Prepare watcher bundle
+        run: |
+          echo "Creating watcher tarball..."
+
+          # Create bundle directory
+          mkdir -p watcher-bundle/wims-watcher
+
+          # Copy watcher source files
+          cp -r wims-watcher/src watcher-bundle/wims-watcher/
+          cp wims-watcher/requirements.txt watcher-bundle/wims-watcher/
+
+          # Copy templates
+          mkdir -p watcher-bundle/wims-watcher/templates
+          cp wims-watcher/templates/* watcher-bundle/wims-watcher/templates/
+
+          # Create VERSION file
+          echo "${{ steps.version.outputs.VERSION }}" > watcher-bundle/wims-watcher/VERSION
+
+          # Verify bundle structure
+          echo "Bundle contents:"
+          find watcher-bundle/wims-watcher -type f
+
+          # Create tarball
+          cd watcher-bundle
+          tar -czf ../wims-watcher-${{ steps.version.outputs.VERSION }}.tar.gz wims-watcher/
+          cd ..
+
+          echo "✓ Created wims-watcher-${{ steps.version.outputs.VERSION }}.tar.gz"
+
+      - name: Verify tarball
+        run: |
+          echo "Tarball contents:"
+          tar -tzf wims-watcher-${{ steps.version.outputs.VERSION }}.tar.gz | head -20
+
+          # Verify key files exist
+          if ! tar -tzf wims-watcher-${{ steps.version.outputs.VERSION }}.tar.gz | grep -q "src/main.py"; then
+            echo "Error: src/main.py not found in tarball"
+            exit 1
+          fi
+
+          if ! tar -tzf wims-watcher-${{ steps.version.outputs.VERSION }}.tar.gz | grep -q "requirements.txt"; then
+            echo "Error: requirements.txt not found in tarball"
+            exit 1
+          fi
+
+          if ! tar -tzf wims-watcher-${{ steps.version.outputs.VERSION }}.tar.gz | grep -q "VERSION"; then
+            echo "Error: VERSION file not found in tarball"
+            exit 1
+          fi
+
+          echo "✓ Tarball structure validated"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            wims-watcher-${{ steps.version.outputs.VERSION }}.tar.gz
+            install-watcher.sh
+          body: |
+            ## WIMS Release ${{ steps.version.outputs.VERSION }}
+
+            ### Watcher Daemon
+
+            Install or update the watcher daemon:
+            ```bash
+            curl -sSL https://raw.githubusercontent.com/jiang925/wims/${{ github.ref_name }}/install-watcher.sh | bash
+            ```
+
+            Update existing installation:
+            ```bash
+            wims-watcher update
+            ```
+
+            ### Chrome Extension
+
+            The extension has been published to Chrome Web Store and will be available after review (typically 24-48 hours).
+
+            ### What's Changed
+
+            See [CHANGELOG.md](https://github.com/jiang925/wims/blob/main/CHANGELOG.md) for details.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Display success message
+        run: |
+          echo ""
+          echo "✅ Watcher daemon release created"
+          echo "Version: ${{ steps.version.outputs.VERSION }}"
+          echo "Tarball: wims-watcher-${{ steps.version.outputs.VERSION }}.tar.gz"
+          echo ""
+          echo "Install command:"
+          echo "curl -sSL https://raw.githubusercontent.com/jiang925/wims/${{ github.ref_name }}/install-watcher.sh | bash"

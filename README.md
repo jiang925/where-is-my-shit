@@ -154,43 +154,84 @@ Just browse these sites normally — conversations are captured automatically.
 
 ## Watcher Setup
 
-The file watcher monitors local AI tool logs and indexes dev session conversations.
+The file watcher monitors local AI tool logs and indexes dev session conversations automatically.
 
-### Installing Dependencies
+### One-Liner Installation
+
+Install the watcher daemon as a user service (no sudo required):
 
 ```bash
+curl -sSL https://raw.githubusercontent.com/jiang925/wims/main/install-watcher.sh | bash
+```
+
+**What happens:**
+
+- Prompts to install `uv` if not already installed (used for dependency management)
+- Downloads the latest watcher release from GitHub
+- Installs to `~/.local/bin/wims-watcher`
+- Sets up systemd (Linux) or launchd (macOS) user service
+- Starts the service automatically
+
+The watcher reads config from `~/.wims/server.json` (auto-created by the server on first run).
+
+### Update
+
+The watcher checks for updates on startup and logs notifications to `~/.wims/watcher.log`. Update manually:
+
+```bash
+wims-watcher update
+```
+
+### Uninstall
+
+```bash
+bash ~/.local/bin/wims-watcher/uninstall.sh
+```
+
+Removes the service and daemon files. Prompts before removing config and database.
+
+### Manual Installation (for development)
+
+If you prefer to run from source:
+
+```bash
+# Install dependencies
 pip install -r wims-watcher/requirements.txt
-```
 
-### Running the Watcher
-
-**Foreground (for testing):**
-
-```bash
+# Run in foreground
 python -m wims-watcher.src.main
-```
 
-**Install as systemd service (Linux):**
-
-```bash
+# Or install as systemd service (Linux only)
 cd wims-watcher
 ./install.sh
 ```
 
-This creates and enables a systemd service that runs the watcher automatically.
-
-### Configuration
-
-The watcher auto-discovers configuration from `~/.wims/server.json`. No additional setup needed — just ensure the server is configured first.
-
 ### Supported Tools
 
 The watcher monitors conversations from:
-- Claude Code
-- Cursor
-- Antigravity
+- **Claude Code** — `~/.claude/history.jsonl`
+- **Cursor** — `~/.config/Cursor/User/workspaceStorage/*/state.vscdb`
+- **Antigravity** — `~/.antigravity/logs/*.log`
 
-Log directories are auto-detected based on standard tool locations.
+Log directories are auto-detected. The watcher starts monitoring when files are created.
+
+### Logs
+
+View watcher logs:
+
+```bash
+tail -f ~/.wims/watcher.log
+```
+
+Check service status:
+
+```bash
+# Linux
+systemctl --user status wims-watcher.service
+
+# macOS
+launchctl print gui/$(id -u)/com.wims.watcher
+```
 
 ---
 

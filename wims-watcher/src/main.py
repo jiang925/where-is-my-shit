@@ -1,12 +1,19 @@
 import logging
 import os
 import sys
+from pathlib import Path
 
-# Configure logging
+# Configure logging to both stdout and file
+LOG_FILE = Path.home() / ".wims" / "watcher.log"
+LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler(sys.stdout)],
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler(LOG_FILE, mode="a"),
+    ],
 )
 
 # Add src to path if running directly
@@ -17,10 +24,14 @@ from src.config import load_config
 from src.sources.antigravity import AntigravityWatcher
 from src.sources.claude import ClaudeWatcher
 from src.sources.cursor import CursorWatcher
+from src.version import check_for_updates
 from src.watcher import LogWatcher
 
 
 def main():
+    # Check for updates on startup
+    check_for_updates()
+
     # Load configuration
     config = load_config()
 
@@ -113,4 +124,11 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # Handle update command
+    if len(sys.argv) > 1 and sys.argv[1] == "update":
+        from src.updater import perform_update
+
+        success = perform_update()
+        sys.exit(0 if success else 1)
+    else:
+        main()

@@ -1,0 +1,23 @@
+#!/bin/bash
+# WIMS Watcher command wrapper
+# This script is installed to ~/.local/bin/wims-watcher (executable)
+# and provides the wims-watcher command
+
+WATCHER_DIR="$HOME/.local/bin/wims-watcher"
+PYTHON="$WATCHER_DIR/.venv/bin/python"
+MAIN_PY="$WATCHER_DIR/src/main.py"
+
+if [ ! -f "$PYTHON" ]; then
+    echo "Error: WIMS Watcher not installed properly"
+    echo "Expected Python at: $PYTHON"
+    exit 1
+fi
+
+if [ ! -f "$MAIN_PY" ]; then
+    echo "Error: WIMS Watcher main.py not found"
+    echo "Expected at: $MAIN_PY"
+    exit 1
+fi
+
+# Pass all arguments to main.py
+exec "$PYTHON" "$MAIN_PY" "$@"
