@@ -163,7 +163,7 @@ jobs:
       - name: Validate manifest.json version matches tag
         run: |
           TAG_VERSION="${{ github.ref_name }}"
-          MANIFEST_VERSION=$(jq -r '.version' extension/dist/manifest.json)
+          MANIFEST_VERSION=$(jq -r '.version' extension/manifest.json)
 
           if [ "$MANIFEST_VERSION" != "$TAG_VERSION" ]; then
             echo "Error: manifest.json version ($MANIFEST_VERSION) does not match tag ($TAG_VERSION)"
@@ -231,6 +231,8 @@ jobs:
     needs: version-sync
     runs-on: ubuntu-latest
     if: github.ref_type == 'tag'
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
