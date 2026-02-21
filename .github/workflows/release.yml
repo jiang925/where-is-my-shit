@@ -427,10 +427,6 @@ jobs:
             ghcr.io/jiang925/wims:latest-slim
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          build-args: |
-            VERSION=${{ steps.version.outputs.VERSION }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Display success message
         run: |
