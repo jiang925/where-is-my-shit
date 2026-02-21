@@ -2,7 +2,8 @@
 
 ![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![CI](https://github.com/{owner}/{repo}/actions/workflows/ci.yml/badge.svg)
+![Docker](https://img.shields.io/badge/docker-ghcr.io-blue.svg)
+![CI](https://github.com/jiang925/where-is-my-shit/actions/workflows/ci.yml/badge.svg)
 
 **找不到之前的AI对话了？WIMS 捕获并索引你所有的AI聊天记录，让你即时找到它们。**
 
@@ -41,15 +42,46 @@ WIMS 由三个组件协同工作：
 
 ## 快速开始
 
+### 方式一：Docker（推荐）
+
 ```bash
-git clone https://github.com/{owner}/where-is-my-shit.git
+# 拉取并运行（完整版，模型已预下载）
+docker run -d \
+  -p 8000:8000 \
+  -v ~/.wims:/root/.wims \
+  --name wims \
+  ghcr.io/jiang925/wims:latest
+
+# 或使用精简版（首次运行时下载模型）
+docker run -d \
+  -p 8000:8000 \
+  -v ~/.wims:/root/.wims \
+  --name wims \
+  ghcr.io/jiang925/wims:latest-slim
+```
+
+**执行过程：**
+- 容器在 http://localhost:8000 启动服务器
+- 首次运行时自动生成 API 密钥（查看日志：`docker logs wims`）
+- 配置和数据存储在 `~/.wims/`（通过卷挂载持久化）
+
+**查看 API 密钥：**
+```bash
+docker logs wims 2>&1 | grep "API Key"
+# 或检查配置文件：
+cat ~/.wims/server.json
+```
+
+### 方式二：从源码安装
+
+```bash
+git clone https://github.com/jiang925/where-is-my-shit.git
 cd where-is-my-shit
 ./setup.sh
 ./start.sh
 ```
 
 **执行过程：**
-
 - `setup.sh` 安装 `uv`（如果尚未安装），同步 Python 依赖，预下载默认嵌入模型（BAAI/bge-m3）
 - `start.sh` 构建前端（如需要）并在 http://localhost:8000 启动服务器
 - 首次运行时，会自动生成 API 密钥并打印到控制台。扩展和监控器需要此密钥。
@@ -61,6 +93,11 @@ cd where-is-my-shit
 
 ## 环境要求
 
+**方式一：Docker（最简单）**
+- **Docker** 或 **Docker Desktop**
+- **~2GB 磁盘空间**用于嵌入模型（完整版）或 ~200MB（精简版）
+
+**方式二：从源码安装**
 - **Python 3.11+**
 - **Node.js 20+**（用于前端构建和扩展）
 - **macOS 或 Linux**（Windows：推荐使用 WSL）
@@ -108,6 +145,99 @@ API Key: sk-wims-xxxxxxxxxxxxxxxxxxxxxxxx
 交互式 API 文档位于：
 - Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
+
+---
+
+## Docker 设置
+
+Docker 是运行 WIMS 最简单的方式，提供两种镜像变体。
+
+### 镜像变体
+
+**完整版（推荐）：**
+- 大小：~800MB
+- 模型已预下载（bge-m3，~2GB）
+- 即时启动，无需等待模型下载
+- 标签：`latest`、`VERSION`、`VERSION-full`
+
+**精简版：**
+- 大小：~200MB
+- 首次运行时下载模型（~2GB，一次性）
+- 更小的镜像体积，首次启动较慢
+- 标签：`latest-slim`、`VERSION-slim`
+
+### 使用 Docker 运行
+
+**完整版（即时启动）：**
+```bash
+docker run -d \
+  -p 8000:8000 \
+  -v ~/.wims:/root/.wims \
+  --name wims \
+  ghcr.io/jiang925/wims:latest
+```
+
+**精简版（更小镜像）：**
+```bash
+docker run -d \
+  -p 8000:8000 \
+  -v ~/.wims:/root/.wims \
+  --name wims \
+  ghcr.io/jiang925/wims:latest-slim
+```
+
+**获取 API 密钥：**
+```bash
+# 从容器日志
+docker logs wims 2>&1 | grep "API Key"
+
+# 或从配置文件
+cat ~/.wims/server.json | jq -r '.api_key'
+```
+
+### 使用 docker-compose
+
+创建 `docker-compose.yml`：
+
+```yaml
+services:
+  wims:
+    image: ghcr.io/jiang925/wims:latest
+    ports:
+      - "8000:8000"
+    volumes:
+      - ~/.wims:/root/.wims
+    restart: unless-stopped
+```
+
+启动：
+```bash
+docker compose up -d
+```
+
+### Docker 管理
+
+```bash
+# 查看日志
+docker logs -f wims
+
+# 停止服务器
+docker stop wims
+
+# 启动服务器
+docker start wims
+
+# 重启服务器
+docker restart wims
+
+# 删除容器（数据保留在 ~/.wims）
+docker rm -f wims
+
+# 更新到最新版本
+docker pull ghcr.io/jiang925/wims:latest
+docker rm -f wims
+# 然后重新运行 docker run 命令
+```
 
 ---
 
