@@ -124,12 +124,25 @@ jobs:
           echo "disk space limits (~14GB). Dockerfile and docker-compose.yml work"
           echo "for manual builds. Will revisit automation with self-hosted runner."
 
+      - name: Upload versioned manifest for extension publishing
+        uses: actions/upload-artifact@v4
+        with:
+          name: versioned-manifest
+          path: extension/manifest.json
+          retention-days: 1
+
   publish-extension:
     needs: version-sync
     runs-on: ubuntu-latest
     if: github.ref_type == 'tag'
     steps:
       - uses: actions/checkout@v4
+
+      - name: Download versioned manifest
+        uses: actions/download-artifact@v4
+        with:
+          name: versioned-manifest
+          path: extension/
 
       - name: Set up Node.js 20
         uses: actions/setup-node@v4
