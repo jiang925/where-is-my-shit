@@ -77,9 +77,6 @@ def check_for_updates() -> None:
         return
 
     if latest != current:
-        logging.info(
-            f"Update available: {current} → {latest}. "
-            f"Run 'wims-watcher update' to upgrade."
-        )
+        logging.info(f"Update available: {current} → {latest}. Run 'wims-watcher update' to upgrade.")
     else:
         logging.debug(f"Running latest version: {current}")
