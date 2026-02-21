@@ -2,7 +2,8 @@
 
 ![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![CI](https://github.com/{owner}/{repo}/actions/workflows/ci.yml/badge.svg)
+![Docker](https://img.shields.io/badge/docker-ghcr.io-blue.svg)
+![CI](https://github.com/jiang925/where-is-my-shit/actions/workflows/ci.yml/badge.svg)
 
 **Ever lost an AI conversation? WIMS captures and indexes all your AI chats so you can find them instantly.**
 
@@ -41,15 +42,46 @@ When you search, the server performs hybrid search combining vector similarity a
 
 ## Quick Start
 
+### Option 1: Docker (Recommended)
+
 ```bash
-git clone https://github.com/{owner}/where-is-my-shit.git
+# Pull and run (full variant with pre-downloaded models)
+docker run -d \
+  -p 8000:8000 \
+  -v ~/.wims:/root/.wims \
+  --name wims \
+  ghcr.io/jiang925/wims:latest
+
+# Or use slim variant (downloads models on first run)
+docker run -d \
+  -p 8000:8000 \
+  -v ~/.wims:/root/.wims \
+  --name wims \
+  ghcr.io/jiang925/wims:latest-slim
+```
+
+**What happens:**
+- Container starts server on http://localhost:8000
+- On first run, API key auto-generated (check logs: `docker logs wims`)
+- Configuration and data stored in `~/.wims/` (persisted via volume mount)
+
+**View API key:**
+```bash
+docker logs wims 2>&1 | grep "API Key"
+# Or check config:
+cat ~/.wims/server.json
+```
+
+### Option 2: From Source
+
+```bash
+git clone https://github.com/jiang925/where-is-my-shit.git
 cd where-is-my-shit
 ./setup.sh
 ./start.sh
 ```
 
 **What happens:**
-
 - `setup.sh` installs `uv` (if not already installed), syncs Python dependencies, pre-downloads the default embedding model (BAAI/bge-m3)
 - `start.sh` builds the frontend (if needed) and starts the server on http://localhost:8000
 - On first run, an API key is auto-generated and printed to the console. You'll need this for the extension and watcher.
@@ -61,6 +93,11 @@ Open http://localhost:8000 in your browser to access the search interface.
 
 ## Prerequisites
 
+**Option 1: Docker (Simplest)**
+- **Docker** or **Docker Desktop**
+- **~2GB disk space** for embedding models (full variant) or ~200MB (slim variant)
+
+**Option 2: From Source**
 - **Python 3.11+**
 - **Node.js 20+** (for frontend build and extension)
 - **macOS or Linux** (Windows: WSL recommended)
@@ -108,6 +145,99 @@ Save this API key for the extension and watcher configuration.
 Interactive API docs available at:
 - Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
+
+---
+
+## Docker Setup
+
+Docker provides the easiest way to run WIMS with two image variants available.
+
+### Image Variants
+
+**Full variant (recommended):**
+- Size: ~800MB
+- Models pre-downloaded (bge-m3, ~2GB)
+- Instant startup, no waiting for model download
+- Tags: `latest`, `VERSION`, `VERSION-full`
+
+**Slim variant:**
+- Size: ~200MB
+- Models download on first run (~2GB, one-time)
+- Smaller footprint, slower first startup
+- Tags: `latest-slim`, `VERSION-slim`
+
+### Running with Docker
+
+**Full variant (instant startup):**
+```bash
+docker run -d \
+  -p 8000:8000 \
+  -v ~/.wims:/root/.wims \
+  --name wims \
+  ghcr.io/jiang925/wims:latest
+```
+
+**Slim variant (smaller image):**
+```bash
+docker run -d \
+  -p 8000:8000 \
+  -v ~/.wims:/root/.wims \
+  --name wims \
+  ghcr.io/jiang925/wims:latest-slim
+```
+
+**Get your API key:**
+```bash
+# From container logs
+docker logs wims 2>&1 | grep "API Key"
+
+# Or from config file
+cat ~/.wims/server.json | jq -r '.api_key'
+```
+
+### Using docker-compose
+
+Create `docker-compose.yml`:
+
+```yaml
+services:
+  wims:
+    image: ghcr.io/jiang925/wims:latest
+    ports:
+      - "8000:8000"
+    volumes:
+      - ~/.wims:/root/.wims
+    restart: unless-stopped
+```
+
+Start with:
+```bash
+docker compose up -d
+```
+
+### Docker Management
+
+```bash
+# View logs
+docker logs -f wims
+
+# Stop server
+docker stop wims
+
+# Start server
+docker start wims
+
+# Restart server
+docker restart wims
+
+# Remove container (data persists in ~/.wims)
+docker rm -f wims
+
+# Update to latest version
+docker pull ghcr.io/jiang925/wims:latest
+docker rm -f wims
+# Then run the docker run command again
+```
 
 ---
 
