@@ -10,7 +10,7 @@ from pathlib import Path
 
 import requests
 
-from .version import GITHUB_API, VERSION_FILE, get_current_version, get_latest_version, set_current_version
+from .version import GITHUB_API, get_current_version, get_latest_version, set_current_version
 
 INSTALL_DIR = Path.home() / ".local" / "bin" / "wims-watcher"
 
