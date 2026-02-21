@@ -395,16 +395,38 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: Build and push full variant (with models)
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
           platforms: linux/amd64
           push: true
+          build-args: |
+            VERSION=${{ steps.version.outputs.VERSION }}
+            DOWNLOAD_MODELS=true
           tags: |
             ghcr.io/jiang925/wims:${{ steps.version.outputs.VERSION }}
+            ghcr.io/jiang925/wims:${{ steps.version.outputs.VERSION }}-full
             ghcr.io/jiang925/wims:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push slim variant (runtime download)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: true
+          build-args: |
+            VERSION=${{ steps.version.outputs.VERSION }}
+            DOWNLOAD_MODELS=false
+          tags: |
+            ghcr.io/jiang925/wims:${{ steps.version.outputs.VERSION }}-slim
+            ghcr.io/jiang925/wims:latest-slim
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           build-args: |
             VERSION=${{ steps.version.outputs.VERSION }}
           cache-from: type=gha
