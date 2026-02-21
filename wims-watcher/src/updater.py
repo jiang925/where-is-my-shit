@@ -7,7 +7,6 @@ import subprocess
 import sys
 import tarfile
 from pathlib import Path
-from typing import Optional
 
 import requests
 

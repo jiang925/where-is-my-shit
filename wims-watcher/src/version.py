@@ -2,7 +2,6 @@
 
 import logging
 from pathlib import Path
-from typing import Optional
 
 import requests
 
@@ -10,7 +9,7 @@ GITHUB_API = "https://api.github.com/repos/jiang925/wims/releases/latest"
 VERSION_FILE = Path.home() / ".wims" / ".watcher-version"
 
 
-def get_current_version() -> Optional[str]:
+def get_current_version() -> str | None:
     """
     Read current installed version from version file.
 
@@ -39,7 +38,7 @@ def set_current_version(version: str) -> None:
         logging.warning(f"Could not write version file: {e}")
 
 
-def get_latest_version() -> Optional[str]:
+def get_latest_version() -> str | None:
     """
     Check GitHub API for latest release version.
 
