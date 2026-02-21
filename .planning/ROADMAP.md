@@ -257,20 +257,20 @@ Plans:
 - [ ] 22-02-PLAN.md — GitHub Actions release workflow with validation
 
 #### Phase 23: Docker Publishing
-**Goal**: Auto-publish multi-platform Docker images to GitHub Container Registry
+**Goal**: Auto-publish Docker images to GitHub Container Registry
 **Depends on**: Phase 22
 **Requirements**: DOCK-01, DOCK-02, DOCK-03, DOCK-04, DOCK-05, DOCK-06
 **Success Criteria** (what must be TRUE):
   1. User can run `docker compose up -d` to deploy WIMS server and UI
-  2. Docker images work on both AMD64 and ARM64 platforms without emulation
+  2. Docker images work on AMD64 platform (ARM64 deferred due to space constraints)
   3. Database and config persist across container restarts via volume mounts
-  4. New version tags automatically publish to GitHub Container Registry
-  5. Images are tagged with semantic versions (v1.7.0, v1.7, v1, latest)
+  4. New version tags automatically publish to GitHub Container Registry with disk optimization
+  5. Images are tagged with CalVer versions (e.g., 2026.02.20, latest)
 **Plans**: 2 plans
 
 Plans:
-- [ ] 23-01-PLAN.md — Dockerfile variants and docker-compose template
-- [ ] 23-02-PLAN.md — GitHub Actions multi-platform publishing workflow
+- [x] 23-01-PLAN.md — Dockerfile variants and docker-compose template
+- [x] 23-02-PLAN.md — GitHub Actions publishing workflow with disk optimization (quick-task-2)
 
 #### Phase 24: Chrome Extension Automation
 **Goal**: Auto-publish extension to Chrome Web Store on version tags

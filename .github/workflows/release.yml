@@ -120,9 +120,8 @@ jobs:
           echo ""
           echo "✅ Version management complete"
           echo ""
-          echo "Note: Automated Docker publishing deferred due to GitHub Actions"
-          echo "disk space limits (~14GB). Dockerfile and docker-compose.yml work"
-          echo "for manual builds. Will revisit automation with self-hosted runner."
+          echo "Note: Automated Docker publishing enabled with disk optimization."
+          echo "Images published to ghcr.io/jiang925/wims on each release tag."
 
       - name: Upload versioned manifest for extension publishing
         uses: actions/upload-artifact@v4
