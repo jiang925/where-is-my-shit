@@ -345,3 +345,81 @@ jobs:
           echo ""
           echo "Install command:"
           echo "curl -sSL https://raw.githubusercontent.com/jiang925/wims/${{ github.ref_name }}/install-watcher.sh | bash"
+
+  publish-docker:
+    needs: version-sync
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag'
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: |
+          echo "Initial disk usage:"
+          df -h
+          echo ""
+
+          echo "Removing large unused packages..."
+          # Remove .NET, Android SDK, GHC, CodeQL (reclaims ~10-12GB)
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+
+          echo "Cleaning apt cache..."
+          sudo apt-get clean
+
+          echo "Pruning Docker system..."
+          docker system prune -af --volumes
+
+          echo ""
+          echo "Final disk usage after cleanup:"
+          df -h
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ghcr.io/jiang925/wims:${{ steps.version.outputs.VERSION }}
+            ghcr.io/jiang925/wims:latest
+          build-args: |
+            VERSION=${{ steps.version.outputs.VERSION }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Display success message
+        run: |
+          echo ""
+          echo "✅ Docker image published successfully"
+          echo "Images:"
+          echo "  - ghcr.io/jiang925/wims:${{ steps.version.outputs.VERSION }}"
+          echo "  - ghcr.io/jiang925/wims:latest"
+          echo ""
+          echo "Platform: linux/amd64"
+          echo ""
+          echo "Pull image:"
+          echo "docker pull ghcr.io/jiang925/wims:${{ steps.version.outputs.VERSION }}"
