@@ -172,7 +172,15 @@ async def serve_spa(full_path: str):
 
     # Check if it's a static file request that wasn't caught by mounted assets
     # (e.g., vite.svg, robots.txt)
-    static_file_path = os.path.join("src/static", full_path)
+    # Prevent path traversal: normalize path and ensure it stays within src/static
+    static_dir = os.path.abspath("src/static")
+    static_file_path = os.path.abspath(os.path.join("src/static", full_path))
+
+    # Verify the resolved path is within static_dir (prevents ../../ attacks)
+    if not static_file_path.startswith(static_dir + os.sep):
+        # Path traversal attempt - serve index.html instead
+        return FileResponse("src/static/index.html")
+
     if os.path.exists(static_file_path) and os.path.isfile(static_file_path):
         return FileResponse(static_file_path)
 
