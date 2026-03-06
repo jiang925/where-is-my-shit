@@ -8,6 +8,8 @@ on:
 jobs:
   validate-tests:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -63,6 +65,9 @@ jobs:
   version-sync:
     needs: validate-tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write  # For uploading artifacts
     steps:
       - uses: actions/checkout@v4
 
@@ -134,6 +139,9 @@ jobs:
     needs: version-sync
     runs-on: ubuntu-latest
     if: github.ref_type == 'tag'
+    permissions:
+      contents: read
+      actions: read  # For downloading artifacts
     steps:
       - uses: actions/checkout@v4
 
