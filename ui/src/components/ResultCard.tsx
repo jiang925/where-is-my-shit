@@ -8,6 +8,8 @@ interface ResultCardProps {
   result: SearchResult;
   className?: string;
   hideScore?: boolean;
+  onSelect?: (conversationId: string) => void;
+  isSelected?: boolean;
 }
 
 // Platform configuration matching SourceFilterUI for consistency
@@ -95,18 +97,34 @@ function getPlatformConfig(source?: string) {
   };
 }
 
-export function ResultCard({ result, className, hideScore }: ResultCardProps) {
+export function ResultCard({ result, className, hideScore, onSelect, isSelected }: ResultCardProps) {
   const { content, meta } = result;
   const platform = getPlatformConfig(meta.source);
   const Icon = platform?.icon || MessageSquare;
 
   const title = meta.title || meta.url || 'Untitled Conversation';
 
+  const handleClick = () => {
+    if (onSelect && meta.conversation_id) {
+      onSelect(meta.conversation_id);
+    }
+  };
+
   return (
-    <div className={cn(
-      "group flex flex-col bg-white border border-gray-100 hover:border-blue-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-all",
-      className
-    )}>
+    <div
+      className={cn(
+        "group flex flex-col bg-white border rounded-lg p-4 shadow-sm transition-all",
+        onSelect ? "cursor-pointer hover:shadow-md" : "hover:shadow-md",
+        isSelected
+          ? "border-blue-400 ring-2 ring-blue-200 border-l-4 border-l-blue-500"
+          : "border-gray-100 hover:border-blue-200",
+        className
+      )}
+      onClick={handleClick}
+      role={onSelect ? "button" : undefined}
+      tabIndex={onSelect ? 0 : undefined}
+      onKeyDown={onSelect ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick(); } } : undefined}
+    >
       <div className="flex items-center justify-between mb-2 text-xs">
         <div className="flex items-center gap-2">
           {/* Source badge with icon and color */}
@@ -173,7 +191,9 @@ export function ResultCard({ result, className, hideScore }: ResultCardProps) {
 
         {meta.url && (
           isFilePath(meta.url) ? (
-            <CopyablePath path={meta.url} />
+            <span onClick={(e) => e.stopPropagation()}>
+              <CopyablePath path={meta.url} />
+            </span>
           ) : (
             <a
               href={meta.url}

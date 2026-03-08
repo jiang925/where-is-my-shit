@@ -4,6 +4,7 @@ import { SourceFilterUI, AVAILABLE_PLATFORMS, type PlatformId } from '../compone
 import { PresetButtons } from '../components/PresetButtons';
 import { DateRangeFilter } from '../components/DateRangeFilter';
 import { TimelineSection } from '../components/TimelineSection';
+import { ConversationPanel } from '../components/ConversationPanel';
 import { useBrowse, type DateRangeOption } from '../lib/api';
 import { flattenAndGroup, TIMELINE_SECTIONS, totalGroupedItems, sectionsForDateRange } from '../lib/dateGroups';
 import { Loader2, LogOut } from 'lucide-react';
@@ -17,6 +18,26 @@ export function BrowsePage({ onLogout }: BrowsePageProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const allPlatformIds = AVAILABLE_PLATFORMS.map(p => p.id) as PlatformId[];
   const [selectedPlatforms, setSelectedPlatforms] = useState<PlatformId[]>(allPlatformIds);
+
+  // Conversation panel state from URL
+  const selectedConversation = searchParams.get('conversation') || null;
+
+  const handleSelectConversation = (conversationId: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (selectedConversation === conversationId) {
+      // Toggle off
+      newParams.delete('conversation');
+    } else {
+      newParams.set('conversation', conversationId);
+    }
+    setSearchParams(newParams);
+  };
+
+  const handleClosePanel = () => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('conversation');
+    setSearchParams(newParams);
+  };
 
   // Get platforms from URL on mount, sync to state
   useEffect(() => {
@@ -42,19 +63,21 @@ export function BrowsePage({ onLogout }: BrowsePageProps) {
     setSelectedPlatforms(newPlatforms);
 
     // Update URL
+    const newParams = new URLSearchParams(searchParams);
     if (newPlatforms.length === 0) {
-      searchParams.delete('platforms');
+      newParams.delete('platforms');
     } else {
-      searchParams.set('platforms', newPlatforms.join(','));
+      newParams.set('platforms', newPlatforms.join(','));
     }
-    setSearchParams(searchParams);
+    setSearchParams(newParams);
   };
 
   // Clear all platform filters
   const handleClearFilters = () => {
     setSelectedPlatforms([]);
-    searchParams.delete('platforms');
-    setSearchParams(searchParams);
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('platforms');
+    setSearchParams(newParams);
   };
 
   // Browse hook with date range and platform filtering
@@ -87,6 +110,7 @@ export function BrowsePage({ onLogout }: BrowsePageProps) {
 
   // Empty state detection
   const showEmptyState = status === 'success' && totalGroupedItems(groupedData) === 0;
+  const isPanelOpen = !!selectedConversation;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center font-sans text-gray-900">
@@ -126,80 +150,123 @@ export function BrowsePage({ onLogout }: BrowsePageProps) {
               selectedPlatforms={selectedPlatforms}
               onPresetSelect={(platforms) => {
                 setSelectedPlatforms(platforms);
+                const newParams = new URLSearchParams(searchParams);
                 if (platforms.length === 0) {
-                  searchParams.delete('platforms');
+                  newParams.delete('platforms');
                 } else {
-                  searchParams.set('platforms', platforms.join(','));
+                  newParams.set('platforms', platforms.join(','));
                 }
-                setSearchParams(searchParams);
+                setSearchParams(newParams);
               }}
             />
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <main className="w-full max-w-3xl px-4 py-6 flex-1 flex flex-col">
+      {/* Main Content with optional panel */}
+      <div className={
+        isPanelOpen
+          ? "w-full flex-1 flex flex-col lg:flex-row"
+          : "w-full flex-1 flex flex-col items-center"
+      }>
+        {/* Results area */}
+        <main className={
+          isPanelOpen
+            ? "flex-1 overflow-y-auto px-4 py-6 flex flex-col"
+            : "w-full max-w-3xl px-4 py-6 flex-1 flex flex-col"
+        }>
 
-        {/* Loading State */}
-        {status === 'pending' && (
-          <div className="flex-1 flex flex-col items-center justify-center text-gray-400 mt-20">
-            <Loader2 className="h-8 w-8 animate-spin text-gray-300 mb-4" />
-            <p className="text-lg">Loading conversations...</p>
-          </div>
-        )}
-
-        {/* Error State */}
-        {status === 'error' && (
-          <div className="text-center p-8 text-red-500 bg-red-50 rounded-lg border border-red-100 mt-4">
-            <p className="font-medium">Something went wrong</p>
-            <p className="text-sm mt-1">{(error as Error).message}</p>
-          </div>
-        )}
-
-        {/* Empty State */}
-        {showEmptyState && (
-          <div className="flex-1 flex flex-col items-center justify-center text-gray-500 mt-20">
-            <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-              <Loader2 className="h-8 w-8 text-gray-300" />
+          {/* Loading State */}
+          {status === 'pending' && (
+            <div className="flex-1 flex flex-col items-center justify-center text-gray-400 mt-20">
+              <Loader2 className="h-8 w-8 animate-spin text-gray-300 mb-4" />
+              <p className="text-lg">Loading conversations...</p>
             </div>
-            <p className="text-lg font-medium">No conversations yet</p>
-            <p className="text-sm mt-2 max-w-md text-center text-gray-400">
-              Install the extension or set up a watcher to start capturing your AI conversations.
-            </p>
-          </div>
-        )}
+          )}
 
-        {/* Timeline Sections */}
-        {status === 'success' && !showEmptyState && (
-          <div>
-            {TIMELINE_SECTIONS
-              .filter(section => sectionsForDateRange(dateRange).includes(section.key))
-              .map(section => (
-              <TimelineSection
-                key={section.key}
-                title={section.label}
-                items={groupedData[section.key]}
-                isEmpty={groupedData[section.key].length === 0}
+          {/* Error State */}
+          {status === 'error' && (
+            <div className="text-center p-8 text-red-500 bg-red-50 rounded-lg border border-red-100 mt-4">
+              <p className="font-medium">Something went wrong</p>
+              <p className="text-sm mt-1">{(error as Error).message}</p>
+            </div>
+          )}
+
+          {/* Empty State */}
+          {showEmptyState && (
+            <div className="flex-1 flex flex-col items-center justify-center text-gray-500 mt-20">
+              <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                <Loader2 className="h-8 w-8 text-gray-300" />
+              </div>
+              <p className="text-lg font-medium">No conversations yet</p>
+              <p className="text-sm mt-2 max-w-md text-center text-gray-400">
+                Install the extension or set up a watcher to start capturing your AI conversations.
+              </p>
+            </div>
+          )}
+
+          {/* Timeline Sections */}
+          {status === 'success' && !showEmptyState && (
+            <div>
+              {TIMELINE_SECTIONS
+                .filter(section => sectionsForDateRange(dateRange).includes(section.key))
+                .map(section => (
+                <TimelineSection
+                  key={section.key}
+                  title={section.label}
+                  items={groupedData[section.key]}
+                  isEmpty={groupedData[section.key].length === 0}
+                  onSelect={handleSelectConversation}
+                  selectedConversation={selectedConversation}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Loading Indicator for Infinite Scroll */}
+          {(isFetchingNextPage || hasNextPage) && !showEmptyState && status === 'success' && (
+            <div
+              ref={lastElementRef}
+              className="w-full py-8 flex justify-center items-center text-gray-400"
+            >
+              {isFetchingNextPage ? (
+                <Loader2 className="h-6 w-6 animate-spin" />
+              ) : (
+                <span className="text-sm">Load more</span>
+              )}
+            </div>
+          )}
+        </main>
+
+        {/* Conversation Panel - Desktop (lg+) */}
+        {isPanelOpen && selectedConversation && (
+          <>
+            {/* Desktop panel */}
+            <div className="hidden lg:flex w-[480px] flex-shrink-0 border-l border-gray-200 h-[calc(100vh-4rem)] sticky top-16">
+              <div className="w-full transition-all duration-300">
+                <ConversationPanel
+                  conversationId={selectedConversation}
+                  onClose={handleClosePanel}
+                />
+              </div>
+            </div>
+
+            {/* Mobile overlay */}
+            <div className="lg:hidden fixed inset-0 z-50">
+              <div
+                className="absolute inset-0 bg-black/50"
+                onClick={handleClosePanel}
               />
-            ))}
-          </div>
+              <div className="absolute right-0 top-0 bottom-0 w-full max-w-[480px] bg-white shadow-xl transition-all duration-300">
+                <ConversationPanel
+                  conversationId={selectedConversation}
+                  onClose={handleClosePanel}
+                />
+              </div>
+            </div>
+          </>
         )}
-
-        {/* Loading Indicator for Infinite Scroll */}
-        {(isFetchingNextPage || hasNextPage) && !showEmptyState && status === 'success' && (
-          <div
-            ref={lastElementRef}
-            className="w-full py-8 flex justify-center items-center text-gray-400"
-          >
-            {isFetchingNextPage ? (
-              <Loader2 className="h-6 w-6 animate-spin" />
-            ) : (
-              <span className="text-sm">Load more</span>
-            )}
-          </div>
-        )}
-      </main>
+      </div>
     </div>
   );
 }

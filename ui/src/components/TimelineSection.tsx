@@ -6,6 +6,8 @@ interface TimelineSectionProps {
   title: string;
   items: BrowseItem[];
   isEmpty: boolean;
+  onSelect?: (conversationId: string) => void;
+  selectedConversation?: string | null;
 }
 
 /**
@@ -30,7 +32,7 @@ function browseItemToSearchResult(item: BrowseItem): SearchResult {
   };
 }
 
-export function TimelineSection({ title, items, isEmpty }: TimelineSectionProps) {
+export function TimelineSection({ title, items, isEmpty, onSelect, selectedConversation }: TimelineSectionProps) {
   return (
     <section className="mb-6">
       {/* Inline section header (Claude's discretion: inline chosen over sticky
@@ -53,6 +55,8 @@ export function TimelineSection({ title, items, isEmpty }: TimelineSectionProps)
               key={item.id}
               result={browseItemToSearchResult(item)}
               hideScore
+              onSelect={onSelect}
+              isSelected={item.conversation_id === selectedConversation}
             />
           ))}
         </div>

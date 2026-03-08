@@ -116,6 +116,7 @@ class BrowseItem(BaseModel):
     title: str = ""
     content: str
     url: str = ""
+    role: str = "user"  # user, assistant, system
 
 
 class BrowseRequest(BaseModel):

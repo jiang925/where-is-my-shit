@@ -1,0 +1,91 @@
+import re
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.concurrency import run_in_threadpool
+
+from src.app.core.auth import verify_api_key
+from src.app.db.client import db_client
+from src.app.schemas.message import BrowseItem, BrowseResponse
+
+# Only allow alphanumeric, hyphens, and underscores in conversation_id
+CONVERSATION_ID_PATTERN = re.compile(r"^[a-zA-Z0-9\-_]+$")
+
+router = APIRouter(dependencies=[Depends(verify_api_key)])
+
+
+@router.get("/thread/{conversation_id}", response_model=BrowseResponse)
+async def get_thread(conversation_id: str):
+    """
+    Return all messages for a given conversation_id, sorted by timestamp
+    ascending (oldest first) for conversation display.
+    """
+    # 1. Sanitize conversation_id to prevent injection
+    if not CONVERSATION_ID_PATTERN.match(conversation_id):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid conversation_id: only alphanumeric characters, hyphens, and underscores are allowed",
+        )
+
+    # 2. Query LanceDB table
+    try:
+        table = db_client.get_table("messages")
+
+        def query_table():
+            # Use a dummy vector to scan with vector search
+            dummy_vector = [0.0] * 384  # Match the vector dimensions from Message model
+
+            query_builder = table.search(dummy_vector, query_type="vector")
+            query_builder = query_builder.where(f"conversation_id = '{conversation_id}'")
+
+            # Select only needed columns (exclude vector to reduce memory)
+            query_builder = query_builder.select(
+                ["id", "conversation_id", "timestamp", "platform", "title", "content", "url", "role"]
+            )
+
+            results = query_builder.limit(10000).to_list()
+            return results
+
+        results_list = await run_in_threadpool(query_table)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Thread query failed: {str(e)}")
+
+    # 3. Sort by timestamp ascending (oldest first for conversation display)
+    def sort_key(item):
+        timestamp_value = item.get("timestamp")
+        if isinstance(timestamp_value, str):
+            return timestamp_value
+        else:
+            return timestamp_value.isoformat()
+
+    results_list.sort(key=sort_key, reverse=False)
+
+    # 4. Build response
+    items = []
+    for r in results_list:
+        # Convert timestamp to Unix timestamp
+        timestamp_value = r.get("timestamp")
+        if isinstance(timestamp_value, str):
+            timestamp_value = datetime.fromisoformat(timestamp_value.replace("Z", "+00:00"))
+        unix_timestamp = int(timestamp_value.timestamp()) if timestamp_value else 0
+
+        items.append(
+            BrowseItem(
+                id=r.get("id", ""),
+                conversation_id=r.get("conversation_id", ""),
+                timestamp=unix_timestamp,
+                platform=r.get("platform", ""),
+                title=r.get("title", ""),
+                content=r.get("content", ""),
+                url=r.get("url", ""),
+                role=r.get("role", "user"),
+            )
+        )
+
+    return BrowseResponse(
+        items=items,
+        nextCursor=None,
+        hasMore=False,
+        total=len(items),
+    )

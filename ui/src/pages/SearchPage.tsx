@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { SearchBar } from '../components/SearchBar';
 import { ResultCard } from '../components/ResultCard';
+import { ConversationPanel } from '../components/ConversationPanel';
 import { SourceFilterUI, AVAILABLE_PLATFORMS, type PlatformId } from '../components/SourceFilterUI';
 import { PresetButtons } from '../components/PresetButtons';
 import { useSearch } from '../lib/api';
@@ -16,6 +17,26 @@ export function SearchPage({ onLogout }: SearchPageProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialQuery = searchParams.get('q') || '';
   const [query, setQuery] = useState(initialQuery);
+
+  // Conversation panel state from URL
+  const selectedConversation = searchParams.get('conversation') || null;
+
+  const handleSelectConversation = (conversationId: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (selectedConversation === conversationId) {
+      // Toggle off
+      newParams.delete('conversation');
+    } else {
+      newParams.set('conversation', conversationId);
+    }
+    setSearchParams(newParams);
+  };
+
+  const handleClosePanel = () => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('conversation');
+    setSearchParams(newParams);
+  };
 
   // Default to all platforms selected
   const allPlatformIds = AVAILABLE_PLATFORMS.map(p => p.id) as PlatformId[];
@@ -44,19 +65,21 @@ export function SearchPage({ onLogout }: SearchPageProps) {
     setSelectedPlatforms(newPlatforms);
 
     // Update URL
+    const newParams = new URLSearchParams(searchParams);
     if (newPlatforms.length === 0) {
-      searchParams.delete('platforms');
+      newParams.delete('platforms');
     } else {
-      searchParams.set('platforms', newPlatforms.join(','));
+      newParams.set('platforms', newPlatforms.join(','));
     }
-    setSearchParams(searchParams);
+    setSearchParams(newParams);
   };
 
   // Clear all platform filters
   const handleClearFilters = () => {
     setSelectedPlatforms([]);
-    searchParams.delete('platforms');
-    setSearchParams(searchParams);
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('platforms');
+    setSearchParams(newParams);
   };
 
   // Search hook with platform filtering
@@ -110,6 +133,7 @@ export function SearchPage({ onLogout }: SearchPageProps) {
   const showInitialState = !query;
   const showEmptyState = query && status === 'success' && data?.pages[0].results.length === 0;
   const hasActiveFilter = selectedPlatforms.length > 0;
+  const isPanelOpen = !!selectedConversation;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center font-sans text-gray-900">
@@ -148,113 +172,165 @@ export function SearchPage({ onLogout }: SearchPageProps) {
               selectedPlatforms={selectedPlatforms}
               onPresetSelect={(platforms) => {
                 setSelectedPlatforms(platforms);
+                const newParams = new URLSearchParams(searchParams);
                 if (platforms.length === 0) {
-                  searchParams.delete('platforms');
+                  newParams.delete('platforms');
                 } else {
-                  searchParams.set('platforms', platforms.join(','));
+                  newParams.set('platforms', platforms.join(','));
                 }
-                setSearchParams(searchParams);
+                setSearchParams(newParams);
               }}
             />
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <main className="w-full max-w-3xl px-4 py-6 flex-1 flex flex-col">
+      {/* Main Content with optional panel */}
+      <div className={
+        isPanelOpen
+          ? "w-full flex-1 flex flex-col lg:flex-row"
+          : "w-full flex-1 flex flex-col items-center"
+      }>
+        {/* Results area */}
+        <main className={
+          isPanelOpen
+            ? "flex-1 overflow-y-auto px-4 py-6 flex flex-col"
+            : "w-full max-w-3xl px-4 py-6 flex-1 flex flex-col"
+        }>
 
-        {/* Error State */}
-        {status === 'error' && (
-          <div className="text-center p-8 text-red-500 bg-red-50 rounded-lg border border-red-100 mt-4">
-            <p className="font-medium">Something went wrong</p>
-            <p className="text-sm mt-1">{(error as Error).message}</p>
-          </div>
-        )}
-
-        {/* Initial State */}
-        {showInitialState && (
-          <div className="flex-1 flex flex-col items-center justify-center text-gray-400 mt-20">
-            <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-              <Loader2 className="h-8 w-8 animate-spin-slow text-gray-300" />
+          {/* Error State */}
+          {status === 'error' && (
+            <div className="text-center p-8 text-red-500 bg-red-50 rounded-lg border border-red-100 mt-4">
+              <p className="font-medium">Something went wrong</p>
+              <p className="text-sm mt-1">{(error as Error).message}</p>
             </div>
-            <p className="text-lg">Start typing to search your history...</p>
-            <p className="text-sm mt-2">Use the filter below to narrow results by source.</p>
-          </div>
-        )}
+          )}
 
-        {/* Empty State (with filter hint) */}
-        {showEmptyState && (
-          <div className="flex-1 flex flex-col items-center justify-center text-gray-500 mt-20">
-            <p className="text-lg font-medium">No results found</p>
-            <p className="text-sm mt-1">
-              {hasActiveFilter
-                ? "Try adjusting your filters or search terms."
-                : "Try different keywords or check your spelling."}
-            </p>
-            {hasActiveFilter && (
-              <button
-                onClick={handleClearFilters}
-                className="mt-4 text-blue-600 hover:text-blue-700 text-sm font-medium cursor-pointer"
-              >
-                Clear filters
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Results Grid */}
-        <div className="space-y-4">
-          {data?.pages.map((page, i) => (
-            <div key={i} className="contents">
-              {page.results.map((result) => (
-                <ResultCard key={result.id} result={result} />
-              ))}
+          {/* Initial State */}
+          {showInitialState && (
+            <div className="flex-1 flex flex-col items-center justify-center text-gray-400 mt-20">
+              <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                <Loader2 className="h-8 w-8 animate-spin-slow text-gray-300" />
+              </div>
+              <p className="text-lg">Start typing to search your history...</p>
+              <p className="text-sm mt-2">Use the filter below to narrow results by source.</p>
             </div>
-          ))}
-        </div>
+          )}
 
-        {/* Collapsible Secondary Results Section */}
-        {secondaryResults.length > 0 && (
-          <div className="mt-6 border-t border-gray-200 pt-4">
-            <button
-              onClick={() => setShowSecondary(!showSecondary)}
-              className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
-              aria-expanded={showSecondary}
-              aria-controls="secondary-results"
-            >
-              {showSecondary ? (
-                <ChevronDown className="h-4 w-4" />
-              ) : (
-                <ChevronRight className="h-4 w-4" />
+          {/* Empty State (with filter hint) */}
+          {showEmptyState && (
+            <div className="flex-1 flex flex-col items-center justify-center text-gray-500 mt-20">
+              <p className="text-lg font-medium">No results found</p>
+              <p className="text-sm mt-1">
+                {hasActiveFilter
+                  ? "Try adjusting your filters or search terms."
+                  : "Try different keywords or check your spelling."}
+              </p>
+              {hasActiveFilter && (
+                <button
+                  onClick={handleClearFilters}
+                  className="mt-4 text-blue-600 hover:text-blue-700 text-sm font-medium cursor-pointer"
+                >
+                  Clear filters
+                </button>
               )}
-              <span>
-                Show {secondaryCount} less relevant result{secondaryCount !== 1 ? 's' : ''}
-              </span>
-            </button>
-            {showSecondary && (
-              <div id="secondary-results" className="space-y-4 mt-4">
-                {secondaryResults.map((result) => (
-                  <ResultCard key={result.id} result={result} className="opacity-80" />
+            </div>
+          )}
+
+          {/* Results Grid */}
+          <div className="space-y-4">
+            {data?.pages.map((page, i) => (
+              <div key={i} className="contents">
+                {page.results.map((result) => (
+                  <ResultCard
+                    key={result.id}
+                    result={result}
+                    onSelect={handleSelectConversation}
+                    isSelected={result.meta.conversation_id === selectedConversation}
+                  />
                 ))}
               </div>
-            )}
+            ))}
           </div>
-        )}
 
-        {/* Loading Indicator for Infinite Scroll */}
-        {(isFetchingNextPage || hasNextPage) && showEmptyState === false && (
-          <div
-            ref={lastElementRef}
-            className="w-full py-8 flex justify-center items-center text-gray-400"
-          >
-            {isFetchingNextPage ? (
-              <Loader2 className="h-6 w-6 animate-spin" />
-            ) : (
-              <span className="text-sm">Load more</span>
-            )}
-          </div>
+          {/* Collapsible Secondary Results Section */}
+          {secondaryResults.length > 0 && (
+            <div className="mt-6 border-t border-gray-200 pt-4">
+              <button
+                onClick={() => setShowSecondary(!showSecondary)}
+                className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
+                aria-expanded={showSecondary}
+                aria-controls="secondary-results"
+              >
+                {showSecondary ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+                <span>
+                  Show {secondaryCount} less relevant result{secondaryCount !== 1 ? 's' : ''}
+                </span>
+              </button>
+              {showSecondary && (
+                <div id="secondary-results" className="space-y-4 mt-4">
+                  {secondaryResults.map((result) => (
+                    <ResultCard
+                      key={result.id}
+                      result={result}
+                      className="opacity-80"
+                      onSelect={handleSelectConversation}
+                      isSelected={result.meta.conversation_id === selectedConversation}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Loading Indicator for Infinite Scroll */}
+          {(isFetchingNextPage || hasNextPage) && showEmptyState === false && (
+            <div
+              ref={lastElementRef}
+              className="w-full py-8 flex justify-center items-center text-gray-400"
+            >
+              {isFetchingNextPage ? (
+                <Loader2 className="h-6 w-6 animate-spin" />
+              ) : (
+                <span className="text-sm">Load more</span>
+              )}
+            </div>
+          )}
+        </main>
+
+        {/* Conversation Panel - Desktop (lg+) */}
+        {isPanelOpen && selectedConversation && (
+          <>
+            {/* Desktop panel */}
+            <div className="hidden lg:flex w-[480px] flex-shrink-0 border-l border-gray-200 h-[calc(100vh-4rem)] sticky top-16">
+              <div className="w-full transition-all duration-300">
+                <ConversationPanel
+                  conversationId={selectedConversation}
+                  onClose={handleClosePanel}
+                />
+              </div>
+            </div>
+
+            {/* Mobile overlay */}
+            <div className="lg:hidden fixed inset-0 z-50">
+              <div
+                className="absolute inset-0 bg-black/50"
+                onClick={handleClosePanel}
+              />
+              <div className="absolute right-0 top-0 bottom-0 w-full max-w-[480px] bg-white shadow-xl transition-all duration-300">
+                <ConversationPanel
+                  conversationId={selectedConversation}
+                  onClose={handleClosePanel}
+                />
+              </div>
+            </div>
+          </>
         )}
-      </main>
+      </div>
     </div>
   );
 }

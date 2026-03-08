@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 
 // Define types based on backend schema
 export interface SearchResult {
@@ -193,5 +193,37 @@ export const useBrowse = (dateRange: string, platforms: string[] = []) => {
       return lastPage.hasMore ? lastPage.nextCursor : undefined;
     },
     staleTime: 1000 * 60, // 1 minute cache
+  });
+};
+
+// === Thread / Conversation API ===
+
+export interface ThreadItem {
+  id: string;
+  conversation_id: string;
+  timestamp: number;
+  platform: string;
+  title: string;
+  content: string;
+  url: string;
+  role: string;
+}
+
+export interface ThreadResponse {
+  items: ThreadItem[];
+  total: number;
+}
+
+export const getConversation = async (conversationId: string): Promise<ThreadResponse> => {
+  const response = await api.get<ThreadResponse>(`/thread/${conversationId}`);
+  return response.data;
+};
+
+export const useConversation = (conversationId: string | null) => {
+  return useQuery({
+    queryKey: ['conversation', conversationId],
+    queryFn: () => getConversation(conversationId!),
+    enabled: !!conversationId,
+    staleTime: 1000 * 60 * 10, // 10-minute cache
   });
 };
