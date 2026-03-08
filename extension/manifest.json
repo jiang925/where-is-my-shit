@@ -1,13 +1,12 @@
 {
   "manifest_version": 3,
   "name": "WIMS Capture",
-  "version": "0.0.0-dev",
+  "version": "2026.3.8",
   "description": "Capture AI chat conversations for local search indexing",
   "permissions": ["storage", "alarms"],
   "host_permissions": ["http://localhost/*", "http://127.0.0.1/*"],
   "background": {
-    "service_worker": "background/service-worker.js",
-    "type": "module"
+    "service_worker": "background/service-worker.js"
   },
   "content_scripts": [{
     "matches": [
