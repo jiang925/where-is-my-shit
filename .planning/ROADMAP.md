@@ -9,7 +9,8 @@
 - ✅ **v1.4 Search & Browse UX** - Phases 15-18 (shipped 2026-02-14)
 - ✅ **v1.5 Embedding & Infrastructure** - Phases 19-20 (shipped 2026-02-15)
 - ✅ **v1.6 GitHub Release** - Phase 21 (shipped 2026-02-18)
-- 🚧 **v1.7 Distribution & Packaging** - Phases 22-25 (in progress)
+- ✅ **v1.7 Distribution & Packaging** - Phases 22-25 (shipped 2026-03-06)
+- ✅ **v1.8 UI Polish & Convenience** - Phases 26-28 (shipped 2026-03-08)
 
 ## Phases
 
@@ -238,7 +239,7 @@ Plans:
 
 </details>
 
-### 🚧 v1.7 Distribution & Packaging (In Progress)
+### ✅ v1.7 Distribution & Packaging (Shipped 2026-03-06)
 
 **Milestone Goal:** Make WIMS easily installable through automated publishing of Docker images, Chrome extension, and standalone daemon installer.
 
@@ -301,10 +302,38 @@ Plans:
 Plans:
 - [x] 25-01-PLAN.md — Complete daemon distribution system with install/update/uninstall scripts
 
+### ✅ v1.8 UI Polish & Convenience (Shipped 2026-03-08)
+
+**Milestone Goal:** Improve the user experience with better navigation between extension and web UI, conversation detail views, and usage insights.
+
+#### Phase 26: Extension → Web UI Link
+**Goal**: Connect extension popup to the web UI for search and browsing
+**Depends on**: Phase 25
+**Requirements**: EXTUI-01, EXTUI-02, EXTUI-03
+
+Plans:
+- [x] 26-01: Extension popup with Open WIMS button, quick search, and recent conversations
+
+#### Phase 27: Conversation Side Panel
+**Goal**: View full conversation threads without leaving search/browse results
+**Depends on**: Phase 26
+**Requirements**: PANEL-01, PANEL-02, PANEL-03, PANEL-04
+
+Plans:
+- [x] 27-01: Thread API endpoint and slide-in conversation panel with role indicators
+
+#### Phase 28: Statistics Dashboard
+**Goal**: Provide usage insights and capture activity metrics
+**Depends on**: Phase 27
+**Requirements**: STATS-01, STATS-02, STATS-03
+
+Plans:
+- [x] 28-01: Stats API endpoint and Recharts dashboard with platform/activity charts
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 22 → 23 → 24 → 25
+Phases execute in numeric order: 26 → 27 → 28
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -329,7 +358,10 @@ Phases execute in numeric order: 22 → 23 → 24 → 25
 | 19. Embedding Upgrade | v1.5 | 3/3 | Complete | 2026-02-15 |
 | 20. Deployment Bugfixes | v1.5 | retroactive | Complete | 2026-02-15 |
 | 21. Documentation | v1.6 | 3/3 | Complete | 2026-02-18 |
-| 22. Version Management | 2/2 | Complete    | 2026-02-19 | - |
-| 23. Docker Publishing | 2/2 | Complete   | 2026-02-19 | - |
+| 22. Version Management | v1.7 | 2/2 | Complete | 2026-02-19 |
+| 23. Docker Publishing | v1.7 | 2/2 | Complete | 2026-02-19 |
 | 24. Extension Automation | v1.7 | 1/1 | Complete | 2026-02-20 |
 | 25. Daemon Distribution | v1.7 | 1/1 | Complete | 2026-02-20 |
+| 26. Extension → Web UI | v1.8 | 1/1 | Complete | 2026-03-07 |
+| 27. Conversation Side Panel | v1.8 | 1/1 | Complete | 2026-03-07 |
+| 28. Statistics Dashboard | v1.8 | 1/1 | Complete | 2026-03-08 |
