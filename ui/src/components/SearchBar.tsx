@@ -6,10 +6,11 @@ interface SearchBarProps {
   onSearch: (query: string) => void;
   isLoading?: boolean;
   className?: string;
+  initialValue?: string;
 }
 
-export function SearchBar({ onSearch, isLoading, className }: SearchBarProps) {
-  const [value, setValue] = useState('');
+export function SearchBar({ onSearch, isLoading, className, initialValue = '' }: SearchBarProps) {
+  const [value, setValue] = useState(initialValue);
 
   useEffect(() => {
     const timer = setTimeout(() => {

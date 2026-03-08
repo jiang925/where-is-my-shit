@@ -1,5 +1,5 @@
 body {
-  width: 280px;
+  width: 360px;
   padding: 16px;
   font-family: system-ui, -apple-system, sans-serif;
   margin: 0;
@@ -182,11 +182,206 @@ input[type="password"]:focus {
   margin-top: -8px;
 }
 
+/* Search Section */
+.search-section {
+  padding-top: 8px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.search-section input[type="text"] {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.search-section input[type="text"]:focus {
+  border-color: #4CAF50;
+}
+
+.search-section input[type="text"]::placeholder {
+  color: #999;
+}
+
+/* Recent Captures Section */
+.recent-section {
+  padding-top: 8px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.recent-header {
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.recent-list {
+  max-height: 280px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.recent-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.recent-item:hover {
+  background-color: #f5f5f5;
+}
+
+/* Platform Badges */
+.platform-badge {
+  flex-shrink: 0;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 4px;
+  border-radius: 3px;
+  color: white;
+  text-align: center;
+  min-width: 24px;
+  line-height: 1.2;
+}
+
+.platform-chatgpt {
+  background-color: #4CAF50;
+}
+
+.platform-claude {
+  background-color: #F59E0B;
+}
+
+.platform-claude-code {
+  background-color: #F97316;
+}
+
+.platform-gemini {
+  background-color: #3B82F6;
+}
+
+.platform-perplexity {
+  background-color: #14B8A6;
+}
+
+.platform-cursor {
+  background-color: #8B5CF6;
+}
+
+.platform-unknown {
+  background-color: #9CA3AF;
+}
+
+/* Recent Item Info */
+.recent-item-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.recent-item-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.recent-item-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+.recent-item-time {
+  font-size: 10px;
+  color: #999;
+  flex-shrink: 0;
+}
+
+.recent-item-preview {
+  font-size: 11px;
+  color: #888;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* WIMS Button on each item */
+.recent-item-wims-btn {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  background-color: #fff;
+  color: #666;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  padding: 0;
+}
+
+.recent-item-wims-btn:hover {
+  background-color: #4CAF50;
+  color: white;
+  border-color: #4CAF50;
+}
+
+/* Offline message for recent section */
+.recent-offline {
+  color: #999;
+  font-size: 12px;
+  text-align: center;
+  padding: 12px 0;
+  font-style: italic;
+}
+
+/* See All Link */
+.see-all-link {
+  display: block;
+  text-align: center;
+  color: #007bff;
+  text-decoration: none;
+  font-size: 12px;
+  padding-top: 8px;
+}
+
+.see-all-link:hover {
+  text-decoration: underline;
+}
+
 /* Actions */
 .actions {
   padding-top: 8px;
   border-top: 1px solid #e0e0e0;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
 }
 
 .actions a {
@@ -197,4 +392,21 @@ input[type="password"]:focus {
 
 .actions a:hover {
   text-decoration: underline;
+}
+
+/* Open WIMS Button */
+.open-wims-btn {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.open-wims-btn:hover {
+  background-color: #45a049;
 }

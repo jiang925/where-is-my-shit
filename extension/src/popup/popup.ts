@@ -1,10 +1,31 @@
 import { getSettings } from '../lib/storage';
+import type { BrowseItem } from '../lib/api';
 
 interface StatusResponse {
   queueSize: number;
   serverOnline: boolean;
   lastCaptureTimestamp: number;
 }
+
+interface RecentResponse {
+  items: BrowseItem[];
+  serverOnline: boolean;
+}
+
+// Platform abbreviation map
+const PLATFORM_ABBREV: Record<string, string> = {
+  'chatgpt': 'GPT',
+  'claude': 'CL',
+  'claude-code': 'CC',
+  'gemini': 'GEM',
+  'perplexity': 'PPX',
+  'cursor': 'CUR'
+};
+
+// Known platform CSS classes
+const KNOWN_PLATFORMS = new Set([
+  'chatgpt', 'claude', 'claude-code', 'gemini', 'perplexity', 'cursor'
+]);
 
 // DOM elements
 const captureToggle = document.getElementById('captureToggle') as HTMLInputElement;
@@ -17,6 +38,11 @@ const openOptions = document.getElementById('openOptions') as HTMLAnchorElement;
 
 const configWarning = document.getElementById('configWarning') as HTMLElement;
 const openOptionsLink = document.getElementById('openOptionsLink') as HTMLAnchorElement;
+
+const searchInput = document.getElementById('searchInput') as HTMLInputElement;
+const recentList = document.getElementById('recentList') as HTMLElement;
+const seeAllLink = document.getElementById('seeAllLink') as HTMLAnchorElement;
+const openWimsBtn = document.getElementById('openWimsBtn') as HTMLButtonElement;
 
 // Auto-refresh interval
 let refreshInterval: number | null = null;
@@ -36,6 +62,8 @@ async function init() {
     showConfigWarning(false);
     // Update status to check if server is reachable
     await updateStatus();
+    // Load recent items after status check
+    await loadRecentItems();
   }
 
   // Start auto-refresh every 5 seconds
@@ -47,6 +75,9 @@ async function init() {
   captureToggle.addEventListener('change', handleToggleChange);
   openOptions.addEventListener('click', handleOpenOptions);
   openOptionsLink.addEventListener('click', handleOpenOptions);
+  searchInput.addEventListener('keydown', handleSearchKeydown);
+  seeAllLink.addEventListener('click', handleSeeAll);
+  openWimsBtn.addEventListener('click', handleOpenWIMS);
 }
 
 /**
@@ -117,6 +148,161 @@ async function updateStatus() {
     serverStatus.className = 'status-dot offline';
     serverStatusText.textContent = 'Error';
   }
+}
+
+/**
+ * Load recent items from service worker
+ */
+async function loadRecentItems() {
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: 'GET_RECENT'
+    }) as RecentResponse;
+
+    if (!response.serverOnline && response.items.length === 0) {
+      renderRecentOffline();
+      return;
+    }
+
+    renderRecentItems(response.items);
+  } catch (error) {
+    console.error('[WIMS Popup] Failed to load recent items:', error);
+    renderRecentOffline();
+  }
+}
+
+/**
+ * Render recent items in the popup
+ */
+function renderRecentItems(items: BrowseItem[]) {
+  recentList.innerHTML = '';
+
+  if (items.length === 0) {
+    const emptyMsg = document.createElement('div');
+    emptyMsg.className = 'recent-offline';
+    emptyMsg.textContent = 'No captures yet';
+    recentList.appendChild(emptyMsg);
+    seeAllLink.style.display = 'none';
+    return;
+  }
+
+  for (const item of items) {
+    const el = createRecentItem(item);
+    recentList.appendChild(el);
+  }
+
+  seeAllLink.style.display = 'block';
+}
+
+/**
+ * Show offline message in recent section
+ */
+function renderRecentOffline() {
+  recentList.innerHTML = '';
+  const msg = document.createElement('div');
+  msg.className = 'recent-offline';
+  msg.textContent = 'Connect to server to see recent captures';
+  recentList.appendChild(msg);
+  seeAllLink.style.display = 'none';
+}
+
+/**
+ * Create DOM element for a single recent item
+ */
+function createRecentItem(item: BrowseItem): HTMLElement {
+  const el = document.createElement('div');
+  el.className = 'recent-item';
+  el.addEventListener('click', () => {
+    chrome.tabs.create({ url: item.url });
+  });
+
+  // Platform badge
+  const badge = document.createElement('span');
+  const platformClass = KNOWN_PLATFORMS.has(item.platform)
+    ? `platform-${item.platform}`
+    : 'platform-unknown';
+  badge.className = `platform-badge ${platformClass}`;
+  badge.textContent = PLATFORM_ABBREV[item.platform] || item.platform.slice(0, 3).toUpperCase();
+
+  // Info container
+  const info = document.createElement('div');
+  info.className = 'recent-item-info';
+
+  // Title row (title + time)
+  const titleRow = document.createElement('div');
+  titleRow.className = 'recent-item-title-row';
+
+  const title = document.createElement('span');
+  title.className = 'recent-item-title';
+  title.textContent = item.title || 'Untitled';
+
+  const time = document.createElement('span');
+  time.className = 'recent-item-time';
+  time.textContent = formatTimeAgo(item.timestamp * 1000);
+
+  titleRow.append(title, time);
+
+  // Content preview
+  const preview = document.createElement('div');
+  preview.className = 'recent-item-preview';
+  const previewText = item.content.replace(/\n/g, ' ').trim();
+  preview.textContent = previewText.length > 60
+    ? previewText.slice(0, 60) + '...'
+    : previewText;
+
+  info.append(titleRow, preview);
+
+  // WIMS button (secondary action)
+  const wimsBtn = document.createElement('button');
+  wimsBtn.className = 'recent-item-wims-btn';
+  wimsBtn.title = 'View in WIMS';
+  wimsBtn.textContent = 'W';
+  wimsBtn.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    const settings = await getSettings();
+    chrome.tabs.create({ url: `${settings.serverUrl}/browse` });
+  });
+
+  el.append(badge, info, wimsBtn);
+  return el;
+}
+
+/**
+ * Handle quick search on Enter key
+ */
+function handleSearchKeydown(e: KeyboardEvent) {
+  if (e.key === 'Enter') {
+    handleQuickSearch();
+  }
+}
+
+/**
+ * Open WIMS web UI with search query
+ */
+async function handleQuickSearch() {
+  const query = searchInput.value.trim();
+  if (!query) return;
+
+  const settings = await getSettings();
+  const url = `${settings.serverUrl}/?q=${encodeURIComponent(query)}`;
+  chrome.tabs.create({ url });
+}
+
+/**
+ * Handle "See all in WIMS" link click
+ */
+async function handleSeeAll(e: Event) {
+  e.preventDefault();
+  const settings = await getSettings();
+  chrome.tabs.create({ url: `${settings.serverUrl}/browse` });
+}
+
+/**
+ * Handle "Open WIMS" button click
+ */
+async function handleOpenWIMS() {
+  const settings = await getSettings();
+  chrome.tabs.create({ url: settings.serverUrl });
 }
 
 /**

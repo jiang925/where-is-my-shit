@@ -14,7 +14,8 @@ interface SearchPageProps {
 export function SearchPage({ onLogout }: SearchPageProps) {
   // URL state management
   const [searchParams, setSearchParams] = useSearchParams();
-  const [query, setQuery] = useState('');
+  const initialQuery = searchParams.get('q') || '';
+  const [query, setQuery] = useState(initialQuery);
 
   // Default to all platforms selected
   const allPlatformIds = AVAILABLE_PLATFORMS.map(p => p.id) as PlatformId[];
@@ -120,6 +121,7 @@ export function SearchPage({ onLogout }: SearchPageProps) {
               <SearchBar
                 onSearch={setQuery}
                 isLoading={isFetching && !isFetchingNextPage}
+                initialValue={initialQuery}
               />
             </div>
             <button

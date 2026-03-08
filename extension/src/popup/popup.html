@@ -46,7 +46,21 @@
         </div>
       </div>
 
+      <!-- Quick Search -->
+      <div class="search-section">
+        <input type="text" id="searchInput" placeholder="Search WIMS... (Enter)" autocomplete="off">
+      </div>
+
+      <!-- Recent Captures -->
+      <div class="recent-section">
+        <div class="recent-header">Recent Captures</div>
+        <div id="recentList" class="recent-list"></div>
+        <a href="#" id="seeAllLink" class="see-all-link" style="display: none;">See all in WIMS</a>
+      </div>
+
+      <!-- Bottom Actions -->
       <div class="actions">
+        <button id="openWimsBtn" class="open-wims-btn">Open WIMS</button>
         <a href="#" id="openOptions">Settings</a>
       </div>
     </div>

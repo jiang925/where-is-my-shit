@@ -1,9 +1,9 @@
 import { ExtractedMessage, IngestPayload } from '../types/message';
 import { OfflineQueue } from '../lib/queue';
 import { getSettings, setSettings } from '../lib/storage';
-import { ApiClient, AuthError } from '../lib/api';
+import { ApiClient, AuthError, BrowseItem } from '../lib/api';
 
-type MessageType = 'MESSAGES_CAPTURED' | 'GET_STATUS' | 'TOGGLE_CAPTURE';
+type MessageType = 'MESSAGES_CAPTURED' | 'GET_STATUS' | 'TOGGLE_CAPTURE' | 'GET_RECENT';
 
 interface MessagePayload {
   type: MessageType;
@@ -24,6 +24,10 @@ interface StatusResponse {
 
 // Global queue instance
 const queue = new OfflineQueue();
+
+// Cache for recent items (avoids hitting API on every popup open)
+let cachedRecent: { items: BrowseItem[]; fetchedAt: number } | null = null;
+const RECENT_CACHE_TTL = 30_000; // 30 seconds
 
 console.log('[WIMS] Service worker initialized');
 
@@ -78,6 +82,9 @@ chrome.runtime.onMessage.addListener((message: MessagePayload, sender, sendRespo
       } else if (message.type === 'TOGGLE_CAPTURE') {
         await handleToggleCapture(message.payload.enabled);
         sendResponse({ success: true });
+      } else if (message.type === 'GET_RECENT') {
+        const recent = await getRecentItems();
+        sendResponse(recent);
       }
     } catch (error) {
       console.error('[WIMS Service Worker] Error handling message:', error);
@@ -143,6 +150,37 @@ async function getStatus(): Promise<StatusResponse> {
     serverOnline,
     lastCaptureTimestamp: settings.lastCaptureTimestamp
   };
+}
+
+/**
+ * Get recent items from server with caching
+ * Returns cached items if cache is fresh, otherwise fetches from server
+ */
+async function getRecentItems(): Promise<{ items: BrowseItem[]; serverOnline: boolean }> {
+  const now = Date.now();
+
+  // Return cached data if fresh
+  if (cachedRecent && (now - cachedRecent.fetchedAt) < RECENT_CACHE_TTL) {
+    return { items: cachedRecent.items, serverOnline: true };
+  }
+
+  // Check if server is online first
+  const settings = await getSettings();
+  const client = new ApiClient(settings.serverUrl);
+  const serverOnline = await client.checkHealth();
+
+  if (!serverOnline) {
+    return { items: cachedRecent?.items || [], serverOnline: false };
+  }
+
+  try {
+    const response = await client.browse(5);
+    cachedRecent = { items: response.items, fetchedAt: now };
+    return { items: response.items, serverOnline: true };
+  } catch (error) {
+    console.error('[WIMS] Failed to fetch recent items:', error);
+    return { items: cachedRecent?.items || [], serverOnline: true };
+  }
 }
 
 /**

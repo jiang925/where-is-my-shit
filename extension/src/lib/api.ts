@@ -1,6 +1,23 @@
 import { IngestPayload } from '../types/message';
 import { getSettings } from './storage';
 
+export interface BrowseItem {
+  id: string;
+  conversation_id: string;
+  timestamp: number;
+  platform: string;
+  title: string;
+  content: string;
+  url: string;
+}
+
+export interface BrowseResponse {
+  items: BrowseItem[];
+  nextCursor: string | null;
+  hasMore: boolean;
+  total: number;
+}
+
 export class AuthError extends Error {
   constructor(message: string) {
     super(message);
@@ -59,6 +76,44 @@ export class ApiClient {
       }
 
       return true;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Request timeout', { cause: error });
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Browse recent items from WIMS server
+   * @param limit Number of items to fetch
+   * @returns BrowseResponse with items array
+   */
+  async browse(limit: number = 5): Promise<BrowseResponse> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.REQUEST_TIMEOUT_MS);
+
+    try {
+      const headers = await this.getHeaders();
+      const response = await fetch(`${this.serverUrl}/api/v1/browse`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ limit }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (response.status === 401 || response.status === 403) {
+        throw new AuthError(`Authentication failed: ${response.status}`);
+      }
+
+      if (!response.ok) {
+        throw new Error(`Server responded with ${response.status}`);
+      }
+
+      return await response.json();
     } catch (error) {
       clearTimeout(timeoutId);
       if (error instanceof Error && error.name === 'AbortError') {
