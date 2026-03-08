@@ -4,6 +4,7 @@ import * as path from 'path';
 export default defineConfig({
   globalSetup: require.resolve('./tests/e2e/playwright.setup.ts'),
   testDir: './tests/e2e',
+  testIgnore: ['**/exploratory.spec.ts'],  // Uses hardcoded live server URL, not for CI
   fullyParallel: false,  // Single worker to avoid LanceDB lock conflicts
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
