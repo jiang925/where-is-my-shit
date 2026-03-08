@@ -79,7 +79,7 @@ test('path display: Claude Code conversations show file path instead of Open lin
 
   // Verify Claude Code results show "Copy Path" button
   console.log('Verifying Claude Code results show Copy Path button...');
-  const copyPathButtons = page.getByRole('button', { name: /Copy Path/i });
+  const copyPathButtons = page.locator('button:has-text("Copy Path")');
   await expect(copyPathButtons.first()).toBeVisible();
   console.log('Copy Path button found');
 
@@ -141,7 +141,7 @@ test('path display: copy button shows Copied feedback', async ({ page, apiKey, r
 
   // Click the Copy Path button
   console.log('Clicking Copy Path button...');
-  const copyButton = page.getByRole('button', { name: /Copy Path/i }).first();
+  const copyButton = page.locator('button:has-text("Copy Path")').first();
   await copyButton.click();
 
   // Verify "Copied!" text appears
@@ -156,7 +156,7 @@ test('path display: copy button shows Copied feedback', async ({ page, apiKey, r
 
   // Verify "Copy Path" is visible again
   console.log('Verifying Copy Path button is back...');
-  await expect(page.getByRole('button', { name: /Copy Path/i }).first()).toBeVisible();
+  await expect(page.locator('button:has-text("Copy Path")').first()).toBeVisible();
   console.log('Copy Path button visible again');
 
   console.log('Copy feedback test completed successfully');

@@ -66,10 +66,10 @@ test('source filter UI: platform filtering works correctly on search page', asyn
 
   // Step 3 - Verify SourceFilterUI is visible with correct platform names
   await expect(page.getByText('Filter by Source')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'ChatGPT' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Claude Code' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Gemini' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Cursor' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Toggle ChatGPT filter' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Toggle Claude Code filter' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Toggle Gemini filter' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Toggle Cursor filter' })).toBeVisible();
   console.log('Source filter UI visible with correct platform names');
 
   // Step 4 - Perform search without filter, verify all results
@@ -88,7 +88,7 @@ test('source filter UI: platform filtering works correctly on search page', asyn
   console.log('Cleared all filters');
 
   // Now click ChatGPT to select ONLY it, verify URL updates and ACTUAL FILTERING
-  const chatgptButton = page.getByRole('button', { name: 'ChatGPT' });
+  const chatgptButton = page.getByRole('button', { name: 'Toggle ChatGPT filter' });
   const searchResponse2 = page.waitForResponse(
     res => res.url().includes('/api/v1/search') && res.status() === 200
   );
@@ -117,7 +117,7 @@ test('source filter UI: platform filtering works correctly on search page', asyn
   console.log('VERIFIED: All results are from ChatGPT platform only');
 
   // Step 6 - Test multiple platform selections
-  const geminiButton = page.getByRole('button', { name: 'Gemini' });
+  const geminiButton = page.getByRole('button', { name: 'Toggle Gemini filter' });
   const searchResponse3 = page.waitForResponse(
     res => res.url().includes('/api/v1/search') && res.status() === 200
   );
@@ -169,7 +169,7 @@ test('source filter UI: platform filtering works correctly on search page', asyn
   console.log('Filter applied from shareable URL');
 
   // Verify Claude Code chip is selected
-  const claudeCodeButton = page.getByRole('button', { name: 'Claude Code' });
+  const claudeCodeButton = page.getByRole('button', { name: 'Toggle Claude Code filter' });
   await expect(claudeCodeButton).toBeVisible();
   console.log('Claude Code chip shows selected state');
 
@@ -294,13 +294,13 @@ test('source filter UI: browse page filtering works correctly', async ({ page, a
 
   // Verify filter UI is visible on Browse page with correct platform names
   await expect(page.getByText('Filter by Source')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'ChatGPT' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Claude Code' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Toggle ChatGPT filter' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Toggle Claude Code filter' })).toBeVisible();
   console.log('Filter UI visible on Browse page with correct platform names');
 
   // Phase 20: All sources are now selected by default, so results show immediately
   // Verify platform buttons show active state (bg-green-100 when part of "All Sources")
-  const chatgptButton = page.getByRole('button', { name: 'ChatGPT' });
+  const chatgptButton = page.getByRole('button', { name: 'Toggle ChatGPT filter' });
   await expect(chatgptButton).toHaveClass(/bg-green-100/); // Active via All Sources preset
   console.log('All sources selected by default in Phase 20');
 
@@ -309,7 +309,7 @@ test('source filter UI: browse page filtering works correctly', async ({ page, a
   await page.waitForTimeout(200);
 
   // Now select just ChatGPT
-  await page.getByRole('button', { name: 'ChatGPT' }).click();
+  await page.getByRole('button', { name: 'Toggle ChatGPT filter' }).click();
   await expect(page.getByText('1 selected')).toBeVisible();
   console.log('Filter selected on Browse page');
 

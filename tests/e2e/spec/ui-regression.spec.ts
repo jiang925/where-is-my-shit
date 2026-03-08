@@ -102,7 +102,7 @@ test.describe('UI Regression Tests', () => {
     await expect(browseButton).toHaveClass(/cursor-pointer/);
 
     // Check platform filter buttons
-    const chatgptButton = page.getByRole('button', { name: 'ChatGPT' });
+    const chatgptButton = page.getByRole('button', { name: 'Toggle ChatGPT filter' });
     await expect(chatgptButton).toHaveClass(/cursor-pointer/);
 
     // Check preset buttons
@@ -257,7 +257,7 @@ test.describe('UI Regression Tests', () => {
     // Search Results header removed in Phase 20 - results remain stable
 
     // Click a platform filter
-    await page.getByRole('button', { name: 'ChatGPT' }).click();
+    await page.getByRole('button', { name: 'Toggle ChatGPT filter' }).click();
     await page.waitForTimeout(300);
 
     // Header should still be visible with filter active
@@ -308,7 +308,7 @@ test.describe('UI Regression Tests', () => {
     await page.waitForTimeout(500);
 
     // Find and click Copy Path button
-    const copyButton = page.getByRole('button', { name: /Copy Path/i }).first();
+    const copyButton = page.locator('button:has-text("Copy Path")').first();
     const isVisible = await copyButton.isVisible().catch(() => false);
     if (isVisible) {
       await copyButton.click();
@@ -317,7 +317,7 @@ test.describe('UI Regression Tests', () => {
       await expect(page.getByText('Copied!')).toBeVisible({ timeout: 2000 });
 
       // Verify it reverts back
-      await expect(page.getByRole('button', { name: /Copy Path/i }).first()).toBeVisible({ timeout: 3000 });
+      await expect(page.locator('button:has-text("Copy Path")').first()).toBeVisible({ timeout: 3000 });
     }
   });
 
@@ -345,7 +345,7 @@ test.describe('UI Regression Tests', () => {
     await page.waitForTimeout(500);
 
     // Verify copy button has cursor-pointer class
-    const copyButton = page.getByRole('button', { name: /Copy Path/i }).first();
+    const copyButton = page.locator('button:has-text("Copy Path")').first();
     const isVisible = await copyButton.isVisible().catch(() => false);
     if (isVisible) {
       await expect(copyButton).toHaveClass(/cursor-pointer/);
