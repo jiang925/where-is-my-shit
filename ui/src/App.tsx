@@ -3,7 +3,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { SearchPage } from './pages/SearchPage';
 import { BrowsePage } from './pages/BrowsePage';
-import { Search, Loader2, BookOpen } from 'lucide-react';
+import { StatsPage } from './pages/StatsPage';
+import { Search, Loader2, BookOpen, BarChart3 } from 'lucide-react';
 import { cn } from './lib/utils';
 
 // Create a client
@@ -72,7 +73,7 @@ function NavHeader() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const isSearch = location.pathname === '/';
+  const currentPath = location.pathname;
 
   return (
     <nav className="flex items-center justify-center gap-2 mb-6">
@@ -80,7 +81,7 @@ function NavHeader() {
         onClick={() => navigate('/')}
         className={cn(
           "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer",
-          isSearch
+          currentPath === '/'
             ? "bg-blue-600 text-white shadow-md"
             : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
         )}
@@ -92,13 +93,25 @@ function NavHeader() {
         onClick={() => navigate('/browse')}
         className={cn(
           "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer",
-          !isSearch
+          currentPath === '/browse'
             ? "bg-blue-600 text-white shadow-md"
             : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
         )}
       >
         <BookOpen className="h-4 w-4" />
         Browse
+      </button>
+      <button
+        onClick={() => navigate('/stats')}
+        className={cn(
+          "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer",
+          currentPath === '/stats'
+            ? "bg-blue-600 text-white shadow-md"
+            : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
+        )}
+      >
+        <BarChart3 className="h-4 w-4" />
+        Stats
       </button>
     </nav>
   );
@@ -119,6 +132,7 @@ function AuthenticatedApp() {
       <Routes>
         <Route path="/" element={<SearchPage onLogout={handleLogout} />} />
         <Route path="/browse" element={<BrowsePage onLogout={handleLogout} />} />
+        <Route path="/stats" element={<StatsPage onLogout={handleLogout} />} />
       </Routes>
     </div>
   );

@@ -227,3 +227,38 @@ export const useConversation = (conversationId: string | null) => {
     staleTime: 1000 * 60 * 10, // 10-minute cache
   });
 };
+
+// === Stats API ===
+
+export interface ActivityEntry {
+  date: string;  // YYYY-MM-DD
+  count: number;
+}
+
+export interface StatsResponse {
+  total_messages: number;
+  total_conversations: number;
+  by_platform: Record<string, number>;
+  conversations_by_platform: Record<string, number>;
+  activity: ActivityEntry[];
+}
+
+export type StatsGranularity = 'day' | 'week' | 'month';
+
+export const getStats = async (granularity: StatsGranularity = 'day', platforms?: string[]): Promise<StatsResponse> => {
+  const params = new URLSearchParams();
+  params.set('granularity', granularity);
+  if (platforms && platforms.length > 0) {
+    params.set('platforms', platforms.join(','));
+  }
+  const response = await api.get<StatsResponse>(`/stats?${params.toString()}`);
+  return response.data;
+};
+
+export const useStats = (granularity: StatsGranularity = 'day', platforms: string[] = []) => {
+  return useQuery({
+    queryKey: ['stats', granularity, platforms.sort()],
+    queryFn: () => getStats(granularity, platforms),
+    staleTime: 1000 * 60 * 5, // 5 min cache
+  });
+};
