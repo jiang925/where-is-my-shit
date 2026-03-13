@@ -7,6 +7,7 @@ dependencies = [
     "fastapi>=0.109.0",
     "uvicorn[standard]>=0.27.0",
     "lancedb>=0.5.0",
+    "pylance>=0.5.0",
     "fastembed>=0.2.0",
     "sentence-transformers>=2.2.0",
     "structlog>=24.1.0",
