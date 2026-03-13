@@ -266,6 +266,13 @@ export const useStats = (granularity: StatsGranularity = 'day', platforms: strin
   });
 };
 
+// === Terminal API ===
+
+export const openTerminal = async (path: string): Promise<{ opened: string }> => {
+  const response = await api.post<{ opened: string }>('/open-terminal', { path });
+  return response.data;
+};
+
 // === Delete API ===
 
 export const deleteConversation = async (conversationId: string): Promise<{ deleted: number }> => {

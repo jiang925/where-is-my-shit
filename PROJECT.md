@@ -48,9 +48,9 @@ Between milestones, brainstorm the next set of features before writing any code.
 
 | Layer | Tool | Command | Count | What it covers |
 |-------|------|---------|-------|----------------|
-| Backend unit/integration | pytest | `uv run pytest` | 129 tests | API endpoints, DB operations, auth, search, browse, thread, delete, stats, export, embeddings, reranker, migration, compaction |
+| Backend unit/integration | pytest | `uv run pytest` | 133 tests | API endpoints, DB operations, auth, search, browse, thread, delete, terminal, stats, export, embeddings, reranker, migration, compaction |
 | Frontend unit | vitest | `cd ui && npm test` | 31 tests | ResultCard (13), SearchBar (5), useKeyboardNavigation (12), App smoke (1) |
-| E2E (browser) | Playwright (Chromium) | `npx playwright test` | 59 tests | Full-stack flows: auth, search, browse, filters, path display, relevance, timeline, keyboard nav, export, thread search, delete, UI regressions |
+| E2E (browser) | Playwright (Chromium) | `npx playwright test` | 61 tests | Full-stack flows: auth, search, browse, filters, path display, relevance, timeline, keyboard nav, export, thread search, delete, open terminal, UI regressions |
 | E2E (manual) | Playwright | `npx playwright test tests/e2e/spec/exploratory.spec.ts` | 11 tests | Exploratory tests against a live server (excluded from CI) |
 | Extension | webpack build | `cd extension && npm run build` | Build check | TypeScript compilation, bundling |
 | Lint | ruff | `uv run ruff check src/ tests/` | - | Python code quality |
@@ -175,7 +175,7 @@ Brainstormed 2026-03-12. Users need to find specific messages within long conver
 
 **Status**: Complete. 124 backend + 31 vitest + 55 e2e tests pass.
 
-### v2.3 — Data Management & Deep Links (in progress)
+### v2.3 — Data Management & Deep Links (complete)
 
 Brainstormed 2026-03-12. Two practical quality-of-life features:
 1. Users need to delete unwanted/test conversations from the UI — no current way to do data hygiene.
@@ -185,7 +185,7 @@ Brainstormed 2026-03-12. Two practical quality-of-life features:
 
 **Phase 38: Open in Terminal for CLI Sessions** — For ResultCard and ConversationPanel, when `url` is a file path (dev sessions), add "Open in Terminal" button that uses a backend endpoint `POST /api/v1/open-terminal` to launch the user's terminal at that directory. macOS: `open -a Terminal <path>`, Linux: `xdg-open` or `xterm`.
 
-**Status**: Not started.
+**Status**: Complete. 133 backend + 31 vitest + 61 e2e tests pass.
 
 ### Backlog
 
@@ -258,3 +258,31 @@ Reflections from each milestone. Mistakes to avoid, patterns that work.
 - Frontend-only export for single conversations (already have the data), backend export for bulk (avoids N API calls)
 - `StreamingResponse` with `io.BytesIO` for zip files — no temp files needed
 - ConversationPanel has 2 instances (desktop + mobile overlay) — always use `.first()` in e2e selectors
+
+### v2.2 In-Thread Search (2026-03-12)
+
+**What went well:**
+- Pure frontend feature — no backend changes needed. Used existing thread data.
+- All 4 e2e tests passed on first attempt.
+
+**Patterns that work:**
+- Dimming non-matching messages with `opacity-30` preserves conversation context better than hiding
+- `highlightText()` with `<mark>` tags is simple and effective
+- Match count indicator (`2/4`) provides useful navigation context
+
+### v2.3 Data Management & Deep Links (2026-03-12)
+
+**What went well:**
+- LanceDB `table.delete()` works cleanly with SQL-like filter strings
+- Delete confirmation dialog with message count provides good UX safety
+- `useQueryClient().invalidateQueries()` cleanly refreshes search/browse/stats after deletion
+
+**Mistakes to avoid:**
+- Running `npx playwright test` from `ui/` directory instead of project root causes vitest/playwright Symbol clash errors ("Cannot redefine property: Symbol($$jest-matchers-object)"). Always run Playwright from project root.
+- Renaming a button label ("Copy Path" → "Copy") breaks e2e selectors across multiple spec files. When modifying shared UI components, grep for the old text in all test files first.
+- `uv run pytest` may resolve to system pytest (`/opt/homebrew/bin/pytest`) instead of venv pytest if the venv doesn't have pytest installed. Use `uv pip install pytest` to ensure it's in the venv.
+
+**Patterns that work:**
+- `subprocess.Popen` with list args (not shell=True) prevents command injection for the terminal opener
+- `Path.expanduser().resolve()` + existence check validates paths safely
+- For file paths that might be files instead of directories, fall back to `path.parent` for terminal opening

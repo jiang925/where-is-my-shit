@@ -1,8 +1,9 @@
 import { useEffect, useCallback, useState, useMemo } from 'react';
 import { X, ExternalLink, Download, Search, Loader2, MessageSquare, Terminal, FileCode, Trash2 } from 'lucide-react';
-import { useConversation, deleteConversation, type ThreadItem } from '../lib/api';
+import { useConversation, deleteConversation, openTerminal, type ThreadItem } from '../lib/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '../lib/utils';
+import { isFilePath } from '../utils/pathUtils';
 
 interface ConversationPanelProps {
   conversationId: string;
@@ -271,15 +272,26 @@ export function ConversationPanel({ conversationId, onClose, onDeleted }: Conver
               {title}
             </h2>
             {url && (
-              <a
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 mt-1"
-              >
-                Open original
-                <ExternalLink className="h-3 w-3" />
-              </a>
+              url && isFilePath(url) ? (
+                <button
+                  onClick={() => openTerminal(url)}
+                  className="inline-flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 mt-1 cursor-pointer"
+                  aria-label="Open in terminal"
+                >
+                  <Terminal className="h-3 w-3" />
+                  Open in Terminal
+                </button>
+              ) : (
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 mt-1"
+                >
+                  Open original
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              )
             )}
           </div>
           <div className="flex items-center gap-1">

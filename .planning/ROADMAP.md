@@ -15,7 +15,7 @@
 - ✅ **v2.0 Keyboard Navigation & Quality** - Phases 32-33 (shipped 2026-03-12)
 - ✅ **v2.1 Export & Data Portability** - Phases 34-35 (shipped 2026-03-12)
 - ✅ **v2.2 In-Thread Search** - Phase 36 (shipped 2026-03-12)
-- 🔄 **v2.3 Data Management & Deep Links** - Phases 37-38
+- ✅ **v2.3 Data Management & Deep Links** - Phases 37-38 (shipped 2026-03-12)
 
 ## Phases
 
@@ -307,7 +307,7 @@ Plans:
 Plans:
 - [x] 25-01-PLAN.md — Complete daemon distribution system with install/update/uninstall scripts
 
-### 🔄 v2.3 Data Management & Deep Links
+### ✅ v2.3 Data Management & Deep Links (Shipped 2026-03-12)
 
 **Milestone Goal:** Enable conversation deletion for data hygiene and improve deep links for CLI-based AI tools.
 
@@ -323,7 +323,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 38-01: POST /api/v1/open-terminal endpoint, "Open in Terminal" button for file-path URLs, backend + e2e tests
+- [x] 38-01: POST /api/v1/open-terminal endpoint, "Open in Terminal" button in CopyablePath and ConversationPanel, 4 backend + 2 e2e tests
 
 ### ✅ v2.2 In-Thread Search (Shipped 2026-03-12)
 
@@ -469,4 +469,4 @@ Phases execute in numeric order: 26 → 27 → 28
 | 35. Bulk Export | v2.1 | 1/1 | Complete | 2026-03-12 |
 | 36. In-Thread Search | v2.2 | 1/1 | Complete | 2026-03-12 |
 | 37. Delete Conversations | v2.3 | 1/1 | Complete | 2026-03-12 |
-| 38. Open in Terminal | v2.3 | 0/1 | Not started | - |
+| 38. Open in Terminal | v2.3 | 1/1 | Complete | 2026-03-12 |

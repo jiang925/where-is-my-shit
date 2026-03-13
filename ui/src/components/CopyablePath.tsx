@@ -1,18 +1,20 @@
 import { useState } from 'react';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, Terminal } from 'lucide-react';
 import { truncateMiddle } from '../utils/pathUtils';
+import { openTerminal } from '../lib/api';
 
 interface CopyablePathProps {
   path: string;
 }
 
 /**
- * Displays a file path with copy-to-clipboard functionality.
+ * Displays a file path with copy-to-clipboard and open-in-terminal functionality.
  * Shows truncated path with middle ellipsis for long paths.
  * Provides visual "Copied!" feedback for 2 seconds after copying.
  */
 export function CopyablePath({ path }: CopyablePathProps) {
   const [copied, setCopied] = useState(false);
+  const [terminalStatus, setTerminalStatus] = useState<'idle' | 'opened' | 'error'>('idle');
 
   const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -39,6 +41,18 @@ export function CopyablePath({ path }: CopyablePathProps) {
     }
   };
 
+  const handleOpenTerminal = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await openTerminal(path);
+      setTerminalStatus('opened');
+      setTimeout(() => setTerminalStatus('idle'), 2000);
+    } catch {
+      setTerminalStatus('error');
+      setTimeout(() => setTerminalStatus('idle'), 2000);
+    }
+  };
+
   return (
     <div className="flex items-center gap-2">
       <code
@@ -47,6 +61,36 @@ export function CopyablePath({ path }: CopyablePathProps) {
       >
         {truncateMiddle(path)}
       </code>
+
+      <button
+        onClick={handleOpenTerminal}
+        className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full transition-colors cursor-pointer ${
+          terminalStatus === 'opened'
+            ? 'text-green-600 bg-green-50'
+            : terminalStatus === 'error'
+              ? 'text-red-600 bg-red-50'
+              : 'bg-purple-50 hover:bg-purple-100 text-purple-700'
+        }`}
+        aria-label="Open in terminal"
+        title="Open in Terminal"
+      >
+        {terminalStatus === 'opened' ? (
+          <>
+            <Check className="h-3 w-3" />
+            Opened!
+          </>
+        ) : terminalStatus === 'error' ? (
+          <>
+            <Terminal className="h-3 w-3" />
+            Failed
+          </>
+        ) : (
+          <>
+            <Terminal className="h-3 w-3" />
+            Terminal
+          </>
+        )}
+      </button>
 
       <button
         onClick={handleCopy}
