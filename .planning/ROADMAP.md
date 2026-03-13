@@ -15,6 +15,7 @@
 - ✅ **v2.0 Keyboard Navigation & Quality** - Phases 32-33 (shipped 2026-03-12)
 - ✅ **v2.1 Export & Data Portability** - Phases 34-35 (shipped 2026-03-12)
 - ✅ **v2.2 In-Thread Search** - Phase 36 (shipped 2026-03-12)
+- 🔄 **v2.3 Data Management & Deep Links** - Phases 37-38
 
 ## Phases
 
@@ -306,6 +307,24 @@ Plans:
 Plans:
 - [x] 25-01-PLAN.md — Complete daemon distribution system with install/update/uninstall scripts
 
+### 🔄 v2.3 Data Management & Deep Links
+
+**Milestone Goal:** Enable conversation deletion for data hygiene and improve deep links for CLI-based AI tools.
+
+#### Phase 37: Delete Conversations
+**Goal**: Allow users to delete conversations from the UI
+**Plans**: 1 plan
+
+Plans:
+- [x] 37-01: DELETE /api/v1/conversations/{id} endpoint, delete button in ConversationPanel with confirmation, 5 backend + 4 e2e tests
+
+#### Phase 38: Open in Terminal for CLI Sessions
+**Goal**: Launch terminal at project directory for dev session results
+**Plans**: 1 plan
+
+Plans:
+- [ ] 38-01: POST /api/v1/open-terminal endpoint, "Open in Terminal" button for file-path URLs, backend + e2e tests
+
 ### ✅ v2.2 In-Thread Search (Shipped 2026-03-12)
 
 **Milestone Goal:** Allow users to search within a conversation thread to find specific messages.
@@ -449,3 +468,5 @@ Phases execute in numeric order: 26 → 27 → 28
 | 34. Export Single Conversation | v2.1 | 1/1 | Complete | 2026-03-12 |
 | 35. Bulk Export | v2.1 | 1/1 | Complete | 2026-03-12 |
 | 36. In-Thread Search | v2.2 | 1/1 | Complete | 2026-03-12 |
+| 37. Delete Conversations | v2.3 | 1/1 | Complete | 2026-03-12 |
+| 38. Open in Terminal | v2.3 | 0/1 | Not started | - |

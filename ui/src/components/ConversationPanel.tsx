@@ -1,11 +1,13 @@
 import { useEffect, useCallback, useState, useMemo } from 'react';
-import { X, ExternalLink, Download, Search, Loader2, MessageSquare, Terminal, FileCode } from 'lucide-react';
-import { useConversation, type ThreadItem } from '../lib/api';
+import { X, ExternalLink, Download, Search, Loader2, MessageSquare, Terminal, FileCode, Trash2 } from 'lucide-react';
+import { useConversation, deleteConversation, type ThreadItem } from '../lib/api';
+import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '../lib/utils';
 
 interface ConversationPanelProps {
   conversationId: string;
   onClose: () => void;
+  onDeleted?: () => void;
 }
 
 // Platform configuration (mirrors ResultCard for consistency)
@@ -176,9 +178,12 @@ function downloadMarkdown(content: string, filename: string) {
   URL.revokeObjectURL(url);
 }
 
-export function ConversationPanel({ conversationId, onClose }: ConversationPanelProps) {
+export function ConversationPanel({ conversationId, onClose, onDeleted }: ConversationPanelProps) {
   const { data, isLoading, isError, error } = useConversation(conversationId);
   const [threadSearch, setThreadSearch] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const queryClient = useQueryClient();
 
   // Reset search when conversation changes
   useEffect(() => {
@@ -219,6 +224,25 @@ export function ConversationPanel({ conversationId, onClose }: ConversationPanel
     downloadMarkdown(md, `${safeName}.md`);
   }, [sortedItems, title, platform?.label]);
 
+  const handleDelete = useCallback(async () => {
+    setIsDeleting(true);
+    try {
+      await deleteConversation(conversationId);
+      // Invalidate caches so search/browse reflect the deletion
+      queryClient.invalidateQueries({ queryKey: ['search'] });
+      queryClient.invalidateQueries({ queryKey: ['browse'] });
+      queryClient.invalidateQueries({ queryKey: ['stats'] });
+      queryClient.removeQueries({ queryKey: ['conversation', conversationId] });
+      onDeleted?.();
+      onClose();
+    } catch {
+      // Reset state on error
+      setShowDeleteConfirm(false);
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [conversationId, queryClient, onDeleted, onClose]);
+
   // Compute which messages match the thread search
   const matchCount = useMemo(() => {
     if (!threadSearch.trim()) return sortedItems.length;
@@ -226,7 +250,7 @@ export function ConversationPanel({ conversationId, onClose }: ConversationPanel
   }, [sortedItems, threadSearch]);
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className="relative flex flex-col h-full bg-gray-50">
       {/* Header */}
       <div className="flex-shrink-0 border-b border-gray-200 bg-white p-4">
         <div className="flex items-start justify-between gap-3">
@@ -260,14 +284,24 @@ export function ConversationPanel({ conversationId, onClose }: ConversationPanel
           </div>
           <div className="flex items-center gap-1">
             {sortedItems.length > 0 && (
-              <button
-                onClick={handleExport}
-                className="flex-shrink-0 p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                aria-label="Export as markdown"
-                title="Export as markdown"
-              >
-                <Download className="h-5 w-5" />
-              </button>
+              <>
+                <button
+                  onClick={handleExport}
+                  className="flex-shrink-0 p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                  aria-label="Export as markdown"
+                  title="Export as markdown"
+                >
+                  <Download className="h-5 w-5" />
+                </button>
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="flex-shrink-0 p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                  aria-label="Delete conversation"
+                  title="Delete conversation"
+                >
+                  <Trash2 className="h-5 w-5" />
+                </button>
+              </>
             )}
             <button
               onClick={onClose}
@@ -337,6 +371,35 @@ export function ConversationPanel({ conversationId, onClose }: ConversationPanel
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteConfirm && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-lg shadow-xl p-6 mx-4 max-w-sm w-full">
+            <h3 className="text-sm font-semibold text-gray-900 mb-2">Delete conversation?</h3>
+            <p className="text-xs text-gray-500 mb-4">
+              This will permanently delete all {sortedItems.length} message{sortedItems.length !== 1 ? 's' : ''} in this conversation. This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={isDeleting}
+                className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="px-3 py-1.5 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors cursor-pointer disabled:opacity-50"
+                aria-label="Confirm delete"
+              >
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

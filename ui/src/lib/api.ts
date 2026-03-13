@@ -266,6 +266,15 @@ export const useStats = (granularity: StatsGranularity = 'day', platforms: strin
   });
 };
 
+// === Delete API ===
+
+export const deleteConversation = async (conversationId: string): Promise<{ deleted: number }> => {
+  const response = await api.delete<{ deleted: number; conversation_id: string }>(
+    `/conversations/${conversationId}`
+  );
+  return response.data;
+};
+
 // === Export API ===
 
 export const exportAll = async (platforms?: string[]): Promise<void> => {

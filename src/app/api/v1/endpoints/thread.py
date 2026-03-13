@@ -89,3 +89,43 @@ async def get_thread(conversation_id: str):
         hasMore=False,
         total=len(items),
     )
+
+
+@router.delete("/conversations/{conversation_id}")
+async def delete_conversation(conversation_id: str):
+    """
+    Delete all messages for a given conversation_id.
+    Returns the number of messages deleted.
+    """
+    if not CONVERSATION_ID_PATTERN.match(conversation_id):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid conversation_id: only alphanumeric characters, hyphens, and underscores are allowed",
+        )
+
+    try:
+        table = db_client.get_table("messages")
+
+        # Count messages before deletion
+        def count_and_delete():
+            results = (
+                table.search([0.0] * 384, query_type="vector")
+                .where(f"conversation_id = '{conversation_id}'")
+                .select(["id"])
+                .limit(10000)
+                .to_list()
+            )
+            count = len(results)
+            if count > 0:
+                table.delete(f"conversation_id = '{conversation_id}'")
+            return count
+
+        deleted_count = await run_in_threadpool(count_and_delete)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Delete failed: {str(e)}")
+
+    if deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    return {"deleted": deleted_count, "conversation_id": conversation_id}

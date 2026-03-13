@@ -48,9 +48,9 @@ Between milestones, brainstorm the next set of features before writing any code.
 
 | Layer | Tool | Command | Count | What it covers |
 |-------|------|---------|-------|----------------|
-| Backend unit/integration | pytest | `uv run pytest` | 124 tests | API endpoints, DB operations, auth, search, browse, thread, stats, export, embeddings, reranker, migration, compaction |
+| Backend unit/integration | pytest | `uv run pytest` | 129 tests | API endpoints, DB operations, auth, search, browse, thread, delete, stats, export, embeddings, reranker, migration, compaction |
 | Frontend unit | vitest | `cd ui && npm test` | 31 tests | ResultCard (13), SearchBar (5), useKeyboardNavigation (12), App smoke (1) |
-| E2E (browser) | Playwright (Chromium) | `npx playwright test` | 55 tests | Full-stack flows: auth, search, browse, filters, path display, relevance, timeline, keyboard nav, export, thread search, UI regressions |
+| E2E (browser) | Playwright (Chromium) | `npx playwright test` | 59 tests | Full-stack flows: auth, search, browse, filters, path display, relevance, timeline, keyboard nav, export, thread search, delete, UI regressions |
 | E2E (manual) | Playwright | `npx playwright test tests/e2e/spec/exploratory.spec.ts` | 11 tests | Exploratory tests against a live server (excluded from CI) |
 | Extension | webpack build | `cd extension && npm run build` | Build check | TypeScript compilation, bundling |
 | Lint | ruff | `uv run ruff check src/ tests/` | - | Python code quality |
@@ -175,10 +175,23 @@ Brainstormed 2026-03-12. Users need to find specific messages within long conver
 
 **Status**: Complete. 124 backend + 31 vitest + 55 e2e tests pass.
 
+### v2.3 — Data Management & Deep Links (in progress)
+
+Brainstormed 2026-03-12. Two practical quality-of-life features:
+1. Users need to delete unwanted/test conversations from the UI — no current way to do data hygiene.
+2. CLI tool deep links (Claude Code, Cursor) should offer "Open in Terminal" instead of just copying the path.
+
+**Phase 37: Delete Conversations** — Backend `DELETE /api/v1/conversations/{id}` endpoint that removes all messages for a conversation_id from LanceDB. UI: delete button in ConversationPanel header with confirmation dialog. Updates browse/search after deletion.
+
+**Phase 38: Open in Terminal for CLI Sessions** — For ResultCard and ConversationPanel, when `url` is a file path (dev sessions), add "Open in Terminal" button that uses a backend endpoint `POST /api/v1/open-terminal` to launch the user's terminal at that directory. macOS: `open -a Terminal <path>`, Linux: `xdg-open` or `xterm`.
+
+**Status**: Not started.
+
 ### Backlog
 
-- [ ] Better deep links for CLI tools
 - [ ] Multi-device sync
+- [ ] Conversation tagging/bookmarks
+- [ ] Dark mode
 
 ## 6. Lessons Learned
 

@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.2
-milestone_name: In-Thread Search
+milestone: v2.3
+milestone_name: Data Management & Deep Links
 status: in_progress
 last_updated: "2026-03-12"
-last_activity: 2026-03-12 — Phase 36 (in-thread search) complete, all tests green
+last_activity: 2026-03-12 — Phase 37 (Delete Conversations) complete
 progress:
-  total_phases: 36
-  completed_phases: 36
-  total_plans: 72
-  completed_plans: 72
-  percent: 100
+  total_phases: 38
+  completed_phases: 37
+  total_plans: 74
+  completed_plans: 73
+  percent: 97
 ---
 
 # Project State: Where Is My Shit (WIMS)
@@ -18,25 +18,25 @@ progress:
 ## Project Reference
 
 **Core Value:** Never lose a conversation again: Instantly recall specific AI discussions or dev sessions across any platform and jump straight back into the original context.
-**Current Focus:** v2.2 In-Thread Search
+**Current Focus:** v2.3 Data Management & Deep Links
 
 ## Current Position
 
-**Milestone:** v2.2 In-Thread Search
-**Phase:** 36 of 36 (In-Thread Search)
-**Status:** Complete
-**Last activity:** 2026-03-12 — Phase 36 shipped, all tests green
+**Milestone:** v2.3 Data Management & Deep Links
+**Phase:** 38 of 38 (Open in Terminal)
+**Status:** Phase 37 complete, starting Phase 38
+**Last activity:** 2026-03-12 — Phase 37 shipped, all tests green
 
-Progress: [████████████████████████] 100% (36/36 phases complete)
+Progress: [███████████████████████░] 97% (37/38 phases complete)
 
 ## Test Coverage
 
 | Layer | Count |
 |-------|-------|
-| Backend (pytest) | 124 |
+| Backend (pytest) | 129 |
 | Frontend (vitest) | 31 |
-| E2E (Playwright) | 55 |
-| **Total** | **210** |
+| E2E (Playwright) | 59 |
+| **Total** | **219** |
 
 ## By Milestone
 
@@ -55,8 +55,9 @@ Progress: [███████████████████████
 | v2.0 Keyboard & Quality | 32-33 | Complete (2026-03-12) |
 | v2.1 Export | 34-35 | Complete (2026-03-12) |
 | v2.2 In-Thread Search | 36 | Complete (2026-03-12) |
+| v2.3 Data Management | 37-38 | In progress |
 
 ## Session Continuity
 
 **Last session:** 2026-03-12
-**Status:** v2.2 Phase 36 complete. Brainstorming next milestone.
+**Status:** v2.3 brainstormed. Starting Phase 37 (Delete Conversations).

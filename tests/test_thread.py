@@ -167,3 +167,73 @@ def test_thread_requires_auth(client):
     response = client.get("/api/v1/thread/some-conv-id")
     assert response.status_code == 403
     assert response.json() == {"detail": "Missing API Key"}
+
+
+def test_delete_conversation_removes_all_messages(client, auth_headers, db_client, test_db_path):
+    """Test that delete removes all messages for a conversation."""
+    db_client.init_db()
+
+    now = datetime.now()
+    conv_id = "delete-test-conv"
+
+    # Ingest 3 messages
+    ingest_test_message(client, "Msg 1", "chatgpt", now - timedelta(hours=2), conv_id, auth_headers)
+    ingest_test_message(client, "Msg 2", "chatgpt", now - timedelta(hours=1), conv_id, auth_headers, role="assistant")
+    ingest_test_message(client, "Msg 3", "chatgpt", now, conv_id, auth_headers)
+
+    # Verify messages exist
+    response = client.get(f"/api/v1/thread/{conv_id}", headers=auth_headers)
+    assert response.json()["total"] == 3
+
+    # Delete
+    response = client.delete(f"/api/v1/conversations/{conv_id}", headers=auth_headers)
+    assert response.status_code == 200
+    assert response.json()["deleted"] == 3
+    assert response.json()["conversation_id"] == conv_id
+
+    # Verify messages are gone
+    response = client.get(f"/api/v1/thread/{conv_id}", headers=auth_headers)
+    assert response.json()["total"] == 0
+
+
+def test_delete_conversation_not_found(client, auth_headers, db_client, test_db_path):
+    """Test that deleting a nonexistent conversation returns 404."""
+    db_client.init_db()
+
+    response = client.delete("/api/v1/conversations/nonexistent-conv", headers=auth_headers)
+    assert response.status_code == 404
+    assert "not found" in response.json()["detail"]
+
+
+def test_delete_conversation_does_not_affect_others(client, auth_headers, db_client, test_db_path):
+    """Test that deleting one conversation doesn't affect other conversations."""
+    db_client.init_db()
+
+    now = datetime.now()
+
+    # Ingest messages in two conversations
+    ingest_test_message(client, "Keep me", "chatgpt", now, "keep-conv", auth_headers)
+    ingest_test_message(client, "Delete me", "chatgpt", now, "delete-conv", auth_headers)
+
+    # Delete one conversation
+    response = client.delete("/api/v1/conversations/delete-conv", headers=auth_headers)
+    assert response.status_code == 200
+
+    # Verify the other conversation is untouched
+    response = client.get("/api/v1/thread/keep-conv", headers=auth_headers)
+    assert response.json()["total"] == 1
+    assert response.json()["items"][0]["content"] == "Keep me"
+
+
+def test_delete_conversation_requires_auth(client):
+    """Test that delete endpoint requires authentication."""
+    response = client.delete("/api/v1/conversations/some-conv-id")
+    assert response.status_code == 403
+
+
+def test_delete_conversation_rejects_invalid_id(client, auth_headers, db_client, test_db_path):
+    """Test that delete rejects conversation IDs with special characters."""
+    db_client.init_db()
+
+    response = client.delete("/api/v1/conversations/'; DROP TABLE messages;--", headers=auth_headers)
+    assert response.status_code == 400
