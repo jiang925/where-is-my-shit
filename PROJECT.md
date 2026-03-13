@@ -246,13 +246,21 @@ Mix of coverage, readability, and organization.
 
 **Status**: Complete. 133 backend + 31 vitest + 61 e2e tests pass.
 
+### v2.6 — Brainstorm (2026-03-12)
+
+**Context:** v2.5 shipped. Core experience is polished (dark mode, markdown rendering, expandable previews, all platforms covered). Next most impactful area: organization features for users with growing conversation libraries.
+
+**Recommended: "Organization"**
+- Phase 43: Conversation bookmarks/favorites — Add `starred` boolean column to LanceDB, star icon on ResultCard and ConversationPanel, "Starred" filter in browse/search. Backend: PATCH endpoint to toggle star.
+- Phase 44: Search history dropdown — Store recent queries in localStorage. Show dropdown below search bar with last 10 queries. Click to fill search bar.
+- Phase 45: Conversation title editing — Allow users to rename conversation titles from ConversationPanel. Backend: PATCH endpoint to update title.
+
+**Status**: Brainstormed. Ready for implementation when next session starts.
+
 ### Backlog
 
 - [ ] Multi-device sync
-- [ ] Conversation tagging/bookmarks
-- [ ] Search history dropdown
 - [ ] Settings/preferences UI page
-- [ ] Conversation title editing
 - [ ] Bulk delete UI
 - [ ] Conversation dedup detection
 
