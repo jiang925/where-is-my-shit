@@ -13,6 +13,7 @@
 - ✅ **v1.8 UI Polish & Convenience** - Phases 26-28 (shipped 2026-03-08)
 - ✅ **v1.9 Result Context & Readability** - Phases 29-31 (shipped 2026-03-12)
 - ✅ **v2.0 Keyboard Navigation & Quality** - Phases 32-33 (shipped 2026-03-12)
+- ✅ **v2.1 Export & Data Portability** - Phases 34-35 (shipped 2026-03-12)
 
 ## Phases
 
@@ -304,6 +305,24 @@ Plans:
 Plans:
 - [x] 25-01-PLAN.md — Complete daemon distribution system with install/update/uninstall scripts
 
+### ✅ v2.1 Export & Data Portability (Shipped 2026-03-12)
+
+**Milestone Goal:** Allow users to export and back up their conversation history.
+
+#### Phase 34: Export Single Conversation
+**Goal**: Export a conversation from the panel as a markdown file
+**Plans**: 1 plan
+
+Plans:
+- [x] 34-01: Download button in ConversationPanel, threadToMarkdown() helper, 2 e2e tests
+
+#### Phase 35: Bulk Export
+**Goal**: Export all conversations as a zip of markdown files
+**Plans**: 1 plan
+
+Plans:
+- [x] 35-01: POST /api/v1/export endpoint, Browse page export button, 4 backend tests, 2 e2e tests
+
 ### ✅ v2.0 Keyboard Navigation & Quality (Shipped 2026-03-12)
 
 **Milestone Goal:** Add keyboard-driven navigation for power users and establish frontend test coverage.
@@ -415,3 +434,5 @@ Phases execute in numeric order: 26 → 27 → 28
 | 31. Search Highlight | v1.9 | 1/1 | Complete | 2026-03-12 |
 | 32. Keyboard Navigation | v2.0 | 1/1 | Complete | 2026-03-12 |
 | 33. Frontend Component Tests | v2.0 | 1/1 | Complete | 2026-03-12 |
+| 34. Export Single Conversation | v2.1 | 1/1 | Complete | 2026-03-12 |
+| 35. Bulk Export | v2.1 | 1/1 | Complete | 2026-03-12 |

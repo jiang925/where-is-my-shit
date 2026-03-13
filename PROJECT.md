@@ -48,9 +48,9 @@ Between milestones, brainstorm the next set of features before writing any code.
 
 | Layer | Tool | Command | Count | What it covers |
 |-------|------|---------|-------|----------------|
-| Backend unit/integration | pytest | `uv run pytest` | 120 tests | API endpoints, DB operations, auth, search, browse, thread, stats, embeddings, reranker, migration, compaction |
+| Backend unit/integration | pytest | `uv run pytest` | 124 tests | API endpoints, DB operations, auth, search, browse, thread, stats, export, embeddings, reranker, migration, compaction |
 | Frontend unit | vitest | `cd ui && npm test` | 31 tests | ResultCard (13), SearchBar (5), useKeyboardNavigation (12), App smoke (1) |
-| E2E (browser) | Playwright (Chromium) | `npx playwright test` | 47 tests | Full-stack flows: auth, search, browse, filters, path display, relevance, timeline, keyboard nav, UI regressions |
+| E2E (browser) | Playwright (Chromium) | `npx playwright test` | 51 tests | Full-stack flows: auth, search, browse, filters, path display, relevance, timeline, keyboard nav, export, UI regressions |
 | E2E (manual) | Playwright | `npx playwright test tests/e2e/spec/exploratory.spec.ts` | 11 tests | Exploratory tests against a live server (excluded from CI) |
 | Extension | webpack build | `cd extension && npm run build` | Build check | TypeScript compilation, bundling |
 | Lint | ruff | `uv run ruff check src/ tests/` | - | Python code quality |
@@ -136,7 +136,7 @@ The **search and browse experience needs improvement**:
 
 These are areas identified from README goals and real usage. Each needs a brainstorm session before becoming a milestone.
 
-- [ ] **Export/import** — Export conversations as markdown, import from other tools.
+- [x] ~~**Export/import**~~ — Export done in v2.1 (single + bulk). Import deferred.
 - [ ] **Multi-device sync** — Optional sync between machines (currently local-only).
 - [ ] **Better deep links** — For CLI tools (Claude Code, Cursor), opening the original session is difficult. Explore launching terminal to the right directory.
 - [ ] **Search within threads** — Full-text search within a conversation thread, not just across conversations.
@@ -165,7 +165,7 @@ Brainstormed 2026-03-12. Users want to save, share, and back up their conversati
 
 **Phase 35: Bulk export** — Export all conversations or filtered set as a zip of markdown files. Backend endpoint: `POST /api/v1/export`.
 
-**Status**: In progress.
+**Status**: Complete. 124 backend + 31 vitest + 51 e2e tests pass.
 
 ### Backlog
 
@@ -226,3 +226,15 @@ Reflections from each milestone. Mistakes to avoid, patterns that work.
 - Keyboard navigation as a separate hook makes it testable independently from UI components
 - `inputRef` as a regular prop is simpler and more explicit than `forwardRef`
 - `renderHook` from @testing-library/react makes hook tests readable and concise
+
+### v2.1 Export & Data Portability (2026-03-12)
+
+**What went well:**
+- Single conversation export implemented entirely in frontend (no backend needed) — uses existing thread data
+- Bulk export backend endpoint is clean: one query, group by conversation, zip in memory, stream response
+- All 4 backend + 4 e2e tests passed on first attempt after minor platform casing fix
+
+**Patterns that work:**
+- Frontend-only export for single conversations (already have the data), backend export for bulk (avoids N API calls)
+- `StreamingResponse` with `io.BytesIO` for zip files — no temp files needed
+- ConversationPanel has 2 instances (desktop + mobile overlay) — always use `.first()` in e2e selectors
