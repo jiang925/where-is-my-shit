@@ -50,7 +50,7 @@ Between milestones, brainstorm the next set of features before writing any code.
 |-------|------|---------|-------|----------------|
 | Backend unit/integration | pytest | `uv run pytest` | 120 tests | API endpoints, DB operations, auth, search, browse, thread, stats, embeddings, reranker, migration, compaction |
 | Frontend unit | vitest | `cd ui && npm test` | 1 test | React component smoke test (App.test.tsx) |
-| E2E (browser) | Playwright (Chromium) | `npx playwright test` | 41 tests | Full-stack flows: auth, search, browse, filters, path display, relevance, timeline, UI regressions |
+| E2E (browser) | Playwright (Chromium) | `npx playwright test` | 47 tests | Full-stack flows: auth, search, browse, filters, path display, relevance, timeline, keyboard nav, UI regressions |
 | E2E (manual) | Playwright | `npx playwright test tests/e2e/spec/exploratory.spec.ts` | 11 tests | Exploratory tests against a live server (excluded from CI) |
 | Extension | webpack build | `cd extension && npm run build` | Build check | TypeScript compilation, bundling |
 | Lint | ruff | `uv run ruff check src/ tests/` | - | Python code quality |
@@ -146,23 +146,27 @@ These are areas identified from README goals and real usage. Each needs a brains
 - [ ] **Better deep links** — For CLI tools (Claude Code, Cursor), opening the original session is difficult. Explore launching terminal to the right directory.
 - [ ] **Conversation grouping** — Group related messages into logical conversations (currently each message is a separate result).
 
-### v1.9 — Result Context & Readability (in progress)
+### v1.9 — Result Context & Readability (complete)
 
-Brainstormed 2026-03-12. Core problem: each result card shows one raw message (often a generic AI closing). Users can't tell conversations apart.
+**Phase 29-30: Conversation-level browse + Richer result cards** — Group browse by conversation_id, show message_count and first_user_message, line-clamp adjustments.
 
-**Phase 29: Conversation-level browse** — Group browse results by conversation_id. Show one entry per conversation with message_count and first_user_message. Eliminates duplicates, gives instant context.
+**Phase 31: Search result context** — Batch conversation context lookup, highlight matching terms with `<mark>` tags.
 
-**Phase 30: Richer result cards** — Update ResultCard to show the user's question as subtitle, role indicator, message count badge. Smarter content preview.
+### v2.0 — Keyboard Navigation & Quality (in progress)
 
-**Phase 31: Search result context** — Add first_user_message to search results. Highlight matching terms in content.
+Brainstormed 2026-03-12. Power users need keyboard-driven workflows for fast result navigation.
 
-**Status**: Complete. All 120 backend + 41 e2e tests pass. Pending: UI visual testing, push.
+**Phase 32: Keyboard navigation for search** — Arrow keys navigate results, Enter opens conversation panel, `/` focuses search bar, Esc clears focus. Visual focus ring on active card. `useKeyboardNavigation` hook.
 
-### Backlog (brainstorm when v1.9 ships)
+**Phase 33: Frontend component tests** — Vitest tests for ResultCard, SearchBar, SourceFilterUI.
 
-- [ ] Frontend test coverage (vitest component tests)
-- [ ] Full-text search improvements (highlight matching terms)
-- [ ] Keyboard navigation
+**Status**: Phase 32 complete. 47 e2e tests pass (6 new for keyboard nav).
+
+### Backlog
+
+- [ ] Frontend test coverage (vitest component tests) — Phase 33
+- [x] ~~Full-text search improvements (highlight matching terms)~~ — Done in v1.9 Phase 31
+- [x] ~~Keyboard navigation~~ — Done in v2.0 Phase 32
 - [ ] Export/import conversations
 - [ ] Better deep links for CLI tools
 - [ ] Conversation grouping in search

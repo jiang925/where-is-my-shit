@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { SearchBar } from '../components/SearchBar';
 import { ResultCard } from '../components/ResultCard';
@@ -6,6 +6,7 @@ import { ConversationPanel } from '../components/ConversationPanel';
 import { SourceFilterUI, AVAILABLE_PLATFORMS, type PlatformId } from '../components/SourceFilterUI';
 import { PresetButtons } from '../components/PresetButtons';
 import { useSearch } from '../lib/api';
+import { useKeyboardNavigation } from '../hooks/useKeyboardNavigation';
 import { Loader2, LogOut, ChevronDown, ChevronRight } from 'lucide-react';
 
 interface SearchPageProps {
@@ -17,6 +18,7 @@ export function SearchPage({ onLogout }: SearchPageProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialQuery = searchParams.get('q') || '';
   const [query, setQuery] = useState(initialQuery);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Conversation panel state from URL
   const selectedConversation = searchParams.get('conversation') || null;
@@ -93,9 +95,27 @@ export function SearchPage({ onLogout }: SearchPageProps) {
     error
   } = useSearch(query, selectedPlatforms);
 
-  // Collect all secondary results from all pages
+  // Collect all results from all pages
+  const allResults = useMemo(
+    () => data?.pages.flatMap(p => p.results) || [],
+    [data?.pages]
+  );
   const secondaryResults = data?.pages.flatMap(p => p.secondary_results || []) || [];
   const secondaryCount = data?.pages[0]?.secondary_total || 0;
+
+  // Keyboard navigation
+  const { focusedIndex, setCardRef } = useKeyboardNavigation({
+    itemCount: allResults.length,
+    onSelect: (index) => {
+      const result = allResults[index];
+      if (result?.meta.conversation_id) {
+        handleSelectConversation(result.meta.conversation_id);
+      }
+    },
+    onEscape: handleClosePanel,
+    searchInputRef,
+    enabled: !!query,
+  });
 
   // Auto-expand secondary results when no primary results but secondary exist
   useEffect(() => {
@@ -143,6 +163,7 @@ export function SearchPage({ onLogout }: SearchPageProps) {
           <div className="flex items-start gap-4">
             <div className="flex-1">
               <SearchBar
+                inputRef={searchInputRef}
                 onSearch={setQuery}
                 isLoading={isFetching && !isFetchingNextPage}
                 initialValue={initialQuery}
@@ -213,7 +234,7 @@ export function SearchPage({ onLogout }: SearchPageProps) {
                 <Loader2 className="h-8 w-8 animate-spin-slow text-gray-300" />
               </div>
               <p className="text-lg">Start typing to search your history...</p>
-              <p className="text-sm mt-2">Use the filter below to narrow results by source.</p>
+              <p className="text-sm mt-2">Use the filters to narrow by source. Press <kbd className="px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded text-xs font-mono">/</kbd> to focus search, <kbd className="px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded text-xs font-mono">&uarr;&darr;</kbd> to navigate results.</p>
             </div>
           )}
 
@@ -239,19 +260,27 @@ export function SearchPage({ onLogout }: SearchPageProps) {
 
           {/* Results Grid */}
           <div className="space-y-4">
-            {data?.pages.map((page, i) => (
-              <div key={i} className="contents">
-                {page.results.map((result) => (
-                  <ResultCard
-                    key={result.id}
-                    result={result}
-                    onSelect={handleSelectConversation}
-                    isSelected={result.meta.conversation_id === selectedConversation}
-                    highlightQuery={query}
-                  />
-                ))}
-              </div>
-            ))}
+            {(() => {
+              let globalIndex = 0;
+              return data?.pages.map((page, i) => (
+                <div key={i} className="contents">
+                  {page.results.map((result) => {
+                    const idx = globalIndex++;
+                    return (
+                      <ResultCard
+                        key={result.id}
+                        result={result}
+                        onSelect={handleSelectConversation}
+                        isSelected={result.meta.conversation_id === selectedConversation}
+                        isFocused={idx === focusedIndex}
+                        highlightQuery={query}
+                        cardRef={(el) => setCardRef(idx, el)}
+                      />
+                    );
+                  })}
+                </div>
+              ));
+            })()}
           </div>
 
           {/* Collapsible Secondary Results Section */}

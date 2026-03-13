@@ -7,9 +7,10 @@ interface SearchBarProps {
   isLoading?: boolean;
   className?: string;
   initialValue?: string;
+  inputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
-export function SearchBar({ onSearch, isLoading, className, initialValue = '' }: SearchBarProps) {
+export function SearchBar({ onSearch, isLoading, className, initialValue = '', inputRef }: SearchBarProps) {
   const [value, setValue] = useState(initialValue);
 
   useEffect(() => {
@@ -32,6 +33,7 @@ export function SearchBar({ onSearch, isLoading, className, initialValue = '' }:
         </div>
 
         <input
+          ref={inputRef}
           className="peer h-full w-full outline-none text-gray-700 pr-2 placeholder-gray-400"
           type="text"
           id="search"

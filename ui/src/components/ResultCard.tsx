@@ -10,7 +10,9 @@ interface ResultCardProps {
   hideScore?: boolean;
   onSelect?: (conversationId: string) => void;
   isSelected?: boolean;
+  isFocused?: boolean;
   highlightQuery?: string;
+  cardRef?: (el: HTMLDivElement | null) => void;
 }
 
 // Platform configuration matching SourceFilterUI for consistency
@@ -117,7 +119,7 @@ function highlightText(text: string, query: string): React.ReactNode {
   );
 }
 
-export function ResultCard({ result, className, hideScore, onSelect, isSelected, highlightQuery }: ResultCardProps) {
+export function ResultCard({ result, className, hideScore, onSelect, isSelected, isFocused, highlightQuery, cardRef }: ResultCardProps) {
   const { content, meta } = result;
   const platform = getPlatformConfig(meta.source);
   const Icon = platform?.icon || MessageSquare;
@@ -134,12 +136,15 @@ export function ResultCard({ result, className, hideScore, onSelect, isSelected,
 
   return (
     <div
+      ref={cardRef}
       className={cn(
         "group flex flex-col bg-white border rounded-lg p-4 shadow-sm transition-all",
         onSelect ? "cursor-pointer hover:shadow-md" : "hover:shadow-md",
         isSelected
           ? "border-blue-400 ring-2 ring-blue-200 border-l-4 border-l-blue-500"
-          : "border-gray-100 hover:border-blue-200",
+          : isFocused
+            ? "border-blue-300 ring-2 ring-blue-100 shadow-md"
+            : "border-gray-100 hover:border-blue-200",
         className
       )}
       onClick={handleClick}

@@ -305,7 +305,7 @@ test('source filter UI: browse page filtering works correctly', async ({ page, a
   console.log('All sources selected by default in Phase 20');
 
   // Clear all filters first
-  await page.getByRole('button', { name: 'Clear' }).click();
+  await page.getByRole('button', { name: 'Clear', exact: true }).click();
   await page.waitForTimeout(200);
 
   // Now select just ChatGPT

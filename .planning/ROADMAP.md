@@ -11,6 +11,7 @@
 - ✅ **v1.6 GitHub Release** - Phase 21 (shipped 2026-02-18)
 - ✅ **v1.7 Distribution & Packaging** - Phases 22-25 (shipped 2026-03-06)
 - ✅ **v1.8 UI Polish & Convenience** - Phases 26-28 (shipped 2026-03-08)
+- ✅ **v1.9 Result Context & Readability** - Phases 29-31 (shipped 2026-03-12)
 
 ## Phases
 
@@ -302,6 +303,31 @@ Plans:
 Plans:
 - [x] 25-01-PLAN.md — Complete daemon distribution system with install/update/uninstall scripts
 
+### ✅ v1.9 Result Context & Readability (Shipped 2026-03-12)
+
+**Milestone Goal:** Make search and browse results recognizable at a glance by showing conversation context instead of raw message snippets.
+
+#### Phase 29: Conversation-level Browse
+**Goal**: Group browse results by conversation instead of showing individual messages
+**Plans**: 1 plan (combined with Phase 30)
+
+Plans:
+- [x] 29-01: Group messages by conversation_id, show message_count and first_user_message
+
+#### Phase 30: Richer Result Cards
+**Goal**: Show user's question as subtitle, message count badge, smarter content preview
+**Plans**: 1 plan (combined with Phase 29)
+
+Plans:
+- [x] 30-01: ResultCard with first_user_message, message count badge, line-clamp adjustments
+
+#### Phase 31: Search Result Context
+**Goal**: Add conversation context to search results and highlight matching terms
+**Plans**: 1 plan
+
+Plans:
+- [x] 31-01: Batch conversation context lookup, highlightText function with mark tags
+
 ### ✅ v1.8 UI Polish & Convenience (Shipped 2026-03-08)
 
 **Milestone Goal:** Improve the user experience with better navigation between extension and web UI, conversation detail views, and usage insights.
@@ -365,3 +391,6 @@ Phases execute in numeric order: 26 → 27 → 28
 | 26. Extension → Web UI | v1.8 | 1/1 | Complete | 2026-03-07 |
 | 27. Conversation Side Panel | v1.8 | 1/1 | Complete | 2026-03-07 |
 | 28. Statistics Dashboard | v1.8 | 1/1 | Complete | 2026-03-08 |
+| 29. Conversation-level Browse | v1.9 | 1/1 | Complete | 2026-03-12 |
+| 30. Richer Result Cards | v1.9 | 1/1 | Complete | 2026-03-12 |
+| 31. Search Highlight | v1.9 | 1/1 | Complete | 2026-03-12 |
