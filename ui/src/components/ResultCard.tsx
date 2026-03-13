@@ -1,4 +1,5 @@
-import { ExternalLink, MessageSquare, Terminal, FileCode } from 'lucide-react';
+import { useState } from 'react';
+import { ExternalLink, MessageSquare, Terminal, FileCode, ChevronDown, ChevronUp } from 'lucide-react';
 import type { SearchResult } from '../lib/api';
 import { cn } from '../lib/utils';
 import { CopyablePath } from './CopyablePath';
@@ -128,10 +129,17 @@ export function ResultCard({ result, className, hideScore, onSelect, isSelected,
   const messageCount = (meta.message_count as number) || 0;
   const firstUserMessage = (meta.first_user_message as string) || '';
 
+  const [expanded, setExpanded] = useState(false);
+
   const handleClick = () => {
     if (onSelect && meta.conversation_id) {
       onSelect(meta.conversation_id);
     }
+  };
+
+  const handleToggleExpand = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpanded(!expanded);
   };
 
   return (
@@ -215,9 +223,25 @@ export function ResultCard({ result, className, hideScore, onSelect, isSelected,
             {firstUserMessage}
           </p>
         )}
-        <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3 font-mono bg-gray-50 dark:bg-gray-700/50 p-2 rounded break-words whitespace-pre-wrap">
+        <p className={cn(
+          "text-sm text-gray-600 dark:text-gray-300 font-mono bg-gray-50 dark:bg-gray-700/50 p-2 rounded break-words whitespace-pre-wrap",
+          !expanded && "line-clamp-3"
+        )}>
           {highlightQuery ? highlightText(content, highlightQuery) : content}
         </p>
+        {content.length > 200 && (
+          <button
+            onClick={handleToggleExpand}
+            className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 mt-1 transition-colors cursor-pointer"
+            aria-label={expanded ? "Collapse preview" : "Expand preview"}
+          >
+            {expanded ? (
+              <><ChevronUp className="h-3 w-3" /> Show less</>
+            ) : (
+              <><ChevronDown className="h-3 w-3" /> Show more</>
+            )}
+          </button>
+        )}
       </div>
 
       <div className="mt-auto pt-2 flex justify-between items-center">
