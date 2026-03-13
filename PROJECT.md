@@ -53,9 +53,9 @@ Between milestones, brainstorm the next set of features before writing any code.
 
 | Layer | Tool | Command | Count | What it covers |
 |-------|------|---------|-------|----------------|
-| Backend unit/integration | pytest | `uv run pytest` | 133 tests | API endpoints, DB operations, auth, search, browse, thread, delete, terminal, stats, export, embeddings, reranker, migration, compaction |
-| Frontend unit | vitest | `cd ui && npm test` | 31 tests | ResultCard (13), SearchBar (5), useKeyboardNavigation (12), App smoke (1) |
-| E2E (browser) | Playwright (Chromium) | `npx playwright test` | 61 tests | Full-stack flows: auth, search, browse, filters, path display, relevance, timeline, keyboard nav, export, thread search, delete, open terminal, UI regressions |
+| Backend unit/integration | pytest | `uv run pytest` | 176 tests | API endpoints, DB operations, auth, search, browse, thread, delete, terminal, stats, export, embeddings, reranker, migration, compaction, config, schemas, SPA, health, ingest |
+| Frontend unit | vitest | `cd ui && npm test` | 82 tests | ResultCard (13), SearchBar (5), useKeyboardNavigation (12), SourceFilterUI (7), PresetButtons (6), DateRangeFilter (5), CopyablePath (5), TimelineSection (4), useTheme (6), dateGroups (9), pathUtils (9), App smoke (1) |
+| E2E (browser) | Playwright (Chromium) | `npx playwright test` | 70 tests | Full-stack flows: auth, search, browse, filters, path display, relevance, timeline, keyboard nav, export, thread search, delete, open terminal, UI regressions, stats page, dark mode |
 | E2E (manual) | Playwright | `npx playwright test tests/e2e/spec/exploratory.spec.ts` | 11 tests | Exploratory tests against a live server (excluded from CI) |
 | Extension | webpack build | `cd extension && npm run build` | Build check | TypeScript compilation, bundling |
 | Lint | ruff | `uv run ruff check src/ tests/` | - | Python code quality |
