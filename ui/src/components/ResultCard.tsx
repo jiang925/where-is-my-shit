@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ExternalLink, MessageSquare, Terminal, FileCode, ChevronDown, ChevronUp } from 'lucide-react';
+import { ExternalLink, MessageSquare, Terminal, FileCode, ChevronDown, ChevronUp, Star } from 'lucide-react';
 import type { SearchResult } from '../lib/api';
 import { cn } from '../lib/utils';
 import { CopyablePath } from './CopyablePath';
@@ -14,6 +14,8 @@ interface ResultCardProps {
   isFocused?: boolean;
   highlightQuery?: string;
   cardRef?: (el: HTMLDivElement | null) => void;
+  isBookmarked?: boolean;
+  onToggleBookmark?: (conversationId: string) => void;
 }
 
 // Platform configuration matching SourceFilterUI for consistency
@@ -120,7 +122,7 @@ function highlightText(text: string, query: string): React.ReactNode {
   );
 }
 
-export function ResultCard({ result, className, hideScore, onSelect, isSelected, isFocused, highlightQuery, cardRef }: ResultCardProps) {
+export function ResultCard({ result, className, hideScore, onSelect, isSelected, isFocused, highlightQuery, cardRef, isBookmarked, onToggleBookmark }: ResultCardProps) {
   const { content, meta } = result;
   const platform = getPlatformConfig(meta.source);
   const Icon = platform?.icon || MessageSquare;
@@ -209,6 +211,15 @@ export function ResultCard({ result, className, hideScore, onSelect, isSelected,
 
       <div className="mb-3">
         <div className="flex items-center gap-2 mb-1">
+          {onToggleBookmark && meta.conversation_id && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onToggleBookmark(meta.conversation_id!); }}
+              className="flex-shrink-0 p-0.5 transition-colors cursor-pointer"
+              aria-label={isBookmarked ? "Remove bookmark" : "Bookmark conversation"}
+            >
+              <Star className={cn("h-4 w-4", isBookmarked ? "fill-yellow-400 text-yellow-400" : "text-gray-300 hover:text-yellow-400")} />
+            </button>
+          )}
           <h3 className="font-medium text-gray-900 dark:text-gray-100 truncate" title={title}>
             {title}
           </h3>

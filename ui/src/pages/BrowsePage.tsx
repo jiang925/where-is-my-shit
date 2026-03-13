@@ -7,6 +7,7 @@ import { TimelineSection } from '../components/TimelineSection';
 import { ConversationPanel } from '../components/ConversationPanel';
 import { useBrowse, exportAll, type DateRangeOption } from '../lib/api';
 import { flattenAndGroup, TIMELINE_SECTIONS, totalGroupedItems, sectionsForDateRange } from '../lib/dateGroups';
+import { useBookmarks } from '../hooks/useBookmarks';
 import { Loader2, LogOut, Download } from 'lucide-react';
 
 interface BrowsePageProps {
@@ -18,6 +19,9 @@ export function BrowsePage({ onLogout }: BrowsePageProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const allPlatformIds = AVAILABLE_PLATFORMS.map(p => p.id) as PlatformId[];
   const [selectedPlatforms, setSelectedPlatforms] = useState<PlatformId[]>(allPlatformIds);
+
+  // Bookmarks
+  const bookmarks = useBookmarks();
 
   // Conversation panel state from URL
   const selectedConversation = searchParams.get('conversation') || null;
@@ -244,6 +248,8 @@ export function BrowsePage({ onLogout }: BrowsePageProps) {
                   isEmpty={groupedData[section.key].length === 0}
                   onSelect={handleSelectConversation}
                   selectedConversation={selectedConversation}
+                  isBookmarked={bookmarks.isBookmarked}
+                  onToggleBookmark={bookmarks.toggle}
                 />
               ))}
             </div>
@@ -273,6 +279,8 @@ export function BrowsePage({ onLogout }: BrowsePageProps) {
                 <ConversationPanel
                   conversationId={selectedConversation}
                   onClose={handleClosePanel}
+                  isBookmarked={bookmarks.isBookmarked(selectedConversation)}
+                  onToggleBookmark={bookmarks.toggle}
                 />
               </div>
             </div>
@@ -287,6 +295,8 @@ export function BrowsePage({ onLogout }: BrowsePageProps) {
                 <ConversationPanel
                   conversationId={selectedConversation}
                   onClose={handleClosePanel}
+                  isBookmarked={bookmarks.isBookmarked(selectedConversation)}
+                  onToggleBookmark={bookmarks.toggle}
                 />
               </div>
             </div>

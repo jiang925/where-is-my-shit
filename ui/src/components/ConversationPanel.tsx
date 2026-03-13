@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useState, useMemo } from 'react';
-import { X, ExternalLink, Download, Search, Loader2, MessageSquare, Terminal, FileCode, Trash2 } from 'lucide-react';
+import { X, ExternalLink, Download, Search, Loader2, MessageSquare, Terminal, FileCode, Trash2, Star } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { useConversation, deleteConversation, openTerminal, type ThreadItem } from '../lib/api';
 import { useQueryClient } from '@tanstack/react-query';
@@ -10,6 +10,8 @@ interface ConversationPanelProps {
   conversationId: string;
   onClose: () => void;
   onDeleted?: () => void;
+  isBookmarked?: boolean;
+  onToggleBookmark?: (conversationId: string) => void;
 }
 
 // Platform configuration (mirrors ResultCard for consistency)
@@ -186,7 +188,7 @@ function downloadMarkdown(content: string, filename: string) {
   URL.revokeObjectURL(url);
 }
 
-export function ConversationPanel({ conversationId, onClose, onDeleted }: ConversationPanelProps) {
+export function ConversationPanel({ conversationId, onClose, onDeleted, isBookmarked, onToggleBookmark }: ConversationPanelProps) {
   const { data, isLoading, isError, error } = useConversation(conversationId);
   const [threadSearch, setThreadSearch] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -302,6 +304,16 @@ export function ConversationPanel({ conversationId, onClose, onDeleted }: Conver
             )}
           </div>
           <div className="flex items-center gap-1">
+            {onToggleBookmark && (
+              <button
+                onClick={() => onToggleBookmark(conversationId)}
+                className="flex-shrink-0 p-1.5 rounded-lg transition-colors cursor-pointer"
+                aria-label={isBookmarked ? "Remove bookmark" : "Bookmark conversation"}
+                title={isBookmarked ? "Remove bookmark" : "Bookmark"}
+              >
+                <Star className={cn("h-5 w-5", isBookmarked ? "fill-yellow-400 text-yellow-400" : "text-gray-400 hover:text-yellow-400")} />
+              </button>
+            )}
             {sortedItems.length > 0 && (
               <>
                 <button

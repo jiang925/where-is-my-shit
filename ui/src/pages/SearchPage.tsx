@@ -7,7 +7,8 @@ import { SourceFilterUI, AVAILABLE_PLATFORMS, type PlatformId } from '../compone
 import { PresetButtons } from '../components/PresetButtons';
 import { useSearch } from '../lib/api';
 import { useKeyboardNavigation } from '../hooks/useKeyboardNavigation';
-import { Loader2, LogOut, ChevronDown, ChevronRight } from 'lucide-react';
+import { useBookmarks } from '../hooks/useBookmarks';
+import { Loader2, LogOut, ChevronDown, ChevronRight, Star } from 'lucide-react';
 
 interface SearchPageProps {
   onLogout: () => void;
@@ -43,6 +44,10 @@ export function SearchPage({ onLogout }: SearchPageProps) {
   // Default to all platforms selected
   const allPlatformIds = AVAILABLE_PLATFORMS.map(p => p.id) as PlatformId[];
   const [selectedPlatforms, setSelectedPlatforms] = useState<PlatformId[]>(allPlatformIds);
+
+  // Bookmarks
+  const bookmarks = useBookmarks();
+  const [showBookmarkedOnly, setShowBookmarkedOnly] = useState(false);
 
   // State for collapsible secondary results
   const [showSecondary, setShowSecondary] = useState(false);
@@ -95,10 +100,16 @@ export function SearchPage({ onLogout }: SearchPageProps) {
     error
   } = useSearch(query, selectedPlatforms);
 
-  // Collect all results from all pages
-  const allResults = useMemo(
+  // Collect all results from all pages, optionally filter by bookmarks
+  const allResultsRaw = useMemo(
     () => data?.pages.flatMap(p => p.results) || [],
     [data?.pages]
+  );
+  const allResults = useMemo(
+    () => showBookmarkedOnly
+      ? allResultsRaw.filter(r => r.meta.conversation_id && bookmarks.isBookmarked(r.meta.conversation_id))
+      : allResultsRaw,
+    [allResultsRaw, showBookmarkedOnly, bookmarks]
   );
   const secondaryResults = data?.pages.flatMap(p => p.secondary_results || []) || [];
   const secondaryCount = data?.pages[0]?.secondary_total || 0;
@@ -202,6 +213,21 @@ export function SearchPage({ onLogout }: SearchPageProps) {
                 setSearchParams(newParams);
               }}
             />
+            {bookmarks.count > 0 && (
+              <button
+                onClick={() => setShowBookmarkedOnly(!showBookmarkedOnly)}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all border cursor-pointer ml-2 ${
+                  showBookmarkedOnly
+                    ? 'bg-yellow-100 text-yellow-700 border-yellow-300'
+                    : 'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-yellow-300 hover:bg-yellow-50'
+                }`}
+                aria-label="Filter bookmarked conversations"
+                aria-pressed={showBookmarkedOnly}
+              >
+                <Star className={`h-3 w-3 ${showBookmarkedOnly ? 'fill-yellow-400' : ''}`} />
+                Starred ({bookmarks.count})
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -261,24 +287,18 @@ export function SearchPage({ onLogout }: SearchPageProps) {
           {/* Results Grid */}
           <div className="space-y-4">
             {(() => {
-              let globalIndex = 0;
-              return data?.pages.map((page, i) => (
-                <div key={i} className="contents">
-                  {page.results.map((result) => {
-                    const idx = globalIndex++;
-                    return (
-                      <ResultCard
-                        key={result.id}
-                        result={result}
-                        onSelect={handleSelectConversation}
-                        isSelected={result.meta.conversation_id === selectedConversation}
-                        isFocused={idx === focusedIndex}
-                        highlightQuery={query}
-                        cardRef={(el) => setCardRef(idx, el)}
-                      />
-                    );
-                  })}
-                </div>
+              return allResults.map((result, idx) => (
+                <ResultCard
+                  key={result.id}
+                  result={result}
+                  onSelect={handleSelectConversation}
+                  isSelected={result.meta.conversation_id === selectedConversation}
+                  isFocused={idx === focusedIndex}
+                  highlightQuery={query}
+                  cardRef={(el) => setCardRef(idx, el)}
+                  isBookmarked={!!result.meta.conversation_id && bookmarks.isBookmarked(result.meta.conversation_id)}
+                  onToggleBookmark={bookmarks.toggle}
+                />
               ));
             })()}
           </div>
@@ -311,6 +331,8 @@ export function SearchPage({ onLogout }: SearchPageProps) {
                       onSelect={handleSelectConversation}
                       isSelected={result.meta.conversation_id === selectedConversation}
                       highlightQuery={query}
+                      isBookmarked={!!result.meta.conversation_id && bookmarks.isBookmarked(result.meta.conversation_id)}
+                      onToggleBookmark={bookmarks.toggle}
                     />
                   ))}
                 </div>
@@ -342,6 +364,8 @@ export function SearchPage({ onLogout }: SearchPageProps) {
                 <ConversationPanel
                   conversationId={selectedConversation}
                   onClose={handleClosePanel}
+                  isBookmarked={bookmarks.isBookmarked(selectedConversation)}
+                  onToggleBookmark={bookmarks.toggle}
                 />
               </div>
             </div>
@@ -356,6 +380,8 @@ export function SearchPage({ onLogout }: SearchPageProps) {
                 <ConversationPanel
                   conversationId={selectedConversation}
                   onClose={handleClosePanel}
+                  isBookmarked={bookmarks.isBookmarked(selectedConversation)}
+                  onToggleBookmark={bookmarks.toggle}
                 />
               </div>
             </div>
