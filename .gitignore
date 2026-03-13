@@ -57,6 +57,7 @@ data/test-auth.db
 
 # Specific project ignores
 extension/node_modules/
+extension/*.zip
 ui/node_modules/
 
 # Playwright test results
