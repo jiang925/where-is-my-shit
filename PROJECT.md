@@ -156,6 +156,8 @@ Brainstormed 2026-03-12. Core problem: each result card shows one raw message (o
 
 **Phase 31: Search result context** — Add first_user_message to search results. Highlight matching terms in content.
 
+**Status**: Phases 29-31 implemented and committed. Pending: UI testing, e2e verification, push.
+
 ### Backlog (brainstorm when v1.9 ships)
 
 - [ ] Frontend test coverage (vitest component tests)
@@ -184,3 +186,19 @@ Reflections from each milestone. Mistakes to avoid, patterns that work.
 **Patterns that work:**
 - Visual UI testing with Playwright screenshots catches layout issues automated tests miss
 - Fixing e2e selectors with `aria-label` is more robust than relying on text content matching
+
+### v1.9 Result Context & Readability (2026-03-12)
+
+**What went well:**
+- Combined Phases 29-30 into one commit (backend + frontend changes are tightly coupled)
+- Added `first_user_message` and `message_count` to both browse AND search in the same pass — avoided doing the same pattern twice
+- Highlight function is simple and self-contained (no new dependencies)
+
+**Mistakes to avoid:**
+- TypeScript `meta` has `[key: string]: unknown` catch-all, so accessing new fields requires casting. When adding new fields to SearchResultMeta backend, also update the frontend TS interface explicitly rather than relying on the catch-all.
+- Browse endpoint cursor pagination needed rethinking after grouping by conversation — cursor now uses the latest message per conversation, not individual message IDs. Breaking change for any existing cursor tokens (acceptable since cursors are ephemeral).
+
+**Patterns that work:**
+- Grouping messages by conversation in the backend (not frontend) keeps the API clean and reduces data transfer
+- Graceful degradation with `try/except pass` for the conversation context query in search — if it fails, results still work, just without context
+- `line-clamp-2` for first user message + `line-clamp-3` for content gives good information density without overwhelming the card
