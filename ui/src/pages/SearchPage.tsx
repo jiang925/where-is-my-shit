@@ -247,6 +247,7 @@ export function SearchPage({ onLogout }: SearchPageProps) {
                     result={result}
                     onSelect={handleSelectConversation}
                     isSelected={result.meta.conversation_id === selectedConversation}
+                    highlightQuery={query}
                   />
                 ))}
               </div>
@@ -280,6 +281,7 @@ export function SearchPage({ onLogout }: SearchPageProps) {
                       className="opacity-80"
                       onSelect={handleSelectConversation}
                       isSelected={result.meta.conversation_id === selectedConversation}
+                      highlightQuery={query}
                     />
                   ))}
                 </div>

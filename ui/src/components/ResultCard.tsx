@@ -10,6 +10,7 @@ interface ResultCardProps {
   hideScore?: boolean;
   onSelect?: (conversationId: string) => void;
   isSelected?: boolean;
+  highlightQuery?: string;
 }
 
 // Platform configuration matching SourceFilterUI for consistency
@@ -97,7 +98,26 @@ function getPlatformConfig(source?: string) {
   };
 }
 
-export function ResultCard({ result, className, hideScore, onSelect, isSelected }: ResultCardProps) {
+/**
+ * Highlight matching query terms in text.
+ * Splits on word boundaries and wraps matches in <mark>.
+ */
+function highlightText(text: string, query: string): React.ReactNode {
+  if (!query.trim()) return text;
+  // Escape regex special chars, split query into words
+  const words = query.trim().split(/\s+/).filter(Boolean);
+  const escaped = words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const pattern = new RegExp(`(${escaped.join('|')})`, 'gi');
+  const parts = text.split(pattern);
+  if (parts.length === 1) return text;
+  return parts.map((part, i) =>
+    pattern.test(part)
+      ? <mark key={i} className="bg-yellow-200 text-yellow-900 rounded-sm px-0.5">{part}</mark>
+      : part
+  );
+}
+
+export function ResultCard({ result, className, hideScore, onSelect, isSelected, highlightQuery }: ResultCardProps) {
   const { content, meta } = result;
   const platform = getPlatformConfig(meta.source);
   const Icon = platform?.icon || MessageSquare;
@@ -191,7 +211,7 @@ export function ResultCard({ result, className, hideScore, onSelect, isSelected 
           </p>
         )}
         <p className="text-sm text-gray-600 line-clamp-3 font-mono bg-gray-50 p-2 rounded break-words whitespace-pre-wrap">
-          {content}
+          {highlightQuery ? highlightText(content, highlightQuery) : content}
         </p>
       </div>
 
