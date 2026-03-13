@@ -8,6 +8,7 @@ import { PresetButtons } from '../components/PresetButtons';
 import { useSearch } from '../lib/api';
 import { useKeyboardNavigation } from '../hooks/useKeyboardNavigation';
 import { useBookmarks } from '../hooks/useBookmarks';
+import { useSearchHistory } from '../hooks/useSearchHistory';
 import { Loader2, LogOut, ChevronDown, ChevronRight, Star } from 'lucide-react';
 
 interface SearchPageProps {
@@ -48,6 +49,9 @@ export function SearchPage({ onLogout }: SearchPageProps) {
   // Bookmarks
   const bookmarks = useBookmarks();
   const [showBookmarkedOnly, setShowBookmarkedOnly] = useState(false);
+
+  // Search history
+  const searchHistory = useSearchHistory();
 
   // State for collapsible secondary results
   const [showSecondary, setShowSecondary] = useState(false);
@@ -175,9 +179,13 @@ export function SearchPage({ onLogout }: SearchPageProps) {
             <div className="flex-1">
               <SearchBar
                 inputRef={searchInputRef}
-                onSearch={setQuery}
+                onSearch={(q) => { setQuery(q); if (q.trim()) searchHistory.add(q); }}
                 isLoading={isFetching && !isFetchingNextPage}
                 initialValue={initialQuery}
+                searchHistory={searchHistory.history}
+                onSelectHistory={(q) => { setQuery(q); searchHistory.add(q); }}
+                onRemoveHistory={searchHistory.remove}
+                onClearHistory={searchHistory.clear}
               />
             </div>
             <button
