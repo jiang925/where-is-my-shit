@@ -17,6 +17,49 @@ async function ingest(request: any, apiKey: string, data: Record<string, any>) {
   expect(response.status()).toBe(201);
 }
 
+test.describe('Bulk Export', () => {
+
+  test('export all button visible on browse page', async ({ page, apiKey, request }) => {
+    await ingest(request, apiKey, {
+      conversation_id: 'bulk-export-test',
+      platform: 'chatgpt',
+      content: 'Bulk export test content',
+      role: 'user',
+      timestamp: new Date().toISOString(),
+      title: 'Bulk Export Test',
+    });
+
+    await authenticate(page, apiKey, '/browse');
+    await page.waitForSelector('h1:has-text("Browse History")', { timeout: 10000 });
+
+    const exportButton = page.locator('button[aria-label="Export all conversations"]');
+    await expect(exportButton).toBeVisible();
+  });
+
+  test('export all button triggers zip download', async ({ page, apiKey, request }) => {
+    await ingest(request, apiKey, {
+      conversation_id: 'bulk-zip-test',
+      platform: 'chatgpt',
+      content: 'Content for zip export test',
+      role: 'user',
+      timestamp: new Date().toISOString(),
+      title: 'Zip Export Test',
+    });
+
+    await authenticate(page, apiKey, '/browse');
+    await page.waitForSelector('h1:has-text("Browse History")', { timeout: 10000 });
+    await page.waitForTimeout(1000);
+
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.locator('button[aria-label="Export all conversations"]').click(),
+    ]);
+
+    expect(download.suggestedFilename()).toContain('wims-export-');
+    expect(download.suggestedFilename()).toContain('.zip');
+  });
+});
+
 test.describe('Export Conversation', () => {
 
   test('export button appears in conversation panel', async ({ page, apiKey, request }) => {

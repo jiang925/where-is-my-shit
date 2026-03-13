@@ -265,3 +265,19 @@ export const useStats = (granularity: StatsGranularity = 'day', platforms: strin
     staleTime: 1000 * 60 * 5, // 5 min cache
   });
 };
+
+// === Export API ===
+
+export const exportAll = async (platforms?: string[]): Promise<void> => {
+  const response = await api.post('/export', {
+    platforms: platforms && platforms.length > 0 ? platforms : undefined,
+  }, { responseType: 'blob' });
+
+  const blob = new Blob([response.data], { type: 'application/zip' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `wims-export-${new Date().toISOString().slice(0, 10)}.zip`;
+  a.click();
+  URL.revokeObjectURL(url);
+};

@@ -5,9 +5,9 @@ import { PresetButtons } from '../components/PresetButtons';
 import { DateRangeFilter } from '../components/DateRangeFilter';
 import { TimelineSection } from '../components/TimelineSection';
 import { ConversationPanel } from '../components/ConversationPanel';
-import { useBrowse, type DateRangeOption } from '../lib/api';
+import { useBrowse, exportAll, type DateRangeOption } from '../lib/api';
 import { flattenAndGroup, TIMELINE_SECTIONS, totalGroupedItems, sectionsForDateRange } from '../lib/dateGroups';
-import { Loader2, LogOut } from 'lucide-react';
+import { Loader2, LogOut, Download } from 'lucide-react';
 
 interface BrowsePageProps {
   onLogout: () => void;
@@ -108,6 +108,17 @@ export function BrowsePage({ onLogout }: BrowsePageProps) {
     if (node) observer.current.observe(node);
   }, [isFetchingNextPage, hasNextPage, fetchNextPage]);
 
+  // Export state
+  const [isExporting, setIsExporting] = useState(false);
+  const handleExportAll = async () => {
+    setIsExporting(true);
+    try {
+      await exportAll(selectedPlatforms);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   // Empty state detection
   const showEmptyState = status === 'success' && totalGroupedItems(groupedData) === 0;
   const isPanelOpen = !!selectedConversation;
@@ -121,13 +132,28 @@ export function BrowsePage({ onLogout }: BrowsePageProps) {
             <h1 className="text-xl font-semibold text-gray-800 flex-1">
               Browse History
             </h1>
-            <button
-              onClick={onLogout}
-              className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-              title="Disconnect / Change API Key"
-            >
-              <LogOut className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handleExportAll}
+                disabled={isExporting}
+                className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                title="Export all conversations as markdown zip"
+                aria-label="Export all conversations"
+              >
+                {isExporting ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Download className="w-5 h-5" />
+                )}
+              </button>
+              <button
+                onClick={onLogout}
+                className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                title="Disconnect / Change API Key"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           {/* Date Range Filter */}
