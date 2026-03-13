@@ -124,19 +124,19 @@ export function BrowsePage({ onLogout }: BrowsePageProps) {
   const isPanelOpen = !!selectedConversation;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center font-sans text-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col items-center font-sans text-gray-900 dark:text-gray-100">
       {/* Sticky Header */}
-      <div className="sticky top-0 z-10 w-full bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm pt-4 pb-4 px-4">
+      <div className="sticky top-0 z-10 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 shadow-sm pt-4 pb-4 px-4">
         <div className="max-w-3xl mx-auto w-full">
           <div className="flex items-start gap-4">
-            <h1 className="text-xl font-semibold text-gray-800 flex-1">
+            <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100 flex-1">
               Browse History
             </h1>
             <div className="flex items-center gap-1">
               <button
                 onClick={handleExportAll}
                 disabled={isExporting}
-                className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
                 title="Export all conversations as markdown zip"
                 aria-label="Export all conversations"
               >
@@ -148,7 +148,7 @@ export function BrowsePage({ onLogout }: BrowsePageProps) {
               </button>
               <button
                 onClick={onLogout}
-                className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors cursor-pointer"
                 title="Disconnect / Change API Key"
               >
                 <LogOut className="w-5 h-5" />
@@ -204,15 +204,15 @@ export function BrowsePage({ onLogout }: BrowsePageProps) {
 
           {/* Loading State */}
           {status === 'pending' && (
-            <div className="flex-1 flex flex-col items-center justify-center text-gray-400 mt-20">
-              <Loader2 className="h-8 w-8 animate-spin text-gray-300 mb-4" />
+            <div className="flex-1 flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 mt-20">
+              <Loader2 className="h-8 w-8 animate-spin text-gray-300 dark:text-gray-600 mb-4" />
               <p className="text-lg">Loading conversations...</p>
             </div>
           )}
 
           {/* Error State */}
           {status === 'error' && (
-            <div className="text-center p-8 text-red-500 bg-red-50 rounded-lg border border-red-100 mt-4">
+            <div className="text-center p-8 text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-100 dark:border-red-800 mt-4">
               <p className="font-medium">Something went wrong</p>
               <p className="text-sm mt-1">{(error as Error).message}</p>
             </div>
@@ -220,12 +220,12 @@ export function BrowsePage({ onLogout }: BrowsePageProps) {
 
           {/* Empty State */}
           {showEmptyState && (
-            <div className="flex-1 flex flex-col items-center justify-center text-gray-500 mt-20">
-              <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                <Loader2 className="h-8 w-8 text-gray-300" />
+            <div className="flex-1 flex flex-col items-center justify-center text-gray-500 dark:text-gray-400 mt-20">
+              <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
+                <Loader2 className="h-8 w-8 text-gray-300 dark:text-gray-600" />
               </div>
               <p className="text-lg font-medium">No conversations yet</p>
-              <p className="text-sm mt-2 max-w-md text-center text-gray-400">
+              <p className="text-sm mt-2 max-w-md text-center text-gray-400 dark:text-gray-500">
                 Install the extension or set up a watcher to start capturing your AI conversations.
               </p>
             </div>
@@ -268,7 +268,7 @@ export function BrowsePage({ onLogout }: BrowsePageProps) {
         {isPanelOpen && selectedConversation && (
           <>
             {/* Desktop panel */}
-            <div className="hidden lg:flex w-[480px] flex-shrink-0 border-l border-gray-200 h-[calc(100vh-4rem)] sticky top-16">
+            <div className="hidden lg:flex w-[480px] flex-shrink-0 border-l border-gray-200 dark:border-gray-700 h-[calc(100vh-4rem)] sticky top-16">
               <div className="w-full transition-all duration-300">
                 <ConversationPanel
                   conversationId={selectedConversation}
@@ -283,7 +283,7 @@ export function BrowsePage({ onLogout }: BrowsePageProps) {
                 className="absolute inset-0 bg-black/50"
                 onClick={handleClosePanel}
               />
-              <div className="absolute right-0 top-0 bottom-0 w-full max-w-[480px] bg-white shadow-xl transition-all duration-300">
+              <div className="absolute right-0 top-0 bottom-0 w-full max-w-[480px] bg-white dark:bg-gray-800 shadow-xl transition-all duration-300">
                 <ConversationPanel
                   conversationId={selectedConversation}
                   onClose={handleClosePanel}

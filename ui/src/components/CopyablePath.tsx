@@ -56,7 +56,7 @@ export function CopyablePath({ path }: CopyablePathProps) {
   return (
     <div className="flex items-center gap-2">
       <code
-        className="text-xs font-mono text-gray-600 bg-gray-50 px-2 py-1 rounded truncate"
+        className="text-xs font-mono text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 px-2 py-1 rounded truncate"
         title={path}
       >
         {truncateMiddle(path)}

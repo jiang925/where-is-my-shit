@@ -57,7 +57,7 @@ export function PresetButtons({
 
   return (
     <div className={cn("flex flex-wrap gap-2", className)}>
-      <span className="text-xs text-gray-500 font-medium self-center mr-1">
+      <span className="text-xs text-gray-500 dark:text-gray-400 font-medium self-center mr-1">
         Quick filters:
       </span>
       {PRESETS.map((preset) => {
@@ -72,7 +72,7 @@ export function PresetButtons({
               "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all border cursor-pointer",
               isActive
                 ? "bg-blue-100 text-blue-700 border-blue-300"
-                : "bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-100"
+                : "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
             )}
             aria-label={`Apply ${preset.name} preset`}
             aria-pressed={isActive}

@@ -31,8 +31,8 @@ export function DateRangeFilter({ className }: DateRangeFilterProps) {
   return (
     <div className={cn("flex flex-col gap-2", className)}>
       <div className="flex items-center gap-2">
-        <Calendar className="h-4 w-4 text-gray-400" />
-        <span className="text-sm font-medium text-gray-700">Date Range</span>
+        <Calendar className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Date Range</span>
       </div>
       <div className="flex flex-wrap gap-2">
         {DATE_RANGE_OPTIONS.map((option) => {
@@ -45,7 +45,7 @@ export function DateRangeFilter({ className }: DateRangeFilterProps) {
                 "inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium transition-all border cursor-pointer",
                 isActive
                   ? "bg-blue-100 text-blue-700 border-blue-300"
-                  : "bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                  : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
               )}
               aria-label={`Filter by ${option.label}`}
               aria-pressed={isActive}

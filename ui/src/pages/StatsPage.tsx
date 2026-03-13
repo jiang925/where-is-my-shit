@@ -83,17 +83,17 @@ export function StatsPage({ onLogout }: StatsPageProps) {
     : [];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center font-sans text-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col items-center font-sans text-gray-900 dark:text-gray-100">
       {/* Sticky Header */}
-      <div className="sticky top-0 z-10 w-full bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm pt-4 pb-4 px-4">
+      <div className="sticky top-0 z-10 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 shadow-sm pt-4 pb-4 px-4">
         <div className="max-w-4xl mx-auto w-full">
           <div className="flex items-center gap-4">
-            <h1 className="text-xl font-semibold text-gray-800 flex-1">
+            <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100 flex-1">
               Statistics
             </h1>
 
             {/* Granularity Toggle */}
-            <div className="flex items-center gap-1 bg-gray-100 rounded-full p-1">
+            <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 rounded-full p-1">
               {GRANULARITY_OPTIONS.map((option) => (
                 <button
                   key={option.value}
@@ -102,7 +102,7 @@ export function StatsPage({ onLogout }: StatsPageProps) {
                     "px-3 py-1 rounded-full text-sm font-medium transition-all cursor-pointer",
                     granularity === option.value
                       ? "bg-blue-600 text-white shadow-sm"
-                      : "text-gray-600 hover:text-gray-800"
+                      : "text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white"
                   )}
                 >
                   {option.label}
@@ -112,7 +112,7 @@ export function StatsPage({ onLogout }: StatsPageProps) {
 
             <button
               onClick={onLogout}
-              className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+              className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors cursor-pointer"
               title="Disconnect / Change API Key"
             >
               <LogOut className="w-5 h-5" />
@@ -125,15 +125,15 @@ export function StatsPage({ onLogout }: StatsPageProps) {
       <main className="w-full max-w-4xl px-4 py-6 flex-1 flex flex-col">
         {/* Loading State */}
         {status === 'pending' && (
-          <div className="flex-1 flex flex-col items-center justify-center text-gray-400 mt-20">
-            <Loader2 className="h-8 w-8 animate-spin text-gray-300 mb-4" />
+          <div className="flex-1 flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 mt-20">
+            <Loader2 className="h-8 w-8 animate-spin text-gray-300 dark:text-gray-600 mb-4" />
             <p className="text-lg">Loading statistics...</p>
           </div>
         )}
 
         {/* Error State */}
         {status === 'error' && (
-          <div className="text-center p-8 text-red-500 bg-red-50 rounded-lg border border-red-100 mt-4">
+          <div className="text-center p-8 text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-100 dark:border-red-800 mt-4">
             <p className="font-medium">Something went wrong</p>
             <p className="text-sm mt-1">{(error as Error).message}</p>
           </div>
@@ -144,27 +144,27 @@ export function StatsPage({ onLogout }: StatsPageProps) {
           <div className="space-y-6">
             {/* Summary Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                  <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
                     <MessagesSquare className="w-5 h-5 text-blue-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Total Conversations</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Total Conversations</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {data.total_conversations.toLocaleString()}
                     </p>
                   </div>
                 </div>
               </div>
-              <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+                  <div className="w-10 h-10 bg-green-50 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
                     <MessageSquare className="w-5 h-5 text-green-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Total Messages</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Total Messages</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                       {data.total_messages.toLocaleString()}
                     </p>
                   </div>
@@ -174,8 +174,8 @@ export function StatsPage({ onLogout }: StatsPageProps) {
 
             {/* Platform Breakdown */}
             {platformData.length > 0 && (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-                <h2 className="text-lg font-semibold text-gray-800 mb-4">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+                <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
                   Conversations by Platform
                 </h2>
                 <ResponsiveContainer width="100%" height={300}>
@@ -216,8 +216,8 @@ export function StatsPage({ onLogout }: StatsPageProps) {
 
             {/* Activity Over Time */}
             {activityData.length > 0 && (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-                <h2 className="text-lg font-semibold text-gray-800 mb-4">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+                <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
                   Activity Over Time
                 </h2>
                 <ResponsiveContainer width="100%" height={300}>

@@ -120,15 +120,15 @@ function MessageBubble({ item, searchQuery, isMatch }: { item: ThreadItem; searc
       className={cn(
         'rounded-lg p-4 border-l-4 transition-opacity',
         isUser
-          ? 'bg-blue-50 border-l-blue-300'
-          : 'bg-white border-l-gray-300',
+          ? 'bg-blue-50 dark:bg-blue-900/30 border-l-blue-300'
+          : 'bg-white dark:bg-gray-800 border-l-gray-300 dark:border-l-gray-600',
         dimmed && 'opacity-30'
       )}
     >
       <div className="flex items-center justify-between mb-2">
         <span className={cn(
           'text-xs font-semibold uppercase tracking-wide',
-          isUser ? 'text-blue-600' : 'text-gray-500'
+          isUser ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'
         )}>
           {isUser ? 'You' : 'Assistant'}
         </span>
@@ -136,7 +136,7 @@ function MessageBubble({ item, searchQuery, isMatch }: { item: ThreadItem; searc
           {formatTimestamp(item.timestamp)}
         </time>
       </div>
-      <div className="text-sm text-gray-800 whitespace-pre-wrap break-words font-mono">
+      <div className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words font-mono">
         {searchQuery && isMatch ? highlightText(item.content, searchQuery) : item.content}
       </div>
     </div>
@@ -251,9 +251,9 @@ export function ConversationPanel({ conversationId, onClose, onDeleted }: Conver
   }, [sortedItems, threadSearch]);
 
   return (
-    <div className="relative flex flex-col h-full bg-gray-50">
+    <div className="relative flex flex-col h-full bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="flex-shrink-0 border-b border-gray-200 bg-white p-4">
+      <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             {/* Platform badge */}
@@ -268,7 +268,7 @@ export function ConversationPanel({ conversationId, onClose, onDeleted }: Conver
                 <span>{platform.label}</span>
               </div>
             )}
-            <h2 className="text-sm font-semibold text-gray-900 truncate" title={title}>
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate" title={title}>
               {title}
             </h2>
             {url && (
@@ -299,7 +299,7 @@ export function ConversationPanel({ conversationId, onClose, onDeleted }: Conver
               <>
                 <button
                   onClick={handleExport}
-                  className="flex-shrink-0 p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                  className="flex-shrink-0 p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors cursor-pointer"
                   aria-label="Export as markdown"
                   title="Export as markdown"
                 >
@@ -307,7 +307,7 @@ export function ConversationPanel({ conversationId, onClose, onDeleted }: Conver
                 </button>
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="flex-shrink-0 p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                  className="flex-shrink-0 p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors cursor-pointer"
                   aria-label="Delete conversation"
                   title="Delete conversation"
                 >
@@ -317,7 +317,7 @@ export function ConversationPanel({ conversationId, onClose, onDeleted }: Conver
             )}
             <button
               onClick={onClose}
-              className="flex-shrink-0 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+              className="flex-shrink-0 p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors cursor-pointer"
               aria-label="Close panel"
             >
               <X className="h-5 w-5" />
@@ -328,7 +328,7 @@ export function ConversationPanel({ conversationId, onClose, onDeleted }: Conver
 
       {/* Thread Search */}
       {sortedItems.length > 1 && (
-        <div className="flex-shrink-0 border-b border-gray-200 bg-white px-4 py-2">
+        <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2">
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
             <input
@@ -336,7 +336,7 @@ export function ConversationPanel({ conversationId, onClose, onDeleted }: Conver
               placeholder="Search in conversation..."
               value={threadSearch}
               onChange={(e) => setThreadSearch(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-300"
+              className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-200 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-300"
               aria-label="Search in conversation"
             />
             {threadSearch && (
@@ -358,7 +358,7 @@ export function ConversationPanel({ conversationId, onClose, onDeleted }: Conver
         )}
 
         {isError && (
-          <div className="text-center p-6 text-red-500 bg-red-50 rounded-lg border border-red-100">
+          <div className="text-center p-6 text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-100 dark:border-red-800">
             <p className="font-medium text-sm">Failed to load conversation</p>
             <p className="text-xs mt-1">{(error as Error).message}</p>
           </div>
@@ -387,16 +387,16 @@ export function ConversationPanel({ conversationId, onClose, onDeleted }: Conver
       {/* Delete Confirmation Dialog */}
       {showDeleteConfirm && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-lg shadow-xl p-6 mx-4 max-w-sm w-full">
-            <h3 className="text-sm font-semibold text-gray-900 mb-2">Delete conversation?</h3>
-            <p className="text-xs text-gray-500 mb-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 mx-4 max-w-sm w-full">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Delete conversation?</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
               This will permanently delete all {sortedItems.length} message{sortedItems.length !== 1 ? 's' : ''} in this conversation. This action cannot be undone.
             </p>
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
                 disabled={isDeleting}
-                className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors cursor-pointer"
+                className="px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors cursor-pointer"
               >
                 Cancel
               </button>

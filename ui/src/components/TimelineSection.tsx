@@ -37,15 +37,15 @@ export function TimelineSection({ title, items, isEmpty, onSelect, selectedConve
     <section className="mb-6">
       {/* Inline section header (Claude's discretion: inline chosen over sticky
           because sticky headers stack on top of the page header creating visual clutter) */}
-      <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">
+      <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3 flex items-center gap-2">
         <span>{title}</span>
-        <span className="text-xs font-normal text-gray-400">
+        <span className="text-xs font-normal text-gray-400 dark:text-gray-500">
           ({items.length})
         </span>
       </h2>
 
       {isEmpty ? (
-        <p className="text-sm text-gray-400 italic py-2 pl-1">
+        <p className="text-sm text-gray-400 dark:text-gray-500 italic py-2 pl-1">
           No conversations
         </p>
       ) : (

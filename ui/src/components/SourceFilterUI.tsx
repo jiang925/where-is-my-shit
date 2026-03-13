@@ -34,9 +34,9 @@ export function SourceFilterUI({
         <div className="flex items-center gap-2">
           <Filter className={cn(
             "h-4 w-4 transition-colors",
-            hasActiveFilter ? "text-blue-600" : "text-gray-400"
+            hasActiveFilter ? "text-blue-600" : "text-gray-400 dark:text-gray-500"
           )} />
-          <span className="text-sm font-medium text-gray-700">
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
             Filter by Source
           </span>
           {hasActiveFilter && (
@@ -49,7 +49,7 @@ export function SourceFilterUI({
         {hasActiveFilter && (
           <button
             onClick={onClear}
-            className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-700 hover:text-red-600 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-red-600 transition-colors cursor-pointer"
           >
             <X className="h-3 w-3" />
             Clear
@@ -67,7 +67,7 @@ export function SourceFilterUI({
               onClick={() => onPlatformToggle(platform.id)}
               className={cn(
                 "inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium transition-all border cursor-pointer",
-                isSelected ? platform.color : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
+                isSelected ? platform.color : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-gray-300"
               )}
               aria-label={`Toggle ${platform.label} filter`}
               aria-pressed={isSelected}

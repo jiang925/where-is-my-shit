@@ -138,13 +138,13 @@ export function ResultCard({ result, className, hideScore, onSelect, isSelected,
     <div
       ref={cardRef}
       className={cn(
-        "group flex flex-col bg-white border rounded-lg p-4 shadow-sm transition-all",
+        "group flex flex-col bg-white dark:bg-gray-800 border rounded-lg p-4 shadow-sm transition-all",
         onSelect ? "cursor-pointer hover:shadow-md" : "hover:shadow-md",
         isSelected
-          ? "border-blue-400 ring-2 ring-blue-200 border-l-4 border-l-blue-500"
+          ? "border-blue-400 ring-2 ring-blue-200 dark:ring-blue-800 border-l-4 border-l-blue-500"
           : isFocused
-            ? "border-blue-300 ring-2 ring-blue-100 shadow-md"
-            : "border-gray-100 hover:border-blue-200",
+            ? "border-blue-300 ring-2 ring-blue-100 dark:ring-blue-800 shadow-md"
+            : "border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-700",
         className
       )}
       onClick={handleClick}
@@ -201,21 +201,21 @@ export function ResultCard({ result, className, hideScore, onSelect, isSelected,
 
       <div className="mb-3">
         <div className="flex items-center gap-2 mb-1">
-          <h3 className="font-medium text-gray-900 truncate" title={title}>
+          <h3 className="font-medium text-gray-900 dark:text-gray-100 truncate" title={title}>
             {title}
           </h3>
           {messageCount > 1 && (
-            <span className="flex-shrink-0 text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+            <span className="flex-shrink-0 text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 dark:text-gray-400 px-1.5 py-0.5 rounded">
               {messageCount} msgs
             </span>
           )}
         </div>
         {firstUserMessage && (
-          <p className="text-sm text-blue-700 bg-blue-50 p-2 rounded mb-1 line-clamp-2 break-words">
+          <p className="text-sm text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 p-2 rounded mb-1 line-clamp-2 break-words">
             {firstUserMessage}
           </p>
         )}
-        <p className="text-sm text-gray-600 line-clamp-3 font-mono bg-gray-50 p-2 rounded break-words whitespace-pre-wrap">
+        <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3 font-mono bg-gray-50 dark:bg-gray-700/50 p-2 rounded break-words whitespace-pre-wrap">
           {highlightQuery ? highlightText(content, highlightQuery) : content}
         </p>
       </div>

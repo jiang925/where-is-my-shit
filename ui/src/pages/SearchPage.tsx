@@ -156,9 +156,9 @@ export function SearchPage({ onLogout }: SearchPageProps) {
   const isPanelOpen = !!selectedConversation;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center font-sans text-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col items-center font-sans text-gray-900 dark:text-gray-100">
       {/* Sticky Header */}
-      <div className="sticky top-0 z-10 w-full bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm pt-4 pb-4 px-4">
+      <div className="sticky top-0 z-10 w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 shadow-sm pt-4 pb-4 px-4">
         <div className="max-w-3xl mx-auto w-full">
           <div className="flex items-start gap-4">
             <div className="flex-1">
@@ -171,7 +171,7 @@ export function SearchPage({ onLogout }: SearchPageProps) {
             </div>
             <button
               onClick={onLogout}
-              className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer mt-1"
+              className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors cursor-pointer mt-1"
               title="Disconnect / Change API Key"
             >
               <LogOut className="w-5 h-5" />
@@ -221,7 +221,7 @@ export function SearchPage({ onLogout }: SearchPageProps) {
 
           {/* Error State */}
           {status === 'error' && (
-            <div className="text-center p-8 text-red-500 bg-red-50 rounded-lg border border-red-100 mt-4">
+            <div className="text-center p-8 text-red-500 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-100 dark:border-red-800 mt-4">
               <p className="font-medium">Something went wrong</p>
               <p className="text-sm mt-1">{(error as Error).message}</p>
             </div>
@@ -229,9 +229,9 @@ export function SearchPage({ onLogout }: SearchPageProps) {
 
           {/* Initial State */}
           {showInitialState && (
-            <div className="flex-1 flex flex-col items-center justify-center text-gray-400 mt-20">
-              <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                <Loader2 className="h-8 w-8 animate-spin-slow text-gray-300" />
+            <div className="flex-1 flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 mt-20">
+              <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
+                <Loader2 className="h-8 w-8 animate-spin-slow text-gray-300 dark:text-gray-600" />
               </div>
               <p className="text-lg">Start typing to search your history...</p>
               <p className="text-sm mt-2">Use the filters to narrow by source. Press <kbd className="px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded text-xs font-mono">/</kbd> to focus search, <kbd className="px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded text-xs font-mono">&uarr;&darr;</kbd> to navigate results.</p>
@@ -285,10 +285,10 @@ export function SearchPage({ onLogout }: SearchPageProps) {
 
           {/* Collapsible Secondary Results Section */}
           {secondaryResults.length > 0 && (
-            <div className="mt-6 border-t border-gray-200 pt-4">
+            <div className="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4">
               <button
                 onClick={() => setShowSecondary(!showSecondary)}
-                className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
+                className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors cursor-pointer"
                 aria-expanded={showSecondary}
                 aria-controls="secondary-results"
               >
@@ -337,7 +337,7 @@ export function SearchPage({ onLogout }: SearchPageProps) {
         {isPanelOpen && selectedConversation && (
           <>
             {/* Desktop panel */}
-            <div className="hidden lg:flex w-[480px] flex-shrink-0 border-l border-gray-200 h-[calc(100vh-4rem)] sticky top-16">
+            <div className="hidden lg:flex w-[480px] flex-shrink-0 border-l border-gray-200 dark:border-gray-700 h-[calc(100vh-4rem)] sticky top-16">
               <div className="w-full transition-all duration-300">
                 <ConversationPanel
                   conversationId={selectedConversation}

@@ -4,8 +4,9 @@ import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { SearchPage } from './pages/SearchPage';
 import { BrowsePage } from './pages/BrowsePage';
 import { StatsPage } from './pages/StatsPage';
-import { Search, Loader2, BookOpen, BarChart3 } from 'lucide-react';
+import { Search, Loader2, BookOpen, BarChart3, Sun, Moon, Monitor } from 'lucide-react';
 import { cn } from './lib/utils';
+import { useTheme } from './hooks/useTheme';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -29,20 +30,20 @@ function ApiKeyPrompt({ onSave }: { onSave: () => void }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4 font-sans">
-      <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full border border-gray-100">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center p-4 font-sans">
+      <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg max-w-md w-full border border-gray-100 dark:border-gray-700">
         <div className="flex flex-col items-center mb-6">
           <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center mb-4">
             <Loader2 className="w-6 h-6 text-blue-600" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">Authentication Required</h2>
-          <p className="text-gray-500 text-center mt-2">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Authentication Required</h2>
+          <p className="text-gray-500 dark:text-gray-400 text-center mt-2">
             Please enter your WIMS API Key to continue. You can find this in your server logs or <code>~/.wims/server.json</code>.
           </p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="apiKey" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="apiKey" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               API Key
             </label>
             <input
@@ -50,7 +51,7 @@ function ApiKeyPrompt({ onSave }: { onSave: () => void }) {
               id="apiKey"
               value={key}
               onChange={(e) => setKey(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               placeholder="sk-wims-..."
               autoFocus
             />
@@ -72,8 +73,12 @@ function ApiKeyPrompt({ onSave }: { onSave: () => void }) {
 function NavHeader() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { theme, toggleTheme } = useTheme();
 
   const currentPath = location.pathname;
+
+  const ThemeIcon = theme === 'dark' ? Moon : theme === 'light' ? Sun : Monitor;
+  const themeLabel = theme === 'dark' ? 'Dark' : theme === 'light' ? 'Light' : 'System';
 
   return (
     <nav className="flex items-center justify-center gap-2 mb-6">
@@ -83,7 +88,7 @@ function NavHeader() {
           "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer",
           currentPath === '/'
             ? "bg-blue-600 text-white shadow-md"
-            : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
+            : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600"
         )}
       >
         <Search className="h-4 w-4" />
@@ -95,7 +100,7 @@ function NavHeader() {
           "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer",
           currentPath === '/browse'
             ? "bg-blue-600 text-white shadow-md"
-            : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
+            : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600"
         )}
       >
         <BookOpen className="h-4 w-4" />
@@ -107,11 +112,19 @@ function NavHeader() {
           "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer",
           currentPath === '/stats'
             ? "bg-blue-600 text-white shadow-md"
-            : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200"
+            : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600"
         )}
       >
         <BarChart3 className="h-4 w-4" />
         Stats
+      </button>
+      <button
+        onClick={toggleTheme}
+        className="flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium transition-all cursor-pointer bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600"
+        aria-label="Toggle theme"
+        title={`Theme: ${themeLabel}`}
+      >
+        <ThemeIcon className="h-4 w-4" />
       </button>
     </nav>
   );
@@ -125,7 +138,7 @@ function AuthenticatedApp() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="pt-4">
         <NavHeader />
       </div>

@@ -187,11 +187,18 @@ Brainstormed 2026-03-12. Two practical quality-of-life features:
 
 **Status**: Complete. 133 backend + 31 vitest + 61 e2e tests pass.
 
+### v2.4 — Dark Mode (complete)
+
+Brainstormed 2026-03-12. Every user benefits from dark mode — it's a polished touch for the open-source repo and reduces eye strain for heavy users.
+
+**Phase 39: Dark Mode Support** — Added `darkMode: 'class'` to Tailwind config. Created `useTheme` hook with localStorage persistence and system preference detection (cycles system → light → dark). Added theme toggle button to NavHeader (Sun/Moon/Monitor icons). Added `dark:` variants to all 12 components: App, SearchPage, BrowsePage, StatsPage, ConversationPanel, ResultCard, SearchBar, SourceFilterUI, PresetButtons, DateRangeFilter, CopyablePath, TimelineSection.
+
+**Status**: Complete. 133 backend + 31 vitest + 61 e2e tests pass.
+
 ### Backlog
 
 - [ ] Multi-device sync
 - [ ] Conversation tagging/bookmarks
-- [ ] Dark mode
 
 ## 6. Lessons Learned
 
@@ -286,3 +293,16 @@ Reflections from each milestone. Mistakes to avoid, patterns that work.
 - `subprocess.Popen` with list args (not shell=True) prevents command injection for the terminal opener
 - `Path.expanduser().resolve()` + existence check validates paths safely
 - For file paths that might be files instead of directories, fall back to `path.parent` for terminal opening
+
+### v2.4 Dark Mode (2026-03-12)
+
+**What went well:**
+- All 12 components updated with `dark:` variants in one pass — no test regressions
+- `useTheme` hook is clean: 3 states (system/light/dark), localStorage persistence, system preference listener
+- Class-based dark mode (`darkMode: 'class'`) is the right choice — component-level control, no flash of wrong theme
+
+**Patterns that work:**
+- Consistent dark palette: `dark:bg-gray-900` (page bg), `dark:bg-gray-800` (cards/panels), `dark:bg-gray-700` (inputs/hover), `dark:border-gray-700` (dividers)
+- For colored accent backgrounds, use `/30` opacity variant: `dark:bg-blue-900/30`, `dark:bg-red-900/30`
+- Recharts hardcoded colors (hex) work fine in dark mode since they're on white card backgrounds that become `dark:bg-gray-800` — no need to change chart colors
+- Theme toggle cycling (system → light → dark) is better than a binary toggle — respects OS preference by default
