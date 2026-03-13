@@ -103,6 +103,8 @@ export function ResultCard({ result, className, hideScore, onSelect, isSelected 
   const Icon = platform?.icon || MessageSquare;
 
   const title = meta.title || meta.url || 'Untitled Conversation';
+  const messageCount = (meta.message_count as number) || 0;
+  const firstUserMessage = (meta.first_user_message as string) || '';
 
   const handleClick = () => {
     if (onSelect && meta.conversation_id) {
@@ -173,10 +175,22 @@ export function ResultCard({ result, className, hideScore, onSelect, isSelected 
       </div>
 
       <div className="mb-3">
-        <h3 className="font-medium text-gray-900 truncate mb-1" title={title}>
-          {title}
-        </h3>
-        <p className="text-sm text-gray-600 line-clamp-6 font-mono bg-gray-50 p-2 rounded break-words whitespace-pre-wrap">
+        <div className="flex items-center gap-2 mb-1">
+          <h3 className="font-medium text-gray-900 truncate" title={title}>
+            {title}
+          </h3>
+          {messageCount > 1 && (
+            <span className="flex-shrink-0 text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+              {messageCount} msgs
+            </span>
+          )}
+        </div>
+        {firstUserMessage && (
+          <p className="text-sm text-blue-700 bg-blue-50 p-2 rounded mb-1 line-clamp-2 break-words">
+            {firstUserMessage}
+          </p>
+        )}
+        <p className="text-sm text-gray-600 line-clamp-3 font-mono bg-gray-50 p-2 rounded break-words whitespace-pre-wrap">
           {content}
         </p>
       </div>

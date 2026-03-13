@@ -112,7 +112,59 @@ async def search_documents(request: SearchRequest):
     # 4. Run unified reranker
     ranked = reranker.rerank(vector_results, text_results, request.query)
 
-    # 5. Build two-tier response
+    # 5. Gather conversation context for search results
+    #    Look up message counts and first user messages for each conversation
+    conv_ids = set()
+    for r in ranked.primary + ranked.secondary:
+        cid = r.get("conversation_id", "")
+        if cid:
+            conv_ids.add(cid)
+
+    conv_context: dict[str, dict] = {}  # conv_id -> {count, first_user_message}
+    if conv_ids:
+        try:
+            def fetch_conv_context():
+                # Query all messages for these conversations
+                cid_list = "', '".join(conv_ids)
+                where = f"conversation_id IN ('{cid_list}')"
+                dummy_vector = [0.0] * len(query_vector)
+                rows = (
+                    table.search(dummy_vector, query_type="vector")
+                    .where(where)
+                    .select(["conversation_id", "role", "content", "timestamp"])
+                    .limit(10000)
+                    .to_list()
+                )
+                return rows
+
+            ctx_rows = await run_in_threadpool(fetch_conv_context)
+
+            # Group by conversation
+            from collections import defaultdict
+            by_conv: dict[str, list] = defaultdict(list)
+            for row in ctx_rows:
+                by_conv[row.get("conversation_id", "")].append(row)
+
+            for cid, msgs in by_conv.items():
+                count = len(msgs)
+                # Find first user message by timestamp
+                user_msgs = [m for m in msgs if m.get("role") == "user"]
+                first_user = ""
+                if user_msgs:
+                    user_msgs.sort(
+                        key=lambda m: str(m.get("timestamp", ""))
+                    )
+                    first_user = user_msgs[0].get("content", "")
+                    if len(first_user) > 300:
+                        first_user = first_user[:300] + "..."
+                conv_context[cid] = {
+                    "count": count,
+                    "first_user_message": first_user,
+                }
+        except Exception:
+            pass  # Graceful degradation: context is optional
+
+    # 6. Build two-tier response
     def build_search_result(result_dict: dict) -> SearchResult:
         """Convert reranker result dict to SearchResult."""
         from datetime import datetime
@@ -125,13 +177,18 @@ async def search_documents(request: SearchRequest):
             timestamp_value = datetime.fromisoformat(timestamp_value.replace("Z", "+00:00"))
         created_at = int(timestamp_value.timestamp()) if timestamp_value else 0
 
+        cid = result_dict.get("conversation_id", "")
+        ctx = conv_context.get(cid, {})
+
         meta = SearchResultMeta(
             source=result_dict.get("platform", ""),
             adapter=result_dict.get("platform", ""),
             created_at=created_at,
             title=result_dict.get("title", ""),
             url=result_dict.get("url", ""),
-            conversation_id=result_dict.get("conversation_id", ""),
+            conversation_id=cid,
+            message_count=ctx.get("count", 0),
+            first_user_message=ctx.get("first_user_message", ""),
         )
 
         return SearchResult(

@@ -34,6 +34,12 @@ Brainstorm --> Define Milestone --> Plan Phases --> Execute --> Test --> Ship
 
 Between milestones, brainstorm the next set of features before writing any code. No milestone should start without a brainstorm session.
 
+### Rules of Thumb
+
+1. **Always document the work.** Record decisions, changes, and rationale in `.planning/`, `PROJECT.md`, or other files — but always make them discoverable from `PROJECT.md`.
+2. **Reflect after each implementation round.** After completing a phase or milestone, write down what went well, what was missed, mistakes to avoid next time, and patterns that worked. Add these to the Lessons section below.
+3. **Commit after each phase, don't push.** Each phase should produce a commit. Push only when the user explicitly asks, or when shipping a milestone.
+
 ## 3. Testing
 
 **Rule: Always test in UI.** Automated tests catch regressions, but visual confirmation in the browser is required for any UI change.
@@ -140,9 +146,41 @@ These are areas identified from README goals and real usage. Each needs a brains
 - [ ] **Better deep links** — For CLI tools (Claude Code, Cursor), opening the original session is difficult. Explore launching terminal to the right directory.
 - [ ] **Conversation grouping** — Group related messages into logical conversations (currently each message is a separate result).
 
-### Next action
+### v1.9 — Result Context & Readability (in progress)
 
-**Brainstorm the next milestone.** Focus on the highest-impact UX improvements:
-1. Better result previews (show topic, not truncated tail)
-2. Conversation context in search/browse results
-3. Frontend test coverage as a foundation for rapid iteration
+Brainstormed 2026-03-12. Core problem: each result card shows one raw message (often a generic AI closing). Users can't tell conversations apart.
+
+**Phase 29: Conversation-level browse** — Group browse results by conversation_id. Show one entry per conversation with message_count and first_user_message. Eliminates duplicates, gives instant context.
+
+**Phase 30: Richer result cards** — Update ResultCard to show the user's question as subtitle, role indicator, message count badge. Smarter content preview.
+
+**Phase 31: Search result context** — Add first_user_message to search results. Highlight matching terms in content.
+
+### Backlog (brainstorm when v1.9 ships)
+
+- [ ] Frontend test coverage (vitest component tests)
+- [ ] Full-text search improvements (highlight matching terms)
+- [ ] Keyboard navigation
+- [ ] Export/import conversations
+- [ ] Better deep links for CLI tools
+- [ ] Conversation grouping in search
+
+## 6. Lessons Learned
+
+Reflections from each milestone. Mistakes to avoid, patterns that work.
+
+### v1.8 UI Polish (2026-03-08)
+
+**What went well:**
+- Phase 27 (thread panel) and Phase 28 (stats dashboard) shipped cleanly in one session
+- Comprehensive backend tests caught issues early (16 new tests)
+
+**Mistakes to avoid:**
+- `exploratory.spec.ts` hardcodes a live server URL — caused 30+ minutes of CI timeout. Always check that tests can run in CI before pushing. Exclude environment-specific tests from CI config.
+- Extension manifest had `"type": "module"` but webpack outputs IIFE — silent service worker failure. When using a bundler, don't declare `"type": "module"` unless the bundler outputs ES modules.
+- Extension manifest had `"version": "0.0.0-dev"` — Chrome rejects non-numeric versions. Always use valid Chrome version format (dot-separated integers).
+- `role="button"` on ResultCard divs broke Playwright selectors that matched by button name (strict mode found multiple matches). Use specific `aria-label` attributes for testable interactive elements.
+
+**Patterns that work:**
+- Visual UI testing with Playwright screenshots catches layout issues automated tests miss
+- Fixing e2e selectors with `aria-label` is more robust than relying on text content matching

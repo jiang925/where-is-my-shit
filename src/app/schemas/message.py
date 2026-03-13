@@ -66,6 +66,8 @@ class SearchResultMeta(BaseModel):
     title: str = ""
     url: str = ""
     conversation_id: str = ""
+    message_count: int = 0  # Total messages in this conversation
+    first_user_message: str = ""  # First user message for context
 
 
 class SearchResult(BaseModel):
@@ -107,16 +109,18 @@ class SearchResponse(BaseModel):
 
 
 class BrowseItem(BaseModel):
-    """Single item in browse results."""
+    """Single item in browse results — one per conversation."""
 
     id: str
     conversation_id: str
-    timestamp: int  # Unix timestamp
+    timestamp: int  # Unix timestamp (most recent message)
     platform: str
     title: str = ""
-    content: str
+    content: str  # Most recent message content
     url: str = ""
-    role: str = "user"  # user, assistant, system
+    role: str = "user"  # Role of the most recent message
+    message_count: int = 1  # Total messages in this conversation
+    first_user_message: str = ""  # First user message (shows what the conversation is about)
 
 
 class BrowseRequest(BaseModel):

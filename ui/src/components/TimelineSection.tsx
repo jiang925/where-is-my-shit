@@ -26,9 +26,9 @@ function browseItemToSearchResult(item: BrowseItem): SearchResult {
       title: item.title,
       url: item.url,
       conversation_id: item.conversation_id,
+      message_count: item.message_count,
+      first_user_message: item.first_user_message,
     },
-    // Claude's discretion: hide relevance score on browse cards,
-    // ResultCard already shows timeAgo which is more useful for timeline
   };
 }
 

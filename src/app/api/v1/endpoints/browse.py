@@ -83,7 +83,7 @@ async def browse_documents(request: BrowseRequest):
 
             # Select only needed columns (exclude vector to reduce memory)
             query_builder = query_builder.select(
-                ["id", "conversation_id", "timestamp", "platform", "title", "content", "url"]
+                ["id", "conversation_id", "timestamp", "platform", "title", "content", "url", "role"]
             )
 
             # Fetch a large limit to get all matching records
@@ -130,29 +130,82 @@ async def browse_documents(request: BrowseRequest):
 
         filtered_results.append(r)
 
-    # 6. Sort by timestamp DESC, id DESC
-    def sort_key(item):
-        timestamp_value = item.get("timestamp")
-        if isinstance(timestamp_value, str):
-            timestamp_iso = timestamp_value
+    # 6. Group messages by conversation_id
+    #    Pick the most recent message as representative, count total, find first user message
+    def to_timestamp(val):
+        if isinstance(val, str):
+            return datetime.fromisoformat(val.replace("Z", "+00:00"))
+        return val
+
+    conversations: dict[str, dict] = {}
+    for r in filtered_results:
+        conv_id = r.get("conversation_id", "")
+        ts = to_timestamp(r.get("timestamp"))
+
+        if conv_id not in conversations:
+            conversations[conv_id] = {
+                "latest": r,
+                "latest_ts": ts,
+                "count": 1,
+                "first_user_message": "",
+                "earliest_user_ts": None,
+                "all_messages": [r],
+            }
         else:
-            timestamp_iso = timestamp_value.isoformat()
-        return (timestamp_iso, item.get("id", ""))
+            conv = conversations[conv_id]
+            conv["count"] += 1
+            conv["all_messages"].append(r)
+            # Track the most recent message
+            if ts > conv["latest_ts"]:
+                conv["latest"] = r
+                conv["latest_ts"] = ts
 
-    filtered_results.sort(key=sort_key, reverse=True)
+    # Find first user message per conversation (by earliest timestamp with role=user)
+    for conv in conversations.values():
+        user_messages = [
+            m for m in conv["all_messages"]
+            if m.get("role", "user") == "user"
+        ]
+        if user_messages:
+            user_messages.sort(key=lambda m: to_timestamp(m.get("timestamp")))
+            conv["first_user_message"] = user_messages[0].get("content", "")
 
-    # 7. Apply pagination (limit + 1 to check if there are more results)
-    has_more = len(filtered_results) > request.limit
-    page_results = filtered_results[: request.limit]
+    # 7. Sort conversations by latest message timestamp DESC
+    sorted_convs = sorted(
+        conversations.values(),
+        key=lambda c: c["latest_ts"],
+        reverse=True,
+    )
 
-    # 8. Build response
+    # 8. Apply cursor-based pagination on conversations
+    if cursor_timestamp and cursor_id:
+        paginated = []
+        for conv in sorted_convs:
+            latest = conv["latest"]
+            ts_val = to_timestamp(latest.get("timestamp"))
+            ts_iso = ts_val.isoformat()
+            rid = latest.get("id", "")
+            if ts_iso > cursor_timestamp:
+                continue
+            if ts_iso == cursor_timestamp and rid >= cursor_id:
+                continue
+            paginated.append(conv)
+        sorted_convs = paginated
+
+    has_more = len(sorted_convs) > request.limit
+    page_convs = sorted_convs[: request.limit]
+
+    # 9. Build response
     items = []
-    for r in page_results:
-        # Convert timestamp to Unix timestamp
-        timestamp_value = r.get("timestamp")
-        if isinstance(timestamp_value, str):
-            timestamp_value = datetime.fromisoformat(timestamp_value.replace("Z", "+00:00"))
+    for conv in page_convs:
+        r = conv["latest"]
+        timestamp_value = to_timestamp(r.get("timestamp"))
         unix_timestamp = int(timestamp_value.timestamp()) if timestamp_value else 0
+
+        # Truncate first_user_message to reasonable preview length
+        first_msg = conv["first_user_message"]
+        if len(first_msg) > 300:
+            first_msg = first_msg[:300] + "..."
 
         items.append(
             BrowseItem(
@@ -163,25 +216,26 @@ async def browse_documents(request: BrowseRequest):
                 title=r.get("title", ""),
                 content=r.get("content", ""),
                 url=r.get("url", ""),
+                role=r.get("role", "user"),
+                message_count=conv["count"],
+                first_user_message=first_msg,
             )
         )
 
-    # 9. Build nextCursor
+    # 10. Build nextCursor
     next_cursor = None
-    if has_more and page_results:
-        last_item = page_results[-1]
-        timestamp_value = last_item.get("timestamp")
-        if isinstance(timestamp_value, str):
-            timestamp_iso = timestamp_value
-        else:
-            timestamp_iso = timestamp_value.isoformat()
+    if has_more and page_convs:
+        last_conv = page_convs[-1]
+        last_r = last_conv["latest"]
+        timestamp_value = to_timestamp(last_r.get("timestamp"))
+        timestamp_iso = timestamp_value.isoformat()
 
-        cursor_data = {"timestamp": timestamp_iso, "id": last_item.get("id", "")}
+        cursor_data = {"timestamp": timestamp_iso, "id": last_r.get("id", "")}
         next_cursor = base64.b64encode(json.dumps(cursor_data).encode()).decode()
 
     return BrowseResponse(
         items=items,
         nextCursor=next_cursor,
         hasMore=has_more,
-        total=len(filtered_results),  # Total matching results before pagination
+        total=len(sorted_convs),
     )

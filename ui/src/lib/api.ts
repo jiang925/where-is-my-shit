@@ -147,6 +147,9 @@ export interface BrowseItem {
   title: string;
   content: string;
   url: string;
+  role?: string;
+  message_count?: number;
+  first_user_message?: string;
 }
 
 export interface BrowseResponse {
