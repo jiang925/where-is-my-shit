@@ -319,6 +319,31 @@ Plans:
 Plans:
 - [x] 39-01: useTheme hook, darkMode config, dark: variants on all components, theme toggle in NavHeader
 
+### 🔄 v2.5 Platform Coverage & Polish
+
+**Milestone Goal:** Fill the Claude.ai extension gap, add markdown rendering to conversation panel, and make content previews expandable.
+
+#### Phase 40: Claude.ai Web Extractor
+**Goal**: Add content script extractor for claude.ai conversations
+**Plans**: 1 plan
+
+Plans:
+- [ ] 40-01: ClaudeExtractor class, manifest.json content_scripts entry, register in index.ts
+
+#### Phase 41: Markdown Rendering in Conversation Panel
+**Goal**: Render AI responses as formatted markdown instead of plain text
+**Plans**: 1 plan
+
+Plans:
+- [ ] 41-01: Install react-markdown, update MessageBubble to render markdown with code highlighting
+
+#### Phase 42: Expandable Content Preview
+**Goal**: Allow users to expand truncated content in search/browse result cards
+**Plans**: 1 plan
+
+Plans:
+- [ ] 42-01: Add expand/collapse toggle to ResultCard content area, remove line-clamp when expanded
+
 ### ✅ v2.3 Data Management & Deep Links (Shipped 2026-03-12)
 
 **Milestone Goal:** Enable conversation deletion for data hygiene and improve deep links for CLI-based AI tools.
@@ -483,3 +508,6 @@ Phases execute in numeric order: 26 → 27 → 28
 | 37. Delete Conversations | v2.3 | 1/1 | Complete | 2026-03-12 |
 | 38. Open in Terminal | v2.3 | 1/1 | Complete | 2026-03-12 |
 | 39. Dark Mode | v2.4 | 1/1 | Complete | 2026-03-12 |
+| 40. Claude.ai Extractor | v2.5 | 0/1 | Not started | - |
+| 41. Markdown Rendering | v2.5 | 0/1 | Not started | - |
+| 42. Expandable Previews | v2.5 | 0/1 | Not started | - |

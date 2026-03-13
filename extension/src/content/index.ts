@@ -3,6 +3,7 @@ import { getSettings } from '../lib/storage';
 import { BaseExtractor } from './extractors/base';
 import { MessageObserver } from './observers/mutation-observer';
 import { ChatGPTExtractor } from './extractors/chatgpt';
+import { ClaudeExtractor } from './extractors/claude';
 import { GeminiExtractor } from './extractors/gemini';
 import { PerplexityExtractor } from './extractors/perplexity';
 
@@ -24,6 +25,7 @@ async function init() {
   // Instantiate all extractors
   const extractors: BaseExtractor[] = [
     new ChatGPTExtractor(),
+    new ClaudeExtractor(),
     new GeminiExtractor(),
     new PerplexityExtractor()
   ];

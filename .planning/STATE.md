@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.4
-milestone_name: Dark Mode
-status: complete
+milestone: v2.5
+milestone_name: Platform Coverage & Polish
+status: in_progress
 last_updated: "2026-03-12"
-last_activity: 2026-03-12 — v2.4 Phase 39 (Dark Mode) complete
+last_activity: 2026-03-12 — v2.5 defined, starting Phase 40
 progress:
-  total_phases: 39
+  total_phases: 42
   completed_phases: 39
-  total_plans: 75
+  total_plans: 78
   completed_plans: 75
-  percent: 100
+  percent: 96
 ---
 
 # Project State: Where Is My Shit (WIMS)
@@ -18,16 +18,16 @@ progress:
 ## Project Reference
 
 **Core Value:** Never lose a conversation again: Instantly recall specific AI discussions or dev sessions across any platform and jump straight back into the original context.
-**Current Focus:** v2.4 Dark Mode — complete
+**Current Focus:** v2.5 Platform Coverage & Polish
 
 ## Current Position
 
-**Milestone:** v2.4 Dark Mode
-**Phase:** 39 of 39 (Dark Mode)
-**Status:** Complete
-**Last activity:** 2026-03-12 — Phase 39 shipped
+**Milestone:** v2.5 Platform Coverage & Polish
+**Phase:** 40 of 42 (Claude.ai Extractor)
+**Status:** Starting
+**Last activity:** 2026-03-12 — v2.5 defined, starting Phase 40
 
-Progress: [████████████████████████] 100% (39/39 phases complete)
+Progress: [███████████████████████░] 96% (39/42 phases complete)
 
 ## Test Coverage
 
@@ -57,8 +57,9 @@ Progress: [███████████████████████
 | v2.2 In-Thread Search | 36 | Complete (2026-03-12) |
 | v2.3 Data Management | 37-38 | Complete (2026-03-12) |
 | v2.4 Dark Mode | 39 | Complete (2026-03-12) |
+| v2.5 Coverage & Polish | 40-42 | In progress |
 
 ## Session Continuity
 
 **Last session:** 2026-03-12
-**Status:** v2.4 complete. v2.5 brainstormed — 3 options proposed in PROJECT.md. Recommended: Option A (Claude.ai extractor, markdown rendering, expandable previews). Awaiting approval.
+**Status:** v2.5 defined. Starting Phase 40 (Claude.ai Extractor).

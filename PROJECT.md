@@ -238,7 +238,7 @@ Mix of coverage, readability, and organization.
 
 **Recommendation:** Option A. The Claude.ai extractor is a credibility issue (README claims it works), markdown rendering dramatically improves conversation readability, and expandable previews fix the last known UX problem. These three changes will have the most visible impact for users. Bookmarks can wait for v2.6.
 
-**Status**: Awaiting approval. No code until milestone is defined.
+**Status**: Proceeding with Option A. Milestone defined.
 
 ### Backlog
 
