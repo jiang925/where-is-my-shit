@@ -241,24 +241,18 @@ def reembed_batch(table, provider, batch_size: int = 100, model_name: str | None
         return {"processed": 0, "remaining": len(unmigrated), "status": "error"}
 
     # Update rows with new embeddings
-    # LanceDB doesn't have direct row update by ID in Python API easily
-    # We need to use merge or delete+insert
-    # Simplest approach: update using merge with matching on 'id'
-    updates = []
-    for row_id, embedding in zip(row_ids, embeddings):
-        updates.append(
-            {
-                "id": row_id,
-                "vector_v2": embedding,
-                "embedding_model_v2": model_name,
-            }
-        )
-
     try:
-        # Merge updates into table
-        # LanceDB merge: matches on schema's unique key (we use 'id')
-        table.merge(updates, "id")
-        processed = len(updates)
+        # Update each row individually - LanceDB merge() is for adding new columns,
+        # not updating existing ones. Use update() with where clause instead.
+        for row_id, embedding in zip(row_ids, embeddings):
+            table.update(
+                where=f"id = '{row_id}'",
+                values={
+                    "vector_v2": embedding,
+                    "embedding_model_v2": model_name,
+                },
+            )
+        processed = len(row_ids)
         logger.info(f"Successfully re-embedded {processed} documents")
     except Exception as e:
         logger.error(f"Failed to update rows with new embeddings: {e}")
