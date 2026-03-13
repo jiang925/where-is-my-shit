@@ -13,7 +13,7 @@ Key files:
 - `.planning/STATE.md` — Current position, progress metrics, session continuity
 - `PROJECT.md` — This file. Dev workflow, testing, and pending work.
 
-Completed: v1.0 through v1.8 (28 phases, 64 plans).
+Completed: v1.0 through v2.5 (42 phases, 78 plans).
 
 ## 2. Development Cycle
 
@@ -238,7 +238,13 @@ Mix of coverage, readability, and organization.
 
 **Recommendation:** Option A. The Claude.ai extractor is a credibility issue (README claims it works), markdown rendering dramatically improves conversation readability, and expandable previews fix the last known UX problem. These three changes will have the most visible impact for users. Bookmarks can wait for v2.6.
 
-**Status**: Proceeding with Option A. Milestone defined.
+**Phase 40: Claude.ai Web Extractor** — Created `ClaudeExtractor` class in `extension/src/content/extractors/claude.ts` with multiple DOM selector strategies, artifact handling, and code block extraction. Added `claude.ai` to manifest content_scripts matches.
+
+**Phase 41: Markdown Rendering** — Installed `react-markdown` and `@tailwindcss/typography`. Updated MessageBubble to render content as markdown with prose styling. Falls back to plain text with highlighting during in-thread search.
+
+**Phase 42: Expandable Content Preview** — Added expand/collapse toggle to ResultCard content area. Content over 200 chars shows "Show more" button that removes `line-clamp-3`. Click stops propagation to avoid opening the conversation panel.
+
+**Status**: Complete. 133 backend + 31 vitest + 61 e2e tests pass.
 
 ### Backlog
 
@@ -356,3 +362,17 @@ Reflections from each milestone. Mistakes to avoid, patterns that work.
 - For colored accent backgrounds, use `/30` opacity variant: `dark:bg-blue-900/30`, `dark:bg-red-900/30`
 - Recharts hardcoded colors (hex) work fine in dark mode since they're on white card backgrounds that become `dark:bg-gray-800` — no need to change chart colors
 - Theme toggle cycling (system → light → dark) is better than a binary toggle — respects OS preference by default
+
+### v2.5 Platform Coverage & Polish (2026-03-12)
+
+**What went well:**
+- Claude.ai extractor follows exact same pattern as existing extractors — consistent architecture pays off
+- react-markdown with @tailwindcss/typography prose classes gives good default styling with minimal config
+- Expandable previews are simple (useState + conditional line-clamp) but high impact
+
+**Patterns that work:**
+- Extension extractors: multiple fallback DOM selectors in priority order. Platforms change their DOM frequently, so having 4-5 selector strategies is essential
+- `e.stopPropagation()` on the expand toggle prevents the card click handler from also firing (which would open the conversation panel)
+- For markdown rendering, fall back to plain text when search highlighting is active — highlighting markdown source isn't useful
+- `@tailwindcss/typography` prose classes work well with dark mode: `prose dark:prose-invert`
+- Content length threshold (200 chars) for showing expand button avoids cluttering short results
