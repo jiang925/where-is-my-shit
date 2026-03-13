@@ -14,6 +14,7 @@
 - ✅ **v1.9 Result Context & Readability** - Phases 29-31 (shipped 2026-03-12)
 - ✅ **v2.0 Keyboard Navigation & Quality** - Phases 32-33 (shipped 2026-03-12)
 - ✅ **v2.1 Export & Data Portability** - Phases 34-35 (shipped 2026-03-12)
+- ✅ **v2.2 In-Thread Search** - Phase 36 (shipped 2026-03-12)
 
 ## Phases
 
@@ -305,6 +306,17 @@ Plans:
 Plans:
 - [x] 25-01-PLAN.md — Complete daemon distribution system with install/update/uninstall scripts
 
+### ✅ v2.2 In-Thread Search (Shipped 2026-03-12)
+
+**Milestone Goal:** Allow users to search within a conversation thread to find specific messages.
+
+#### Phase 36: In-Thread Search
+**Goal**: Full-text search within the conversation panel with highlighting and dimming
+**Plans**: 1 plan
+
+Plans:
+- [x] 36-01: Thread search input, highlightText/messageMatchesQuery helpers, match count, opacity dimming, 4 e2e tests
+
 ### ✅ v2.1 Export & Data Portability (Shipped 2026-03-12)
 
 **Milestone Goal:** Allow users to export and back up their conversation history.
@@ -436,3 +448,4 @@ Phases execute in numeric order: 26 → 27 → 28
 | 33. Frontend Component Tests | v2.0 | 1/1 | Complete | 2026-03-12 |
 | 34. Export Single Conversation | v2.1 | 1/1 | Complete | 2026-03-12 |
 | 35. Bulk Export | v2.1 | 1/1 | Complete | 2026-03-12 |
+| 36. In-Thread Search | v2.2 | 1/1 | Complete | 2026-03-12 |

@@ -50,7 +50,7 @@ Between milestones, brainstorm the next set of features before writing any code.
 |-------|------|---------|-------|----------------|
 | Backend unit/integration | pytest | `uv run pytest` | 124 tests | API endpoints, DB operations, auth, search, browse, thread, stats, export, embeddings, reranker, migration, compaction |
 | Frontend unit | vitest | `cd ui && npm test` | 31 tests | ResultCard (13), SearchBar (5), useKeyboardNavigation (12), App smoke (1) |
-| E2E (browser) | Playwright (Chromium) | `npx playwright test` | 51 tests | Full-stack flows: auth, search, browse, filters, path display, relevance, timeline, keyboard nav, export, UI regressions |
+| E2E (browser) | Playwright (Chromium) | `npx playwright test` | 55 tests | Full-stack flows: auth, search, browse, filters, path display, relevance, timeline, keyboard nav, export, thread search, UI regressions |
 | E2E (manual) | Playwright | `npx playwright test tests/e2e/spec/exploratory.spec.ts` | 11 tests | Exploratory tests against a live server (excluded from CI) |
 | Extension | webpack build | `cd extension && npm run build` | Build check | TypeScript compilation, bundling |
 | Lint | ruff | `uv run ruff check src/ tests/` | - | Python code quality |
@@ -139,7 +139,7 @@ These are areas identified from README goals and real usage. Each needs a brains
 - [x] ~~**Export/import**~~ — Export done in v2.1 (single + bulk). Import deferred.
 - [ ] **Multi-device sync** — Optional sync between machines (currently local-only).
 - [ ] **Better deep links** — For CLI tools (Claude Code, Cursor), opening the original session is difficult. Explore launching terminal to the right directory.
-- [ ] **Search within threads** — Full-text search within a conversation thread, not just across conversations.
+- [x] ~~**Search within threads**~~ — Done in v2.2 (in-thread search with highlighting and dimming).
 
 ### v1.9 — Result Context & Readability (complete)
 
@@ -147,7 +147,7 @@ These are areas identified from README goals and real usage. Each needs a brains
 
 **Phase 31: Search result context** — Batch conversation context lookup, highlight matching terms with `<mark>` tags.
 
-### v2.0 — Keyboard Navigation & Quality (in progress)
+### v2.0 — Keyboard Navigation & Quality (complete)
 
 Brainstormed 2026-03-12. Power users need keyboard-driven workflows for fast result navigation.
 
@@ -157,7 +157,7 @@ Brainstormed 2026-03-12. Power users need keyboard-driven workflows for fast res
 
 **Status**: Complete. 47 e2e tests + 31 vitest tests pass.
 
-### v2.1 — Export & Data Portability (in progress)
+### v2.1 — Export & Data Portability (complete)
 
 Brainstormed 2026-03-12. Users want to save, share, and back up their conversation history.
 
@@ -167,11 +167,18 @@ Brainstormed 2026-03-12. Users want to save, share, and back up their conversati
 
 **Status**: Complete. 124 backend + 31 vitest + 51 e2e tests pass.
 
+### v2.2 — In-Thread Search (complete)
+
+Brainstormed 2026-03-12. Users need to find specific messages within long conversation threads.
+
+**Phase 36: In-thread search** — Search input in ConversationPanel header, `highlightText()` marks matching text with `<mark>` tags, `messageMatchesQuery()` filters by word, non-matching messages dimmed with `opacity-30`, match count indicator (e.g. "2/4"), Esc clears search before closing panel.
+
+**Status**: Complete. 124 backend + 31 vitest + 55 e2e tests pass.
+
 ### Backlog
 
 - [ ] Better deep links for CLI tools
 - [ ] Multi-device sync
-- [ ] Search within threads
 
 ## 6. Lessons Learned
 

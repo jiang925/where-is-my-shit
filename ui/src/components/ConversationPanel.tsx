@@ -1,5 +1,5 @@
-import { useEffect, useCallback } from 'react';
-import { X, ExternalLink, Download, Loader2, MessageSquare, Terminal, FileCode } from 'lucide-react';
+import { useEffect, useCallback, useState, useMemo } from 'react';
+import { X, ExternalLink, Download, Search, Loader2, MessageSquare, Terminal, FileCode } from 'lucide-react';
 import { useConversation, type ThreadItem } from '../lib/api';
 import { cn } from '../lib/utils';
 
@@ -88,16 +88,38 @@ function isUserRole(role: string): boolean {
   return lower === 'user' || lower === 'human';
 }
 
-function MessageBubble({ item }: { item: ThreadItem }) {
+function highlightText(text: string, query: string): React.ReactNode {
+  if (!query.trim()) return text;
+  const words = query.trim().split(/\s+/).filter(Boolean);
+  const escaped = words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const pattern = new RegExp(`(${escaped.join('|')})`, 'gi');
+  const parts = text.split(pattern);
+  if (parts.length === 1) return text;
+  return parts.map((part, i) =>
+    pattern.test(part)
+      ? <mark key={i} className="bg-yellow-200 text-yellow-900 rounded-sm px-0.5">{part}</mark>
+      : part
+  );
+}
+
+function messageMatchesQuery(content: string, query: string): boolean {
+  if (!query.trim()) return true;
+  const lower = content.toLowerCase();
+  return query.trim().split(/\s+/).some(word => lower.includes(word.toLowerCase()));
+}
+
+function MessageBubble({ item, searchQuery, isMatch }: { item: ThreadItem; searchQuery?: string; isMatch?: boolean }) {
   const isUser = isUserRole(item.role);
+  const dimmed = searchQuery && !isMatch;
 
   return (
     <div
       className={cn(
-        'rounded-lg p-4 border-l-4',
+        'rounded-lg p-4 border-l-4 transition-opacity',
         isUser
           ? 'bg-blue-50 border-l-blue-300'
-          : 'bg-white border-l-gray-300'
+          : 'bg-white border-l-gray-300',
+        dimmed && 'opacity-30'
       )}
     >
       <div className="flex items-center justify-between mb-2">
@@ -112,7 +134,7 @@ function MessageBubble({ item }: { item: ThreadItem }) {
         </time>
       </div>
       <div className="text-sm text-gray-800 whitespace-pre-wrap break-words font-mono">
-        {item.content}
+        {searchQuery && isMatch ? highlightText(item.content, searchQuery) : item.content}
       </div>
     </div>
   );
@@ -156,17 +178,27 @@ function downloadMarkdown(content: string, filename: string) {
 
 export function ConversationPanel({ conversationId, onClose }: ConversationPanelProps) {
   const { data, isLoading, isError, error } = useConversation(conversationId);
+  const [threadSearch, setThreadSearch] = useState('');
+
+  // Reset search when conversation changes
+  useEffect(() => {
+    setThreadSearch('');
+  }, [conversationId]);
 
   // Esc key listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        if (threadSearch) {
+          setThreadSearch('');
+        } else {
+          onClose();
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  }, [onClose, threadSearch]);
 
   // Derive metadata from first item
   const firstItem = data?.items?.[0];
@@ -186,6 +218,12 @@ export function ConversationPanel({ conversationId, onClose }: ConversationPanel
     const safeName = title.replace(/[^a-zA-Z0-9-_ ]/g, '').replace(/\s+/g, '-').slice(0, 60);
     downloadMarkdown(md, `${safeName}.md`);
   }, [sortedItems, title, platform?.label]);
+
+  // Compute which messages match the thread search
+  const matchCount = useMemo(() => {
+    if (!threadSearch.trim()) return sortedItems.length;
+    return sortedItems.filter(item => messageMatchesQuery(item.content, threadSearch)).length;
+  }, [sortedItems, threadSearch]);
 
   return (
     <div className="flex flex-col h-full bg-gray-50">
@@ -242,6 +280,28 @@ export function ConversationPanel({ conversationId, onClose }: ConversationPanel
         </div>
       </div>
 
+      {/* Thread Search */}
+      {sortedItems.length > 1 && (
+        <div className="flex-shrink-0 border-b border-gray-200 bg-white px-4 py-2">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search in conversation..."
+              value={threadSearch}
+              onChange={(e) => setThreadSearch(e.target.value)}
+              className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-300"
+              aria-label="Search in conversation"
+            />
+            {threadSearch && (
+              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400">
+                {matchCount}/{sortedItems.length}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4">
         {isLoading && (
@@ -267,7 +327,12 @@ export function ConversationPanel({ conversationId, onClose }: ConversationPanel
         {!isLoading && !isError && sortedItems.length > 0 && (
           <div className="space-y-3">
             {sortedItems.map((item) => (
-              <MessageBubble key={item.id} item={item} />
+              <MessageBubble
+                key={item.id}
+                item={item}
+                searchQuery={threadSearch}
+                isMatch={messageMatchesQuery(item.content, threadSearch)}
+              />
             ))}
           </div>
         )}

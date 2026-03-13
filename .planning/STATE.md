@@ -1,15 +1,15 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.1
-milestone_name: Export & Data Portability
-status: completed
+milestone: v2.2
+milestone_name: In-Thread Search
+status: in_progress
 last_updated: "2026-03-12"
-last_activity: 2026-03-12 — v2.1 milestone complete, all tests green
+last_activity: 2026-03-12 — Phase 36 (in-thread search) complete, all tests green
 progress:
-  total_phases: 35
-  completed_phases: 35
-  total_plans: 71
-  completed_plans: 71
+  total_phases: 36
+  completed_phases: 36
+  total_plans: 72
+  completed_plans: 72
   percent: 100
 ---
 
@@ -18,16 +18,16 @@ progress:
 ## Project Reference
 
 **Core Value:** Never lose a conversation again: Instantly recall specific AI discussions or dev sessions across any platform and jump straight back into the original context.
-**Current Focus:** Brainstorming v2.2
+**Current Focus:** v2.2 In-Thread Search
 
 ## Current Position
 
-**Milestone:** v2.1 Export & Data Portability
-**Phase:** 35 of 35 (Bulk Export)
+**Milestone:** v2.2 In-Thread Search
+**Phase:** 36 of 36 (In-Thread Search)
 **Status:** Complete
-**Last activity:** 2026-03-12 — All phases shipped, tests green
+**Last activity:** 2026-03-12 — Phase 36 shipped, all tests green
 
-Progress: [████████████████████████] 100% (35/35 phases complete)
+Progress: [████████████████████████] 100% (36/36 phases complete)
 
 ## Test Coverage
 
@@ -35,8 +35,8 @@ Progress: [███████████████████████
 |-------|-------|
 | Backend (pytest) | 124 |
 | Frontend (vitest) | 31 |
-| E2E (Playwright) | 51 |
-| **Total** | **206** |
+| E2E (Playwright) | 55 |
+| **Total** | **210** |
 
 ## By Milestone
 
@@ -54,8 +54,9 @@ Progress: [███████████████████████
 | v1.9 Result Context | 29-31 | Complete (2026-03-12) |
 | v2.0 Keyboard & Quality | 32-33 | Complete (2026-03-12) |
 | v2.1 Export | 34-35 | Complete (2026-03-12) |
+| v2.2 In-Thread Search | 36 | Complete (2026-03-12) |
 
 ## Session Continuity
 
 **Last session:** 2026-03-12
-**Status:** v2.1 milestone complete. Brainstorming v2.2.
+**Status:** v2.2 Phase 36 complete. Brainstorming next milestone.
