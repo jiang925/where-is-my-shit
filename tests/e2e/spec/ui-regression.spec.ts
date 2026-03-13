@@ -55,15 +55,13 @@ test.describe('UI Regression Tests', () => {
     }
   });
 
-  // Issue 3: Card snippet should show 6 lines for better readability (updated from 4 in Phase 20)
-  test('card content snippet uses line-clamp-6', async ({ page, apiKey, request }) => {
+  // Issue 3: Card content snippet should be clamped for readability
+  test('card content snippet uses line-clamp-3', async ({ page, apiKey, request }) => {
     // Ingest a document with long content
     const longContent = 'Line one of content. '.repeat(5) + '\n' +
       'Line two of content. '.repeat(5) + '\n' +
       'Line three of content. '.repeat(5) + '\n' +
-      'Line four of content. '.repeat(5) + '\n' +
-      'Line five of content. '.repeat(5) + '\n' +
-      'Line six of content. '.repeat(5);
+      'Line four of content. '.repeat(5);
 
     await ingest(request, apiKey, {
       conversation_id: 'regression-line-clamp',
@@ -84,8 +82,8 @@ test.describe('UI Regression Tests', () => {
     await searchResponse;
     await page.waitForTimeout(500);
 
-    // Verify the content paragraph has line-clamp-6 class
-    const contentParagraph = page.locator('p.line-clamp-6').first();
+    // Verify the content paragraph has line-clamp-3 class (reduced from 6 to make room for first_user_message)
+    const contentParagraph = page.locator('p.line-clamp-3').first();
     await expect(contentParagraph).toBeVisible();
   });
 

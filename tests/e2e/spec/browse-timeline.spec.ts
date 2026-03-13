@@ -49,7 +49,7 @@ test.describe('Browse API - Backend', () => {
     const browseResponse = await request.post(`${baseURL}/api/v1/browse`, {
       headers: { 'X-API-Key': apiKey },
       data: {
-        limit: 10,
+        limit: 100,
       },
     });
     expect(browseResponse.status()).toBe(200);
