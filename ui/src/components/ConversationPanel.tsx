@@ -1,5 +1,6 @@
 import { useEffect, useCallback, useState, useMemo } from 'react';
 import { X, ExternalLink, Download, Search, Loader2, MessageSquare, Terminal, FileCode, Trash2 } from 'lucide-react';
+import Markdown from 'react-markdown';
 import { useConversation, deleteConversation, openTerminal, type ThreadItem } from '../lib/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '../lib/utils';
@@ -136,9 +137,15 @@ function MessageBubble({ item, searchQuery, isMatch }: { item: ThreadItem; searc
           {formatTimestamp(item.timestamp)}
         </time>
       </div>
-      <div className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words font-mono">
-        {searchQuery && isMatch ? highlightText(item.content, searchQuery) : item.content}
-      </div>
+      {searchQuery && isMatch ? (
+        <div className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words font-mono">
+          {highlightText(item.content, searchQuery)}
+        </div>
+      ) : (
+        <div className="text-sm text-gray-800 dark:text-gray-200 break-words prose prose-sm dark:prose-invert max-w-none prose-pre:bg-gray-100 dark:prose-pre:bg-gray-900 prose-pre:rounded-md prose-pre:p-3 prose-pre:text-xs prose-code:text-xs prose-code:before:content-none prose-code:after:content-none prose-p:my-1.5 prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5 prose-headings:my-2">
+          <Markdown>{item.content}</Markdown>
+        </div>
+      )}
     </div>
   );
 }
