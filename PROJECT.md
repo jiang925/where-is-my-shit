@@ -156,7 +156,7 @@ Brainstormed 2026-03-12. Core problem: each result card shows one raw message (o
 
 **Phase 31: Search result context** — Add first_user_message to search results. Highlight matching terms in content.
 
-**Status**: Phases 29-31 implemented and committed. Pending: UI testing, e2e verification, push.
+**Status**: Complete. All 120 backend + 41 e2e tests pass. Pending: UI visual testing, push.
 
 ### Backlog (brainstorm when v1.9 ships)
 
@@ -202,3 +202,4 @@ Reflections from each milestone. Mistakes to avoid, patterns that work.
 - Grouping messages by conversation in the backend (not frontend) keeps the API clean and reduces data transfer
 - Graceful degradation with `try/except pass` for the conversation context query in search — if it fails, results still work, just without context
 - `line-clamp-2` for first user message + `line-clamp-3` for content gives good information density without overwhelming the card
+- When changing browse from per-message to per-conversation, existing e2e tests with small `limit` values fail because fewer items fit per page. Always increase test limits when changing result granularity.
