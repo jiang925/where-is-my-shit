@@ -49,7 +49,7 @@ Between milestones, brainstorm the next set of features before writing any code.
 | Layer | Tool | Command | Count | What it covers |
 |-------|------|---------|-------|----------------|
 | Backend unit/integration | pytest | `uv run pytest` | 120 tests | API endpoints, DB operations, auth, search, browse, thread, stats, embeddings, reranker, migration, compaction |
-| Frontend unit | vitest | `cd ui && npm test` | 1 test | React component smoke test (App.test.tsx) |
+| Frontend unit | vitest | `cd ui && npm test` | 31 tests | ResultCard (13), SearchBar (5), useKeyboardNavigation (12), App smoke (1) |
 | E2E (browser) | Playwright (Chromium) | `npx playwright test` | 47 tests | Full-stack flows: auth, search, browse, filters, path display, relevance, timeline, keyboard nav, UI regressions |
 | E2E (manual) | Playwright | `npx playwright test tests/e2e/spec/exploratory.spec.ts` | 11 tests | Exploratory tests against a live server (excluded from CI) |
 | Extension | webpack build | `cd extension && npm run build` | Build check | TypeScript compilation, bundling |
@@ -160,11 +160,11 @@ Brainstormed 2026-03-12. Power users need keyboard-driven workflows for fast res
 
 **Phase 33: Frontend component tests** — Vitest tests for ResultCard, SearchBar, SourceFilterUI.
 
-**Status**: Phase 32 complete. 47 e2e tests pass (6 new for keyboard nav).
+**Status**: Complete. 47 e2e tests + 31 vitest tests pass.
 
 ### Backlog
 
-- [ ] Frontend test coverage (vitest component tests) — Phase 33
+- [x] ~~Frontend test coverage (vitest component tests)~~ — Done in v2.0 Phase 33
 - [x] ~~Full-text search improvements (highlight matching terms)~~ — Done in v1.9 Phase 31
 - [x] ~~Keyboard navigation~~ — Done in v2.0 Phase 32
 - [ ] Export/import conversations
