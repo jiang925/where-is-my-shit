@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useState, useMemo } from 'react';
-import { X, ExternalLink, Download, Search, Loader2, MessageSquare, Terminal, FileCode, Trash2, Star } from 'lucide-react';
+import { X, ExternalLink, Download, Search, Loader2, MessageSquare, Terminal, FileCode, Trash2, Star, Pencil, Check } from 'lucide-react';
 import Markdown from 'react-markdown';
-import { useConversation, deleteConversation, openTerminal, type ThreadItem } from '../lib/api';
+import { useConversation, deleteConversation, openTerminal, updateConversationTitle, type ThreadItem } from '../lib/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '../lib/utils';
 import { isFilePath } from '../utils/pathUtils';
@@ -193,11 +193,15 @@ export function ConversationPanel({ conversationId, onClose, onDeleted, isBookma
   const [threadSearch, setThreadSearch] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [isSavingTitle, setIsSavingTitle] = useState(false);
   const queryClient = useQueryClient();
 
-  // Reset search when conversation changes
+  // Reset search and editing state when conversation changes
   useEffect(() => {
     setThreadSearch('');
+    setIsEditingTitle(false);
   }, [conversationId]);
 
   // Esc key listener
@@ -253,6 +257,31 @@ export function ConversationPanel({ conversationId, onClose, onDeleted, isBookma
     }
   }, [conversationId, queryClient, onDeleted, onClose]);
 
+  const handleStartEditTitle = useCallback(() => {
+    setEditTitle(title);
+    setIsEditingTitle(true);
+  }, [title]);
+
+  const handleSaveTitle = useCallback(async () => {
+    const trimmed = editTitle.trim();
+    if (!trimmed || trimmed === title) {
+      setIsEditingTitle(false);
+      return;
+    }
+    setIsSavingTitle(true);
+    try {
+      await updateConversationTitle(conversationId, trimmed);
+      queryClient.invalidateQueries({ queryKey: ['conversation', conversationId] });
+      queryClient.invalidateQueries({ queryKey: ['search'] });
+      queryClient.invalidateQueries({ queryKey: ['browse'] });
+      setIsEditingTitle(false);
+    } catch {
+      // Keep editing on error
+    } finally {
+      setIsSavingTitle(false);
+    }
+  }, [conversationId, editTitle, title, queryClient]);
+
   // Compute which messages match the thread search
   const matchCount = useMemo(() => {
     if (!threadSearch.trim()) return sortedItems.length;
@@ -277,9 +306,48 @@ export function ConversationPanel({ conversationId, onClose, onDeleted, isBookma
                 <span>{platform.label}</span>
               </div>
             )}
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate" title={title}>
-              {title}
-            </h2>
+            {isEditingTitle ? (
+              <div className="flex items-center gap-1">
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleSaveTitle(); if (e.key === 'Escape') setIsEditingTitle(false); }}
+                  className="flex-1 text-sm font-semibold text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-2 py-0.5 outline-none focus:ring-1 focus:ring-blue-300"
+                  autoFocus
+                  disabled={isSavingTitle}
+                />
+                <button
+                  onClick={handleSaveTitle}
+                  disabled={isSavingTitle}
+                  className="p-1 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 cursor-pointer disabled:opacity-50"
+                  aria-label="Save title"
+                >
+                  <Check className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setIsEditingTitle(false)}
+                  disabled={isSavingTitle}
+                  className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-pointer"
+                  aria-label="Cancel editing"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 group/title">
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate" title={title}>
+                  {title}
+                </h2>
+                <button
+                  onClick={handleStartEditTitle}
+                  className="opacity-0 group-hover/title:opacity-100 p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-opacity cursor-pointer"
+                  aria-label="Edit title"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
             {url && (
               url && isFilePath(url) ? (
                 <button

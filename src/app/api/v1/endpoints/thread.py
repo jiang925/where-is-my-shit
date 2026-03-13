@@ -3,10 +3,15 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.concurrency import run_in_threadpool
+from pydantic import BaseModel
 
 from src.app.core.auth import verify_api_key
 from src.app.db.client import db_client
 from src.app.schemas.message import BrowseItem, BrowseResponse
+
+
+class UpdateTitleRequest(BaseModel):
+    title: str
 
 # Only allow alphanumeric, hyphens, and underscores in conversation_id
 CONVERSATION_ID_PATTERN = re.compile(r"^[a-zA-Z0-9\-_]+$")
@@ -129,3 +134,51 @@ async def delete_conversation(conversation_id: str):
         raise HTTPException(status_code=404, detail="Conversation not found")
 
     return {"deleted": deleted_count, "conversation_id": conversation_id}
+
+
+@router.patch("/conversations/{conversation_id}/title")
+async def update_conversation_title(conversation_id: str, request: UpdateTitleRequest):
+    """
+    Update the title for all messages in a conversation.
+    """
+    if not CONVERSATION_ID_PATTERN.match(conversation_id):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid conversation_id: only alphanumeric characters, hyphens, and underscores are allowed",
+        )
+
+    title = request.title.strip()
+    if not title:
+        raise HTTPException(status_code=400, detail="Title cannot be empty")
+    if len(title) > 500:
+        raise HTTPException(status_code=400, detail="Title must be 500 characters or less")
+
+    try:
+        table = db_client.get_table("messages")
+
+        def do_update():
+            # First verify the conversation exists
+            results = (
+                table.search([0.0] * 384, query_type="vector")
+                .where(f"conversation_id = '{conversation_id}'")
+                .select(["id"])
+                .limit(1)
+                .to_list()
+            )
+            if not results:
+                return 0
+            table.update(
+                where=f"conversation_id = '{conversation_id}'",
+                values={"title": title},
+            )
+            return 1
+
+        found = await run_in_threadpool(do_update)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Title update failed: {str(e)}")
+
+    if found == 0:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    return {"conversation_id": conversation_id, "title": title}

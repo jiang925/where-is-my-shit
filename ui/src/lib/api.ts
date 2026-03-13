@@ -282,6 +282,16 @@ export const deleteConversation = async (conversationId: string): Promise<{ dele
   return response.data;
 };
 
+// === Title Update API ===
+
+export const updateConversationTitle = async (conversationId: string, title: string): Promise<{ title: string }> => {
+  const response = await api.patch<{ conversation_id: string; title: string }>(
+    `/conversations/${conversationId}/title`,
+    { title }
+  );
+  return response.data;
+};
+
 // === Export API ===
 
 export const exportAll = async (platforms?: string[]): Promise<void> => {
