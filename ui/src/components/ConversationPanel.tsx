@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { X, ExternalLink, Loader2, MessageSquare, Terminal, FileCode } from 'lucide-react';
+import { useEffect, useCallback } from 'react';
+import { X, ExternalLink, Download, Loader2, MessageSquare, Terminal, FileCode } from 'lucide-react';
 import { useConversation, type ThreadItem } from '../lib/api';
 import { cn } from '../lib/utils';
 
@@ -118,6 +118,42 @@ function MessageBubble({ item }: { item: ThreadItem }) {
   );
 }
 
+function threadToMarkdown(items: ThreadItem[], title: string, platform: string): string {
+  const lines: string[] = [];
+  lines.push(`# ${title}`);
+  lines.push('');
+  lines.push(`**Platform:** ${platform}`);
+  if (items.length > 0) {
+    const ms = items[0].timestamp < 1e11 ? items[0].timestamp * 1000 : items[0].timestamp;
+    lines.push(`**Date:** ${new Date(ms).toLocaleDateString('en', { year: 'numeric', month: 'long', day: 'numeric' })}`);
+  }
+  lines.push('');
+  lines.push('---');
+  lines.push('');
+
+  for (const item of items) {
+    const role = isUserRole(item.role) ? 'User' : 'Assistant';
+    const ms = item.timestamp < 1e11 ? item.timestamp * 1000 : item.timestamp;
+    const time = new Date(ms).toLocaleTimeString('en', { hour: 'numeric', minute: '2-digit' });
+    lines.push(`## ${role} *(${time})*`);
+    lines.push('');
+    lines.push(item.content);
+    lines.push('');
+  }
+
+  return lines.join('\n');
+}
+
+function downloadMarkdown(content: string, filename: string) {
+  const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export function ConversationPanel({ conversationId, onClose }: ConversationPanelProps) {
   const { data, isLoading, isError, error } = useConversation(conversationId);
 
@@ -143,6 +179,13 @@ export function ConversationPanel({ conversationId, onClose }: ConversationPanel
   const sortedItems = data?.items
     ? [...data.items].sort((a, b) => a.timestamp - b.timestamp)
     : [];
+
+  const handleExport = useCallback(() => {
+    if (sortedItems.length === 0) return;
+    const md = threadToMarkdown(sortedItems, title, platform?.label || 'Unknown');
+    const safeName = title.replace(/[^a-zA-Z0-9-_ ]/g, '').replace(/\s+/g, '-').slice(0, 60);
+    downloadMarkdown(md, `${safeName}.md`);
+  }, [sortedItems, title, platform?.label]);
 
   return (
     <div className="flex flex-col h-full bg-gray-50">
@@ -177,13 +220,25 @@ export function ConversationPanel({ conversationId, onClose }: ConversationPanel
               </a>
             )}
           </div>
-          <button
-            onClick={onClose}
-            className="flex-shrink-0 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-            aria-label="Close panel"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-1">
+            {sortedItems.length > 0 && (
+              <button
+                onClick={handleExport}
+                className="flex-shrink-0 p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                aria-label="Export as markdown"
+                title="Export as markdown"
+              >
+                <Download className="h-5 w-5" />
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="flex-shrink-0 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+              aria-label="Close panel"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
       </div>
 

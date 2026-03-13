@@ -136,15 +136,10 @@ The **search and browse experience needs improvement**:
 
 These are areas identified from README goals and real usage. Each needs a brainstorm session before becoming a milestone.
 
-- [ ] **Better result previews** — Show conversation topic/summary instead of truncated last message. Could show first user message, auto-generated title, or AI-summarized snippet.
-- [ ] **Frontend test coverage** — Only 1 vitest test exists. Need component tests for SearchPage, BrowsePage, StatsPage, ResultCard, ThreadPanel.
-- [ ] **Conversation context in results** — Show a few turns of conversation (user question + AI answer beginning) so results are recognizable at a glance.
-- [ ] **Full-text search improvements** — Search within conversation threads, highlight matching terms in results.
-- [ ] **Keyboard navigation** — Arrow keys to navigate results, Enter to open, Esc to close panels.
 - [ ] **Export/import** — Export conversations as markdown, import from other tools.
 - [ ] **Multi-device sync** — Optional sync between machines (currently local-only).
 - [ ] **Better deep links** — For CLI tools (Claude Code, Cursor), opening the original session is difficult. Explore launching terminal to the right directory.
-- [ ] **Conversation grouping** — Group related messages into logical conversations (currently each message is a separate result).
+- [ ] **Search within threads** — Full-text search within a conversation thread, not just across conversations.
 
 ### v1.9 — Result Context & Readability (complete)
 
@@ -162,14 +157,21 @@ Brainstormed 2026-03-12. Power users need keyboard-driven workflows for fast res
 
 **Status**: Complete. 47 e2e tests + 31 vitest tests pass.
 
+### v2.1 — Export & Data Portability (in progress)
+
+Brainstormed 2026-03-12. Users want to save, share, and back up their conversation history.
+
+**Phase 34: Export single conversation as markdown** — Add "Export" button in ConversationPanel that downloads the full thread as a `.md` file. Backend endpoint: `GET /api/v1/thread/{id}/export`.
+
+**Phase 35: Bulk export** — Export all conversations or filtered set as a zip of markdown files. Backend endpoint: `POST /api/v1/export`.
+
+**Status**: In progress.
+
 ### Backlog
 
-- [x] ~~Frontend test coverage (vitest component tests)~~ — Done in v2.0 Phase 33
-- [x] ~~Full-text search improvements (highlight matching terms)~~ — Done in v1.9 Phase 31
-- [x] ~~Keyboard navigation~~ — Done in v2.0 Phase 32
-- [ ] Export/import conversations
 - [ ] Better deep links for CLI tools
-- [ ] Conversation grouping in search
+- [ ] Multi-device sync
+- [ ] Search within threads
 
 ## 6. Lessons Learned
 
