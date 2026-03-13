@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import patch
+
+import pytest
 from fastapi.testclient import TestClient
 
 from src.app.core.config import ServerConfig
@@ -33,6 +34,7 @@ def mock_settings(monkeypatch, test_api_key):
 def client(mock_settings):
     """Create TestClient after settings are mocked."""
     from src.app.main import app
+
     return TestClient(app)
 
 

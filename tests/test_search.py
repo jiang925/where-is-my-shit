@@ -195,9 +195,7 @@ def test_search_requires_auth(client):
 
 def test_search_invalid_api_key(client, mock_settings):
     """Test that search rejects invalid API key."""
-    response = client.post(
-        "/api/v1/search", json={"query": "test", "limit": 5}, headers={"X-API-Key": "wrong-key"}
-    )
+    response = client.post("/api/v1/search", json={"query": "test", "limit": 5}, headers={"X-API-Key": "wrong-key"})
     assert response.status_code == 403
     assert response.json() == {"detail": "Invalid API Key"}
 

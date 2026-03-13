@@ -3,10 +3,7 @@ import os
 import tempfile
 from pathlib import Path
 
-import pytest
-
-from src.app.core.config import ConfigManager, EmbeddingConfig, ServerConfig
-
+from src.app.core.config import ConfigManager, EmbeddingConfig
 
 # ========== ConfigManager Tests ==========
 
@@ -120,7 +117,7 @@ def test_config_atomic_save():
     """Test that _save writes config atomically and sets permissions."""
     with tempfile.TemporaryDirectory() as tmpdir:
         config_path = Path(tmpdir) / "server.json"
-        manager = ConfigManager(config_path=config_path)
+        ConfigManager(config_path=config_path)
 
         # Verify the file was created with restrictive permissions
         assert config_path.exists()

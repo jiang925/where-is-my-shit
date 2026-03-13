@@ -6,7 +6,7 @@ from fastapi.concurrency import run_in_threadpool
 from src.app.core.auth import verify_api_key
 from src.app.db.client import db_client
 from src.app.db.compaction import compaction_manager
-from src.app.schemas.message import IngestRequest, Message
+from src.app.schemas.message import IngestRequest
 from src.app.services.embedding import EmbeddingService
 
 router = APIRouter(dependencies=[Depends(verify_api_key)])

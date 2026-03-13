@@ -1,7 +1,6 @@
 import io
 import zipfile
 from datetime import datetime
-from typing import Optional
 
 from fastapi import APIRouter, Depends
 from fastapi.concurrency import run_in_threadpool
@@ -17,7 +16,7 @@ ALLOWED_PLATFORMS = ["chatgpt", "claude", "claude-code", "gemini", "perplexity",
 
 
 class ExportRequest(BaseModel):
-    platforms: Optional[list[str]] = None
+    platforms: list[str] | None = None
 
 
 def _to_unix_ms(val) -> int:
@@ -44,6 +43,7 @@ def _is_user_role(role: str) -> bool:
 
 def _safe_filename(title: str, conv_id: str) -> str:
     import re
+
     safe = re.sub(r"[^a-zA-Z0-9\-_ ]", "", title).strip().replace(" ", "-")[:60]
     if not safe:
         safe = conv_id[:20]
@@ -132,7 +132,5 @@ async def export_conversations(request: ExportRequest):
     return StreamingResponse(
         buffer,
         media_type="application/zip",
-        headers={
-            "Content-Disposition": f'attachment; filename="wims-export-{datetime.now().strftime("%Y%m%d")}.zip"'
-        },
+        headers={"Content-Disposition": f'attachment; filename="wims-export-{datetime.now().strftime("%Y%m%d")}.zip"'},
     )

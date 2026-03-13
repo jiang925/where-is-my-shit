@@ -162,10 +162,7 @@ async def browse_documents(request: BrowseRequest):
 
     # Find first user message per conversation (by earliest timestamp with role=user)
     for conv in conversations.values():
-        user_messages = [
-            m for m in conv["all_messages"]
-            if m.get("role", "user") == "user"
-        ]
+        user_messages = [m for m in conv["all_messages"] if m.get("role", "user") == "user"]
         if user_messages:
             user_messages.sort(key=lambda m: to_timestamp(m.get("timestamp")))
             conv["first_user_message"] = user_messages[0].get("content", "")

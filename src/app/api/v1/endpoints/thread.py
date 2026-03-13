@@ -13,6 +13,7 @@ from src.app.schemas.message import BrowseItem, BrowseResponse
 class UpdateTitleRequest(BaseModel):
     title: str
 
+
 # Only allow alphanumeric, hyphens, and underscores in conversation_id
 CONVERSATION_ID_PATTERN = re.compile(r"^[a-zA-Z0-9\-_]+$")
 

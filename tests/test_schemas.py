@@ -4,15 +4,11 @@ import pytest
 from pydantic import ValidationError
 
 from src.app.schemas.message import (
-    BrowseItem,
-    BrowseRequest,
     IngestRequest,
     SearchRequest,
-    SearchResult,
     SearchResultMeta,
 )
 from src.app.schemas.stats import ActivityEntry, StatsResponse
-
 
 # ========== Pydantic Model Tests ==========
 

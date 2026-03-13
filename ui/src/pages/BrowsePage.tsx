@@ -50,7 +50,6 @@ export function BrowsePage({ onLogout }: BrowsePageProps) {
       const platforms = platformsFromUrl.split(',').filter((p): p is PlatformId =>
         AVAILABLE_PLATFORMS.some(ap => ap.id === p)
       );
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedPlatforms(platforms);
     }
   }, [searchParams]);

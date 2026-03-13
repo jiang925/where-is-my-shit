@@ -18,10 +18,12 @@ export function useKeyboardNavigation({
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const cardRefs = useRef<Map<number, HTMLDivElement>>(new Map());
 
-  // Reset focused index when item count changes
-  useEffect(() => {
+  // Reset focused index when item count changes (React-recommended render-time adjustment)
+  const [prevItemCount, setPrevItemCount] = useState(itemCount);
+  if (itemCount !== prevItemCount) {
+    setPrevItemCount(itemCount);
     setFocusedIndex(-1);
-  }, [itemCount]);
+  }
 
   const scrollToCard = useCallback((index: number) => {
     const card = cardRefs.current.get(index);

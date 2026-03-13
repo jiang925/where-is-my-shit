@@ -123,6 +123,7 @@ async def search_documents(request: SearchRequest):
     conv_context: dict[str, dict] = {}  # conv_id -> {count, first_user_message}
     if conv_ids:
         try:
+
             def fetch_conv_context():
                 # Query all messages for these conversations
                 cid_list = "', '".join(conv_ids)
@@ -141,6 +142,7 @@ async def search_documents(request: SearchRequest):
 
             # Group by conversation
             from collections import defaultdict
+
             by_conv: dict[str, list] = defaultdict(list)
             for row in ctx_rows:
                 by_conv[row.get("conversation_id", "")].append(row)
@@ -151,9 +153,7 @@ async def search_documents(request: SearchRequest):
                 user_msgs = [m for m in msgs if m.get("role") == "user"]
                 first_user = ""
                 if user_msgs:
-                    user_msgs.sort(
-                        key=lambda m: str(m.get("timestamp", ""))
-                    )
+                    user_msgs.sort(key=lambda m: str(m.get("timestamp", "")))
                     first_user = user_msgs[0].get("content", "")
                     if len(first_user) > 300:
                         first_user = first_user[:300] + "..."

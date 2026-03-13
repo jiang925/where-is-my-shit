@@ -205,13 +205,12 @@ class TestReembedBatch:
         # Verify embeddings were generated
         provider.embed.assert_called_once_with(["Hello world", "Test message"])
 
-        # Verify table.merge was called
-        table.merge.assert_called_once()
-        updates = table.merge.call_args[0][0]
-        assert len(updates) == 2
-        assert updates[0]["id"] == "msg-1"
-        assert updates[0]["embedding_model_v2"] == "nomic-embed-text"
-        assert len(updates[0]["vector_v2"]) == 384
+        # Verify table.update was called for each row
+        assert table.update.call_count == 2
+        first_call = table.update.call_args_list[0]
+        assert first_call[1]["where"] == "id = 'msg-1'"
+        assert first_call[1]["values"]["embedding_model_v2"] == "nomic-embed-text"
+        assert len(first_call[1]["values"]["vector_v2"]) == 384
 
         # Verify result
         assert result["processed"] == 2
@@ -260,9 +259,9 @@ class TestReembedBatch:
 
         result = reembed_batch(table, provider, batch_size=10)
 
-        # Should not call embed or merge
+        # Should not call embed or update
         provider.embed.assert_not_called()
-        table.merge.assert_not_called()
+        table.update.assert_not_called()
 
         assert result["processed"] == 0
         assert result["remaining"] == 0
@@ -289,9 +288,9 @@ class TestReembedBatch:
 
             _result = reembed_batch(table, provider, batch_size=10, model_name="custom-model-v2")
 
-        # Verify custom model name was used
-        updates = table.merge.call_args[0][0]
-        assert updates[0]["embedding_model_v2"] == "custom-model-v2"
+        # Verify custom model name was used in table.update calls
+        first_call = table.update.call_args_list[0]
+        assert first_call[1]["values"]["embedding_model_v2"] == "custom-model-v2"
 
     def test_reembed_batch_handles_embed_error(self):
         """Should handle embedding generation errors gracefully."""
