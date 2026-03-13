@@ -12,17 +12,18 @@ Key files:
 - `.planning/ROADMAP.md` — All milestones and phases with status
 - `.planning/STATE.md` — Current position, progress metrics, session continuity
 - `PROJECT.md` — This file. Dev workflow, testing, and pending work.
+- `TESTING.md` — Test inventory, coverage gaps, and implementation checklist. Audit before shipping.
 
-Completed: v1.0 through v2.5 (42 phases, 78 plans).
+Completed: v1.0 through v2.6 (45 phases, 81 plans).
 
 ## 2. Development Cycle
 
 The workflow is an iterative loop:
 
 ```
-Brainstorm --> Define Milestone --> Plan Phases --> Execute --> Test --> Ship
-    ^                                                                   |
-    +-------------------------------------------------------------------+
+Brainstorm --> Define Milestone --> Plan Phases --> Execute --> Test --> Audit Tests --> Ship
+    ^                                                                                    |
+    +------------------------------------------------------------------------------------+
 ```
 
 1. **Brainstorm**: Identify pain points from real usage. What's the most impactful thing to build next? Discuss freely before committing to scope.
@@ -30,7 +31,8 @@ Brainstorm --> Define Milestone --> Plan Phases --> Execute --> Test --> Ship
 3. **Plan Phases**: Break the milestone into phases. Each phase has a goal, success criteria, and plans.
 4. **Execute**: Implement plans one at a time. Commit after each plan.
 5. **Test**: Run all test layers (see section 3). Fix before moving on.
-6. **Ship**: Push to main, verify CI, update ROADMAP.md and STATE.md.
+6. **Audit Tests**: Check `TESTING.md` — enumerate gaps, implement missing tests, run, fix. Tests must be up to date and coverage targets met (90%+ unit) before shipping.
+7. **Ship**: Push to main, verify CI, update ROADMAP.md and STATE.md.
 
 Between milestones, brainstorm the next set of features before writing any code. No milestone should start without a brainstorm session.
 
@@ -39,10 +41,13 @@ Between milestones, brainstorm the next set of features before writing any code.
 1. **Always document the work.** Record decisions, changes, and rationale in `.planning/`, `PROJECT.md`, or other files — but always make them discoverable from `PROJECT.md`.
 2. **Reflect after each implementation round.** After completing a phase or milestone, write down what went well, what was missed, mistakes to avoid next time, and patterns that worked. Add these to the Lessons section below.
 3. **Commit after each phase, don't push.** Each phase should produce a commit. Push only when the user explicitly asks, or when shipping a milestone.
+4. **Use agent teams and subagents as much as possible.** Parallelize independent research, exploration, and implementation tasks using subagents. Prefer dispatching multiple agents over sequential work when tasks don't depend on each other.
 
 ## 3. Testing
 
 **Rule: Always test in UI.** Automated tests catch regressions, but visual confirmation in the browser is required for any UI change.
+
+**See `TESTING.md`** for the full test inventory, coverage gaps, and implementation checklist. The audit step in the dev cycle (step 6) uses TESTING.md to enumerate → audit → implement → run → fix until coverage targets are met.
 
 ### Test layers
 
@@ -255,7 +260,13 @@ Mix of coverage, readability, and organization.
 - Phase 44: Search history dropdown — Store recent queries in localStorage. Show dropdown below search bar with last 10 queries. Click to fill search bar.
 - Phase 45: Conversation title editing — Allow users to rename conversation titles from ConversationPanel. Backend: PATCH endpoint to update title.
 
-**Status**: Brainstormed. Ready for implementation when next session starts.
+**Phase 43: Conversation Bookmarks** — Created `useBookmarks` hook with localStorage-based Set<string> storage. Added star icons to ResultCard (next to title) and ConversationPanel (header). Added "Starred (N)" filter button on SearchPage. Wired bookmarks through BrowsePage → TimelineSection → ResultCard.
+
+**Phase 44: Search History** — Created `useSearchHistory` hook storing last 10 queries in localStorage. Added dropdown to SearchBar that appears on focus when input is empty, showing recent queries with individual remove and clear all actions.
+
+**Phase 45: Conversation Title Editing** — Added PATCH `/api/v1/conversations/{id}/title` endpoint. Added inline title editing in ConversationPanel header with pencil icon on hover, Enter to save, Esc to cancel. Invalidates search/browse caches after save.
+
+**Status**: Complete. 133 backend + 31 vitest + 61 e2e tests pass.
 
 ### Backlog
 

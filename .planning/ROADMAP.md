@@ -319,6 +319,31 @@ Plans:
 Plans:
 - [x] 39-01: useTheme hook, darkMode config, dark: variants on all components, theme toggle in NavHeader
 
+### ✅ v2.6 Organization (Shipped 2026-03-13)
+
+**Milestone Goal:** Help users organize and manage growing conversation libraries with bookmarks, search history, and title editing.
+
+#### Phase 43: Conversation Bookmarks
+**Goal**: Allow users to star/bookmark important conversations for quick access
+**Plans**: 1 plan
+
+Plans:
+- [x] 43-01: useBookmarks hook with localStorage, star toggle on ResultCard and ConversationPanel, starred filter in SourceFilterUI
+
+#### Phase 44: Search History
+**Goal**: Show recent search queries for quick recall
+**Plans**: 1 plan
+
+Plans:
+- [x] 44-01: useSearchHistory hook with localStorage, dropdown below SearchBar with recent queries
+
+#### Phase 45: Conversation Title Editing
+**Goal**: Allow users to rename conversation titles
+**Plans**: 1 plan
+
+Plans:
+- [x] 45-01: Editable title in ConversationPanel header, PATCH endpoint to update title in LanceDB
+
 ### ✅ v2.5 Platform Coverage & Polish (Shipped 2026-03-12)
 
 **Milestone Goal:** Fill the Claude.ai extension gap, add markdown rendering to conversation panel, and make content previews expandable.
@@ -511,3 +536,6 @@ Phases execute in numeric order: 26 → 27 → 28
 | 40. Claude.ai Extractor | v2.5 | 1/1 | Complete | 2026-03-12 |
 | 41. Markdown Rendering | v2.5 | 1/1 | Complete | 2026-03-12 |
 | 42. Expandable Previews | v2.5 | 1/1 | Complete | 2026-03-12 |
+| 43. Conversation Bookmarks | v2.6 | 1/1 | Complete | 2026-03-13 |
+| 44. Search History | v2.6 | 1/1 | Complete | 2026-03-13 |
+| 45. Title Editing | v2.6 | 1/1 | Complete | 2026-03-13 |
