@@ -79,7 +79,7 @@ async def export_conversations(request: ExportRequest):
 
     def query_all():
         table = db_client.get_table("messages")
-        dummy_vector = [0.0] * 384
+        dummy_vector = [0.0] * db_client.get_vector_dim()
 
         filters = []
         if platforms_filter:

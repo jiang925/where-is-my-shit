@@ -38,7 +38,7 @@ async def get_thread(conversation_id: str):
 
         def query_table():
             # Use a dummy vector to scan with vector search
-            dummy_vector = [0.0] * 384  # Match the vector dimensions from Message model
+            dummy_vector = [0.0] * db_client.get_vector_dim()  # Match the vector dimensions from Message model
 
             query_builder = table.search(dummy_vector, query_type="vector")
             query_builder = query_builder.where(f"conversation_id = '{conversation_id}'")
@@ -114,7 +114,7 @@ async def delete_conversation(conversation_id: str):
         # Count messages before deletion
         def count_and_delete():
             results = (
-                table.search([0.0] * 384, query_type="vector")
+                table.search([0.0] * db_client.get_vector_dim(), query_type="vector")
                 .where(f"conversation_id = '{conversation_id}'")
                 .select(["id"])
                 .limit(10000)
@@ -159,7 +159,7 @@ async def update_conversation_title(conversation_id: str, request: UpdateTitleRe
         def do_update():
             # First verify the conversation exists
             results = (
-                table.search([0.0] * 384, query_type="vector")
+                table.search([0.0] * db_client.get_vector_dim(), query_type="vector")
                 .where(f"conversation_id = '{conversation_id}'")
                 .select(["id"])
                 .limit(1)

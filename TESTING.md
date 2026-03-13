@@ -229,7 +229,26 @@ Work through in order. Check off as completed.
   - [ ] Add integration tests to CI pipeline
   - [ ] Verify all jobs pass
 
-## 8. Running the Full Suite
+## 8. Manual Curl Endpoint Tests
+
+All API endpoints verified with curl against a live server (2026-03-13). Server started with `start.sh`, embedding model: BAAI/bge-m3 (1024-dim vectors).
+
+| # | Endpoint | Method | Curl Command | Status | Response |
+|---|----------|--------|-------------|--------|----------|
+| 1 | `/api/v1/health` | GET | `curl http://localhost:8000/api/v1/health` | 200 | `{"status":"healthy","system":{...},"database":{"connected":true,"row_count":N}}` |
+| 2 | `/api/v1/ingest` | POST | `curl -X POST .../ingest -H "X-API-Key: $KEY" -d '{"content":"...","platform":"chatgpt","conversation_id":"test","title":"Test","timestamp":"2026-03-13T00:00:00Z"}'` | 201 | `{"id":"<uuid>","status":"created"}` |
+| 3 | `/api/v1/search` | POST | `curl -X POST .../search -H "X-API-Key: $KEY" -d '{"query":"test"}'` | 200 | `{"groups":[...],"count":N,"secondary_groups":[...],...}` |
+| 4 | `/api/v1/browse` | POST | `curl -X POST .../browse -H "X-API-Key: $KEY" -d '{"limit":5}'` | 200 | `{"items":[...],"total":N,"hasMore":bool}` |
+| 5 | `/api/v1/stats` | GET | `curl .../stats -H "X-API-Key: $KEY"` | 200 | `{"total_messages":N,"total_conversations":N,"by_platform":{...},"activity":[...]}` |
+| 6 | `/api/v1/thread/{id}` | GET | `curl .../thread/conv-id -H "X-API-Key: $KEY"` | 200 | `{"items":[...],"total":N}` |
+| 7 | `/api/v1/conversations/{id}/title` | PATCH | `curl -X PATCH .../conversations/conv-id/title -H "X-API-Key: $KEY" -d '{"title":"New Title"}'` | 200 | `{"conversation_id":"...","title":"New Title"}` |
+| 8 | `/api/v1/export` | POST | `curl -X POST .../export -H "X-API-Key: $KEY" -d '{}'` | 200 | ZIP file (application/zip) |
+| 9 | `/api/v1/open-terminal` | POST | `curl -X POST .../open-terminal -H "X-API-Key: $KEY" -d '{"path":"/tmp"}'` | 200 | `{"opened":"/private/tmp"}` |
+| 10 | `/api/v1/conversations/{id}` | DELETE | `curl -X DELETE .../conversations/conv-id -H "X-API-Key: $KEY"` | 200 | `{"deleted":1,"conversation_id":"..."}` |
+
+**Key fix applied:** All endpoints using dummy vector scanning (`[0.0] * 384`) were updated to use `db_client.get_vector_dim()` which reads the actual vector dimension from the table schema. This resolved 500 errors on browse, stats, thread, export, delete, and title update endpoints when the DB contains 1024-dim vectors (bge-m3 model).
+
+## 9. Running the Full Suite
 
 ```bash
 # Backend unit + coverage

@@ -74,7 +74,7 @@ async def browse_documents(request: BrowseRequest):
 
             # Create a dummy vector for scanning (all zeros)
             # This allows us to use vector search as a scan operation
-            dummy_vector = [0.0] * 384  # Match the vector dimensions from Message model
+            dummy_vector = [0.0] * db_client.get_vector_dim()
 
             query_builder = table.search(dummy_vector, query_type="vector")
 

@@ -32,31 +32,28 @@ async def ingest_document(request: IngestRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Embedding generation failed: {str(e)}")
 
-    # 3. Construct Message model
-    try:
-        message = Message(
-            id=request.id,
-            conversation_id=request.conversation_id,
-            platform=request.platform,
-            title=request.title,
-            content=request.content,
-            role=request.role,
-            timestamp=request.timestamp,
-            url=request.url,
-            vector=vector,
-        )
-    except Exception as e:
-        raise HTTPException(status_code=422, detail=f"Validation failed: {str(e)}")
+    # 3. Build record dict (avoids hardcoded Vector(384) in Message model)
+    record = {
+        "id": request.id,
+        "conversation_id": request.conversation_id,
+        "platform": request.platform,
+        "title": request.title,
+        "content": request.content,
+        "role": request.role,
+        "timestamp": request.timestamp,
+        "url": request.url,
+        "vector": vector,
+        "embedding_model": embedding_service.get_model_name(),
+    }
 
     # 4. Insert into LanceDB
     try:
         table = db_client.get_table("messages")
-        # table.add expects a list of items
-        await run_in_threadpool(table.add, [message])
+        await run_in_threadpool(table.add, [record])
 
         # Record write for compaction tracking
         compaction_manager.record_write()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database insertion failed: {str(e)}")
 
-    return {"id": message.id, "status": "created"}
+    return {"id": request.id, "status": "created"}

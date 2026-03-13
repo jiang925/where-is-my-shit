@@ -38,7 +38,7 @@ async def get_stats(
         table = db_client.get_table("messages")
 
         def query_table():
-            dummy_vector = [0.0] * 384
+            dummy_vector = [0.0] * db_client.get_vector_dim()
             query_builder = table.search(dummy_vector, query_type="vector")
 
             if platforms_to_filter:

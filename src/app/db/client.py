@@ -80,6 +80,18 @@ class DBClient:
                 print(f"Warning: Failed to verify/create FTS index on existing table: {e}")
                 print("  Hybrid search may fall back to vector-only mode")
 
+    def get_vector_dim(self, table_name: str = "messages") -> int:
+        """Return the vector dimension from the table schema (cached)."""
+        cache_key = f"_vdim_{table_name}"
+        if not hasattr(self, cache_key) or getattr(self, cache_key) is None:
+            table = self.get_table(table_name)
+            for field in table.schema:
+                if field.name == "vector" and hasattr(field.type, "list_size"):
+                    setattr(self, cache_key, field.type.list_size)
+                    return field.type.list_size
+            setattr(self, cache_key, 384)  # fallback
+        return getattr(self, cache_key)
+
     def get_table(self, table_name: str = "messages") -> lancedb.table.Table:
         if table_name not in self._tables:
             db = self.connect()
