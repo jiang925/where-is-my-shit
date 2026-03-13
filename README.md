@@ -20,7 +20,12 @@ English | [中文](README_CN.md)
 - **Semantic Search** — Vector similarity + full-text hybrid search with relevance ranking
 - **Source Filtering** — Filter by platform, quick presets (Web Chats, Dev Sessions, All)
 - **Timeline Browse** — Chronological browsing with date range filters (Today, This Week, etc.)
-- **Deep Links** — Click to jump back to the original conversation
+- **Keyboard Navigation** — Arrow keys to navigate results, `/` to focus search, Enter to open
+- **Dark Mode** — System/light/dark theme toggle with persistence
+- **In-Thread Search** — Find specific messages within conversations with highlighting
+- **Export** — Single conversation or bulk export as markdown/zip
+- **Bookmarks & Organization** — Star conversations, edit titles, search history
+- **Deep Links** — Click to jump back to the original conversation, Open in Terminal for dev sessions
 - **Local-First** — All data stays on your machine, no cloud dependency
 - **Multiple Embedding Backends** — sentence-transformers (default), fastembed, ONNX, OpenAI-compatible API
 
@@ -612,7 +617,7 @@ du -sh data/wims.lance/
 
 **View database statistics:**
 
-Visit http://localhost:8000/docs and use the `/api/v1/stats` endpoint (coming soon).
+Visit http://localhost:8000/stats or use the `/api/v1/stats` API endpoint.
 
 ---
 
@@ -737,15 +742,17 @@ WIMS uses a hybrid search architecture combining vector similarity and full-text
 ### Running Tests
 
 ```bash
-uv pip install -e ".[dev]"
+# Backend (176 tests)
 uv run pytest
-```
 
-### Code Quality
+# Frontend (82 tests)
+cd ui && npx vitest run
 
-```bash
-uv run ruff check src/ tests/    # Lint
-uv run ruff check --fix src/     # Auto-fix
+# E2E (70 tests, auto-launches server)
+npx playwright test
+
+# Lint
+uv run ruff check src/ tests/
 ```
 
 ---

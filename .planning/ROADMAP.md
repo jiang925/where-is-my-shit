@@ -17,6 +17,8 @@
 - ✅ **v2.2 In-Thread Search** - Phase 36 (shipped 2026-03-12)
 - ✅ **v2.3 Data Management & Deep Links** - Phases 37-38 (shipped 2026-03-12)
 - ✅ **v2.4 Dark Mode** - Phase 39 (shipped 2026-03-12)
+- ✅ **v2.5 Platform Coverage & Polish** - Phases 40-42 (shipped 2026-03-12)
+- ✅ **v2.6 Organization** - Phases 43-45 (shipped 2026-03-13)
 
 ## Phases
 
@@ -260,8 +262,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 22-01-PLAN.md — CHANGELOG and Docker version labels
-- [ ] 22-02-PLAN.md — GitHub Actions release workflow with validation
+- [x] 22-01-PLAN.md — CHANGELOG and Docker version labels
+- [x] 22-02-PLAN.md — GitHub Actions release workflow with validation
 
 #### Phase 23: Docker Publishing
 **Goal**: Auto-publish Docker images to GitHub Container Registry

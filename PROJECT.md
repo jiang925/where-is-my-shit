@@ -21,7 +21,7 @@ Completed: v1.0 through v2.6 (45 phases, 81 plans).
 The workflow is an iterative loop:
 
 ```
-Brainstorm --> Define Milestone --> Plan Phases --> Execute --> Test --> Audit Tests --> Ship
+Brainstorm --> Define Milestone --> Plan Phases --> Execute --> Test --> Audit Tests --> Audit Docs --> Ship
     ^                                                                                    |
     +------------------------------------------------------------------------------------+
 ```
@@ -32,7 +32,8 @@ Brainstorm --> Define Milestone --> Plan Phases --> Execute --> Test --> Audit T
 4. **Execute**: Implement plans one at a time. Commit after each plan.
 5. **Test**: Run all test layers (see section 3). Fix before moving on.
 6. **Audit Tests**: Check `TESTING.md` — enumerate gaps, implement missing tests, run, fix. Tests must be up to date and coverage targets met (90%+ unit) before shipping.
-7. **Ship**: Push to main, verify CI, update ROADMAP.md and STATE.md.
+7. **Audit Docs**: Review and update all documentation (`PROJECT.md`, `TESTING.md`, `README.md`, `.planning/STATE.md`, `.planning/ROADMAP.md`) to reflect the features just built. Docs must be accurate before shipping.
+8. **Ship**: Push to main, verify CI, update ROADMAP.md and STATE.md.
 
 Between milestones, brainstorm the next set of features before writing any code. No milestone should start without a brainstorm session.
 
@@ -54,8 +55,8 @@ Between milestones, brainstorm the next set of features before writing any code.
 | Layer | Tool | Command | Count | What it covers |
 |-------|------|---------|-------|----------------|
 | Backend unit/integration | pytest | `uv run pytest` | 176 tests | API endpoints, DB operations, auth, search, browse, thread, delete, terminal, stats, export, embeddings, reranker, migration, compaction, config, schemas, SPA, health, ingest |
-| Frontend unit | vitest | `cd ui && npm test` | 82 tests | ResultCard (13), SearchBar (5), useKeyboardNavigation (12), SourceFilterUI (7), PresetButtons (6), DateRangeFilter (5), CopyablePath (5), TimelineSection (4), useTheme (6), dateGroups (9), pathUtils (9), App smoke (1) |
-| E2E (browser) | Playwright (Chromium) | `npx playwright test` | 70 tests | Full-stack flows: auth, search, browse, filters, path display, relevance, timeline, keyboard nav, export, thread search, delete, open terminal, UI regressions, stats page, dark mode |
+| Frontend unit | vitest | `cd ui && npm test` | 82 tests (12 files) | ResultCard (13), SearchBar (5), useKeyboardNavigation (12), SourceFilterUI (7), PresetButtons (6), DateRangeFilter (5), CopyablePath (5), TimelineSection (4), useTheme (6), dateGroups (9), pathUtils (9), App smoke (1) |
+| E2E (browser) | Playwright (Chromium) | `npx playwright test` | 70 CI tests | Full-stack flows: auth, search, browse, filters, path display, relevance, timeline, keyboard nav, export, thread search, delete, open terminal, UI regressions, stats page, dark mode |
 | E2E (manual) | Playwright | `npx playwright test tests/e2e/spec/exploratory.spec.ts` | 11 tests | Exploratory tests against a live server (excluded from CI) |
 | Extension | webpack build | `cd extension && npm run build` | Build check | TypeScript compilation, bundling |
 | Lint | ruff | `uv run ruff check src/ tests/` | - | Python code quality |
@@ -270,6 +271,8 @@ Mix of coverage, readability, and organization.
 
 ### Backlog
 
+- [x] Audit and keep all documentation up to date (PROJECT.md, TESTING.md, README.md, ROADMAP.md, STATE.md)
+- [x] Dark mode toggle button not working — Fixed: Tailwind v4 ignores `tailwind.config.js`; added `@custom-variant dark` and `@plugin` directives to `index.css`
 - [ ] Multi-device sync
 - [ ] Settings/preferences UI page
 - [ ] Bulk delete UI

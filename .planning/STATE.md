@@ -33,10 +33,10 @@ Progress: [███████████████████████
 
 | Layer | Count |
 |-------|-------|
-| Backend (pytest) | 133 |
-| Frontend (vitest) | 31 |
-| E2E (Playwright) | 61 |
-| **Total** | **225** |
+| Backend (pytest) | 176 |
+| Frontend (vitest) | 82 |
+| E2E (Playwright) | 70 (+11 exploratory) |
+| **Total** | **328** |
 
 ## By Milestone
 
@@ -63,4 +63,4 @@ Progress: [███████████████████████
 ## Session Continuity
 
 **Last session:** 2026-03-13
-**Status:** v2.6 Organization complete. All 45 phases shipped. Working on TESTING.md gaps.
+**Status:** v2.6 Organization complete. All 45 phases shipped. Dark mode bug fixed (Tailwind v4 CSS config). Docs audited.
