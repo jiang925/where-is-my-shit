@@ -207,3 +207,20 @@ Reflections from each milestone. Mistakes to avoid, patterns that work.
 - Graceful degradation with `try/except pass` for the conversation context query in search — if it fails, results still work, just without context
 - `line-clamp-2` for first user message + `line-clamp-3` for content gives good information density without overwhelming the card
 - When changing browse from per-message to per-conversation, existing e2e tests with small `limit` values fail because fewer items fit per page. Always increase test limits when changing result granularity.
+
+### v2.0 Keyboard Navigation & Quality (2026-03-12)
+
+**What went well:**
+- `useKeyboardNavigation` hook is clean and reusable — 12 unit tests cover all edge cases
+- Discovered React 19 `forwardRef` issue immediately via e2e tests — switched to `inputRef` prop
+- 31 vitest tests written in one pass, all pass first try
+
+**Mistakes to avoid:**
+- `forwardRef` doesn't work reliably in React 19 — use regular props for refs. React 19 passes `ref` as a prop natively, so `forwardRef` wrapper is unnecessary and may cause silent failures.
+- Test data from one e2e spec leaks into other specs since the test DB persists. ResultCard `role="button"` with content containing "clear" caused `getByRole('button', { name: 'Clear' })` to match 2 elements. Always use `{ exact: true }` for button name selectors that might collide with result card text content.
+- `page.click('body')` and `page.keyboard.press('Tab')` are unreliable for blurring autoFocused inputs. Use `page.evaluate(() => { input.blur(); button.focus(); })` for deterministic focus control in Playwright tests.
+
+**Patterns that work:**
+- Keyboard navigation as a separate hook makes it testable independently from UI components
+- `inputRef` as a regular prop is simpler and more explicit than `forwardRef`
+- `renderHook` from @testing-library/react makes hook tests readable and concise

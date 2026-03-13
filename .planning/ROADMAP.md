@@ -12,6 +12,7 @@
 - ✅ **v1.7 Distribution & Packaging** - Phases 22-25 (shipped 2026-03-06)
 - ✅ **v1.8 UI Polish & Convenience** - Phases 26-28 (shipped 2026-03-08)
 - ✅ **v1.9 Result Context & Readability** - Phases 29-31 (shipped 2026-03-12)
+- ✅ **v2.0 Keyboard Navigation & Quality** - Phases 32-33 (shipped 2026-03-12)
 
 ## Phases
 
@@ -303,6 +304,24 @@ Plans:
 Plans:
 - [x] 25-01-PLAN.md — Complete daemon distribution system with install/update/uninstall scripts
 
+### ✅ v2.0 Keyboard Navigation & Quality (Shipped 2026-03-12)
+
+**Milestone Goal:** Add keyboard-driven navigation for power users and establish frontend test coverage.
+
+#### Phase 32: Keyboard Navigation for Search
+**Goal**: Navigate search results with keyboard shortcuts
+**Plans**: 1 plan
+
+Plans:
+- [x] 32-01: useKeyboardNavigation hook, ResultCard focus ring, SearchBar inputRef, `/` shortcut, 6 e2e tests
+
+#### Phase 33: Frontend Component Tests
+**Goal**: Establish vitest test coverage for key frontend components
+**Plans**: 1 plan
+
+Plans:
+- [x] 33-01: 31 vitest tests for ResultCard, SearchBar, useKeyboardNavigation hook
+
 ### ✅ v1.9 Result Context & Readability (Shipped 2026-03-12)
 
 **Milestone Goal:** Make search and browse results recognizable at a glance by showing conversation context instead of raw message snippets.
@@ -394,3 +413,5 @@ Phases execute in numeric order: 26 → 27 → 28
 | 29. Conversation-level Browse | v1.9 | 1/1 | Complete | 2026-03-12 |
 | 30. Richer Result Cards | v1.9 | 1/1 | Complete | 2026-03-12 |
 | 31. Search Highlight | v1.9 | 1/1 | Complete | 2026-03-12 |
+| 32. Keyboard Navigation | v2.0 | 1/1 | Complete | 2026-03-12 |
+| 33. Frontend Component Tests | v2.0 | 1/1 | Complete | 2026-03-12 |
