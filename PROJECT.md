@@ -138,7 +138,7 @@ These are areas identified from README goals and real usage. Each needs a brains
 
 - [x] ~~**Export/import**~~ — Export done in v2.1 (single + bulk). Import deferred.
 - [ ] **Multi-device sync** — Optional sync between machines (currently local-only).
-- [ ] **Better deep links** — For CLI tools (Claude Code, Cursor), opening the original session is difficult. Explore launching terminal to the right directory.
+- [x] ~~**Better deep links**~~ — Done in v2.3 (Open in Terminal for CLI sessions).
 - [x] ~~**Search within threads**~~ — Done in v2.2 (in-thread search with highlighting and dimming).
 
 ### v1.9 — Result Context & Readability (complete)
@@ -195,10 +195,60 @@ Brainstormed 2026-03-12. Every user benefits from dark mode — it's a polished 
 
 **Status**: Complete. 133 backend + 31 vitest + 61 e2e tests pass.
 
+### v2.5 — Brainstorm (2026-03-12)
+
+**Context:** v2.4 shipped. 39 phases complete. All core features work. Time to address gaps and improve the experience for growing conversation libraries.
+
+**Key findings from codebase review:**
+1. **Claude.ai extractor is missing** — README claims "ChatGPT, Claude, Gemini, Perplexity via Chrome extension" but there's no Claude extractor in `extension/src/content/extractors/`. Only ChatGPT, Gemini, Perplexity have extractors. This is the most visible gap.
+2. **Known UX problems partially unresolved** — Content snippets are still limited to `line-clamp-3`. Users still struggle with truncated previews.
+3. **No organization features** — No way to bookmark, tag, or star conversations. Growing libraries become hard to navigate.
+4. **Conversation panel shows raw text** — AI responses contain markdown (code blocks, lists, headers) but render as plain text with `whitespace-pre-wrap`.
+5. **No search history** — Users must re-type queries every time.
+
+**Proposed milestone options:**
+
+#### Option A: "Platform Coverage & Polish" (Recommended)
+Focus on filling gaps and improving content display.
+- Phase 40: Claude.ai web extractor (fix the README promise)
+- Phase 41: Markdown rendering in conversation panel (react-markdown)
+- Phase 42: Expandable content preview in ResultCard (click to expand snippet)
+
+**Pros:** Fixes the most visible gap (Claude.ai), makes conversations actually readable (markdown), and addresses the known UX problem (truncated snippets).
+**Cons:** No organization features (bookmarks/tags).
+
+#### Option B: "Organization"
+Focus on managing growing conversation libraries.
+- Phase 40: Conversation bookmarks/favorites (star icon, starred filter)
+- Phase 41: Conversation title editing
+- Phase 42: Search history dropdown (recent queries)
+
+**Pros:** Adds long-requested organization features.
+**Cons:** Claude.ai gap persists, content readability unchanged.
+
+#### Option C: "Full Stack Polish"
+Mix of coverage, readability, and organization.
+- Phase 40: Claude.ai web extractor
+- Phase 41: Markdown rendering in conversation panel
+- Phase 42: Conversation bookmarks/favorites
+- Phase 43: Settings/preferences UI page
+
+**Pros:** Broadest coverage of gaps.
+**Cons:** Larger scope, settings page is lower impact.
+
+**Recommendation:** Option A. The Claude.ai extractor is a credibility issue (README claims it works), markdown rendering dramatically improves conversation readability, and expandable previews fix the last known UX problem. These three changes will have the most visible impact for users. Bookmarks can wait for v2.6.
+
+**Status**: Awaiting approval. No code until milestone is defined.
+
 ### Backlog
 
 - [ ] Multi-device sync
 - [ ] Conversation tagging/bookmarks
+- [ ] Search history dropdown
+- [ ] Settings/preferences UI page
+- [ ] Conversation title editing
+- [ ] Bulk delete UI
+- [ ] Conversation dedup detection
 
 ## 6. Lessons Learned
 

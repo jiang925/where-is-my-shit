@@ -61,4 +61,4 @@ Progress: [███████████████████████
 ## Session Continuity
 
 **Last session:** 2026-03-12
-**Status:** v2.4 complete. All 39 phases shipped. Ready for next brainstorm.
+**Status:** v2.4 complete. v2.5 brainstormed — 3 options proposed in PROJECT.md. Recommended: Option A (Claude.ai extractor, markdown rendering, expandable previews). Awaiting approval.
