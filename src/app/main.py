@@ -114,7 +114,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Print startup banner with credentials
     print("\n" + "=" * 60)
     print("🚀 WIMS Server Running")
-    print(f"🔑 API Key: {settings.api_key}")
+    masked_key = settings.api_key[:8] + "..." if settings.api_key else "(not set)"
+    print(f"🔑 API Key: {masked_key}")
     print(f"📄 Config:  {config_manager.path}")
     print(f"📚 Docs:    http://{settings.host}:{settings.port}/docs")
     print("=" * 60 + "\n")

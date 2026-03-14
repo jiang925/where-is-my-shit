@@ -6,6 +6,7 @@ Run with:
     fastmcp run src/app/mcp_server.py
 """
 
+import re
 from datetime import datetime
 
 from fastmcp import FastMCP
@@ -130,6 +131,8 @@ def get_conversation(conversation_id: str) -> str:
     dummy_vector = [0.0] * db_client.get_vector_dim()
 
     search = table.search(dummy_vector, query_type="vector")
+    if not re.match(r"^[a-zA-Z0-9\-_]+$", conversation_id):
+        return {"error": "Invalid conversation_id format"}
     search = search.where(f"conversation_id = '{conversation_id}'")
     search = search.select(
         ["id", "conversation_id", "timestamp", "platform", "title", "content", "url", "role"]

@@ -1,4 +1,5 @@
 import platform
+import shlex
 import subprocess
 from pathlib import Path
 
@@ -47,7 +48,7 @@ async def open_terminal(request: OpenTerminalRequest):
                         # xdg-open doesn't support terminal directly, skip
                         continue
                     else:
-                        subprocess.Popen([term, "-e", f"cd {str(dir_path)} && $SHELL"])
+                        subprocess.Popen([term, "-e", f"cd {shlex.quote(str(dir_path))} && $SHELL"])
                     break
                 except FileNotFoundError:
                     continue

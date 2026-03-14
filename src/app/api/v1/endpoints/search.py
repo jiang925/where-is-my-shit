@@ -1,3 +1,4 @@
+import re
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -47,14 +48,16 @@ async def search_documents(request: SearchRequest):
         # Build filters
         filters = []
 
-        # Conversation filter (existing)
+        # Conversation filter (validated to prevent injection)
         if request.conversation_id:
+            if not re.match(r"^[a-zA-Z0-9\-_]+$", request.conversation_id):
+                raise HTTPException(status_code=400, detail="Invalid conversation_id format")
             filters.append(f"conversation_id = '{request.conversation_id}'")
 
-        # Platform filter (supports multiple values with OR logic)
+        # Platform filter (supports multiple values with OR logic, validated against whitelist)
         if request.platform:
             if isinstance(request.platform, str):
-                platforms_to_filter = [request.platform]
+                platforms_to_filter = [request.platform] if request.platform in ALLOWED_PLATFORMS else []
             else:
                 platforms_to_filter = []
                 for p in request.platform:
@@ -82,20 +85,20 @@ async def search_documents(request: SearchRequest):
             if start:
                 # LanceDB stores naive timestamps, strip tzinfo
                 naive_start = start.replace(tzinfo=None).isoformat()
-                filters.append(f"timestamp >= '{naive_start}'")
+                filters.append(f"timestamp >= timestamp '{naive_start}'")
 
         # Specific date filters (from search operators)
         if request.before_date:
             try:
                 before_dt = datetime.fromisoformat(request.before_date)
-                filters.append(f"timestamp < '{before_dt.isoformat()}'")
+                filters.append(f"timestamp < timestamp '{before_dt.isoformat()}'")
             except ValueError:
                 pass
 
         if request.after_date:
             try:
                 after_dt = datetime.fromisoformat(request.after_date)
-                filters.append(f"timestamp >= '{after_dt.isoformat()}'")
+                filters.append(f"timestamp >= timestamp '{after_dt.isoformat()}'")
             except ValueError:
                 pass
 
