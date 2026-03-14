@@ -9,6 +9,7 @@ from src.app.api.v1.endpoints import (
     ingest,
     search,
     stats,
+    sync,
     terminal,
     thread,
 )
@@ -25,3 +26,4 @@ api_router.include_router(import_data.router, tags=["import"])
 api_router.include_router(terminal.router, tags=["terminal"])
 api_router.include_router(health.router, tags=["health"])
 api_router.include_router(digest.router, tags=["digest"])
+api_router.include_router(sync.router, tags=["sync"])

@@ -143,7 +143,7 @@ The core indexing pipeline works well — web chats (ChatGPT, Claude, Gemini, Pe
 These are areas identified from README goals and real usage. Each needs a brainstorm session before becoming a milestone.
 
 - [x] ~~**Export/import**~~ — Export done in v2.1 (single + bulk). Import deferred.
-- [ ] **Multi-device sync** — Optional sync between machines (currently local-only).
+- [x] ~~**Multi-device sync**~~ — Done. Sync endpoints: `GET /api/v1/sync/changes?since=<ts>`, `POST /api/v1/sync/push`, `GET /api/v1/sync/status`.
 - [x] ~~**Better deep links**~~ — Done in v2.3 (Open in Terminal for CLI sessions).
 - [x] ~~**Search within threads**~~ — Done in v2.2 (in-thread search with highlighting and dimming).
 
@@ -273,7 +273,7 @@ Mix of coverage, readability, and organization.
 
 - [x] Audit and keep all documentation up to date (PROJECT.md, TESTING.md, README.md, ROADMAP.md, STATE.md)
 - [x] Dark mode toggle button not working — Fixed: Tailwind v4 ignores `tailwind.config.js`; added `@custom-variant dark` and `@plugin` directives to `index.css`
-- [ ] Multi-device sync
+- [x] Multi-device sync — Done. Sync API endpoints for pull/push between instances.
 - [x] Settings/preferences UI page — Added `/settings` route with theme selector, default view mode, data management (clear local data), and search operators help reference
 - [x] Bulk delete UI — Added checkboxes on BrowsePage result cards, floating action bar with bulk delete/cancel, selection toggle button in header
 - [x] Conversation dedup detection — Import endpoints now check for existing message IDs before inserting, reporting `skipped_duplicates` count
@@ -313,7 +313,7 @@ Implements the P0 and P1 features from the Feature Research section below.
 
 **Status**: Complete. 194 backend + 82 vitest tests pass.
 
-### v3.4 — Dev Foundation (partial)
+### v3.4 — Dev Foundation (complete)
 
 **Completed:**
 - **pytest-cov** (P0) — Added to dev dependencies, configured in `pyproject.toml` with `fail_under = 60`, `show_missing = true`.
@@ -329,7 +329,7 @@ Implements the P0 and P1 features from the Feature Research section below.
 - **Trivy Docker scanning** — Added `aquasecurity/trivy-action` step to release workflow.
 - **git-cliff changelog** — `cliff.toml` with conventional commit parsing and grouped output.
 
-**Status**: P0 + most P1 items complete. Remaining: codecov, extension unit tests.
+**Status**: All items complete.
 
 ### v3.5 — Additional Features
 
@@ -348,8 +348,17 @@ Implements the P0 and P1 features from the Feature Research section below.
 - **git-cliff config** (v3.4) — `cliff.toml`.
 - **Gemini CLI watcher** (v3.2) — `GeminiCliWatcher` for `~/.gemini/tmp/*/chats/` sessions.
 - **Continue.dev watcher** (v3.2) — `ContinueDevWatcher` for `~/.continue/sessions/` sessions.
+- **Cline watcher** (v3.2) — `ClineWatcher` for VS Code globalStorage tasks.
+- **Aider watcher** (v3.2) — `AiderWatcher` for `.aider.chat.history.md` files.
+- **Jan.ai watcher** (v3.2) — `JanWatcher` for `~/jan/threads/` JSONL sessions.
+- **Chrome extractors** (v3.2) — Copilot, Poe, Grok, Doubao, Kimi, Qwen Chat (6 new, 13 total).
+- **Conversation merge** (v3.3) — `POST /api/v1/conversations/merge` endpoint.
+- **Extension unit tests** (v3.4) — vitest + jsdom, 56 tests across 4 files (fingerprint, storage, api, extractors).
 
-**Status**: Complete. 194 backend + 82 vitest tests pass.
+- **Open WebUI watcher** (v3.2) — API-based watcher polling `/api/v1/chats` for Ollama/self-hosted users.
+- **Multi-device sync** (backlog) — `GET /api/v1/sync/changes`, `POST /api/v1/sync/push`, `GET /api/v1/sync/status`.
+
+**Status**: Complete. 194 backend + 82 ui vitest + 56 extension vitest tests pass.
 
 ### Feature Research (2026-03-13)
 
@@ -373,57 +382,57 @@ Fix the 3 known UX problems and add power-user search features.
 - ~~**Bulk selection & actions** (P1)~~ — Done (BrowsePage).
 - ~~**Empty state suggestions** (P1)~~ — Done.
 
-#### v3.2 — Platform Expansion
+#### v3.2 — Platform Expansion (mostly complete)
 
 New Chrome extension extractors and watcher daemon integrations.
 
 **Watcher daemon (file-based):**
-| Platform | Stars/Users | Feasibility | Storage format |
-|----------|-------------|-------------|----------------|
-| Gemini CLI | 97.6k stars | Easy | JSON sessions in `~/.gemini/tmp/*/chats/` |
-| Windsurf/Antigravity | $3B acquisition | Medium | Already partially implemented in `antigravity.py` |
-| Continue.dev | 31.8k stars, 2.3M installs | Easy | JSON sessions in `~/.continue/sessions/` |
-| Cline | 59k stars, 3.3M installs | Medium | JSON tasks in VS Code globalStorage |
-| Aider | 41.9k stars, 680k PyPI/mo | Medium | Markdown history `.aider.chat.history.md` per project |
-| Qwen Code | 20.5k stars | Easy-Medium | Open-source terminal agent, format TBD |
-| Cherry Studio | 41.4k stars | Easy-Medium | Open-source Electron app, local storage |
-| Jan.ai | 41k stars | Easy | Offline-first, JSON in `~/jan/` |
+| Platform | Stars/Users | Feasibility | Status |
+|----------|-------------|-------------|--------|
+| ~~Gemini CLI~~ | 97.6k stars | Easy | ✅ Done |
+| Windsurf/Antigravity | $3B acquisition | Medium | Already in `antigravity.py` |
+| ~~Continue.dev~~ | 31.8k stars, 2.3M installs | Easy | ✅ Done |
+| ~~Cline~~ | 59k stars, 3.3M installs | Medium | ✅ Done |
+| ~~Aider~~ | 41.9k stars, 680k PyPI/mo | Medium | ✅ Done |
+| Qwen Code | 20.5k stars | Easy-Medium | Deferred (format TBD) |
+| Cherry Studio | 41.4k stars | Easy-Medium | Deferred |
+| ~~Jan.ai~~ | 41k stars | Easy | ✅ Done |
 
 **Chrome extension extractors:**
-| Platform | Visits/Users | Feasibility | Notes |
-|----------|--------------|-------------|-------|
-| DeepSeek Chat | 40-60M MAU | Medium | Largest unserved global AI chat, mirrors ChatGPT pattern |
-| Microsoft Copilot | 50-80M MAU | Medium | Watch for Shadow DOM (Fluent UI) |
-| Le Chat (Mistral) | 5-10M MAU | Easy | Clean React SPA, strong EU/developer audience |
-| Poe | 10-20M MAU | Medium | Multi-model users = ideal WIMS audience |
-| Doubao | 60M MAU | Medium-Hard | China's #1 AI chat (ByteDance) |
-| Grok | 30-50M MAU | Hard | Target grok.com, not x.com |
-| Kimi | 20-35M MAU | Medium | kimi.com, strong in China |
-| Qwen Chat | 15-30M MAU | Medium | chat.qwen.ai, multiple redirect domains |
-| HuggingChat | 2-5M MAU | Easy | Open-source codebase = easy selectors |
+| Platform | Visits/Users | Feasibility | Status |
+|----------|--------------|-------------|--------|
+| ~~DeepSeek Chat~~ | 40-60M MAU | Medium | ✅ Done |
+| ~~Microsoft Copilot~~ | 50-80M MAU | Medium | ✅ Done |
+| ~~Le Chat (Mistral)~~ | 5-10M MAU | Easy | ✅ Done |
+| ~~Poe~~ | 10-20M MAU | Medium | ✅ Done |
+| ~~Doubao~~ | 60M MAU | Medium-Hard | ✅ Done |
+| ~~Grok~~ | 30-50M MAU | Hard | ✅ Done |
+| ~~Kimi~~ | 20-35M MAU | Medium | ✅ Done |
+| ~~Qwen Chat~~ | 15-30M MAU | Medium | ✅ Done |
+| ~~HuggingChat~~ | 2-5M MAU | Easy | ✅ Done |
 
 **Self-hosted / API integration:**
-| Platform | Stars/Users | Feasibility | Notes |
-|----------|-------------|-------------|-------|
-| Open WebUI | 50k stars | Easy | REST API at `/api/v1/chats`, covers all Ollama/LLM self-hosted users |
+| Platform | Stars/Users | Feasibility | Status |
+|----------|-------------|-------------|--------|
+| ~~Open WebUI~~ | 50k stars | Easy | ✅ Done — API-based watcher polling `/api/v1/chats` |
 
 **Browser expansion:** Firefox (P2 — privacy-focused audience aligns), Safari (P2 — requires Xcode + App Store), Mobile (defer — consider companion app instead).
 
-#### v3.3 — Smart Organization (mostly complete)
+#### v3.3 — Smart Organization (complete)
 
 Intelligence features that help users navigate growing conversation libraries.
 
 - ~~**Related conversations** (P1)~~ — Done. `GET /api/v1/related/{conversation_id}` + ConversationPanel UI.
-- **Auto-tagging** (P1) — Extract tags from content: programming languages, frameworks, topics.
+- ~~**Auto-tagging** (P1)~~ — Done. `GET /api/v1/tags/{conversation_id}` + `tagger.py` service. Keyword-based extraction of languages, frameworks, tools, topics. Tags displayed in ConversationPanel.
 - ~~**Daily/weekly digest** (P1)~~ — Done. `GET /api/v1/digest?period=today|this_week`. Groups conversations by platform with counts and summaries.
 - ~~**Obsidian-compatible export** (P1)~~ — Done. `POST /api/v1/export` with `format="obsidian"`.
 - ~~**Conversation notes** (P2)~~ — Done. `useNotes` hook with localStorage, note editor in ConversationPanel, StickyNote icon in header.
 - ~~**Pinned conversations** (P2)~~ — Done. Extended bookmarks with `togglePin`/`isPinned`, pinned section at top of BrowsePage.
 - ~~**Copy context for new chat** (P2)~~ — Done. ClipboardCopy button in ConversationPanel extracts topic, code blocks, and last response summary.
-- **Conversation merge** (P2) — Combine multiple conversations on same topic.
+- ~~**Conversation merge** (P2)~~ — Done. `POST /api/v1/conversations/merge` reassigns messages from source conversations to target.
 - ~~**Share as HTML** (P2)~~ — Done. `POST /api/v1/export` with `format="html"`. Self-contained HTML with inline CSS.
 
-#### v3.4 — Dev Foundation (mostly complete)
+#### v3.4 — Dev Foundation (complete)
 
 Tooling improvements for maintainability and contributor experience.
 
@@ -433,8 +442,8 @@ Tooling improvements for maintainability and contributor experience.
 - ~~**Pyright** (P1)~~ — Done. `pyrightconfig.json` with `typeCheckingMode = "basic"`, Python 3.11.
 - ~~**justfile** (P1)~~ — Done.
 - ~~**Pre-commit hooks** (P1)~~ — Done. `.pre-commit-config.yaml` with ruff, trailing whitespace, large files, merge conflicts.
-- **Codecov** (P1) — Coverage badges for README, PR delta comments, trend tracking.
-- **Extension unit tests** (P1) — Biggest test gap: 2,200 lines, zero tests.
+- ~~**Codecov** (P1)~~ — Done. `codecov/codecov-action@v4` in CI workflow with backend/frontend flags.
+- ~~**Extension unit tests** (P1)~~ — Done. vitest + jsdom, 56 tests for fingerprint, storage, api client, and extractors.
 - ~~**Devcontainer** (P1)~~ — Done. `.devcontainer/devcontainer.json` for VS Code / Codespaces.
 - ~~**Trivy Docker scanning** (P1)~~ — Done. Added `aquasecurity/trivy-action` step to release workflow after Docker push.
 - ~~**PR/issue templates** (P2)~~ — Done. Bug report YAML template + PR template.
