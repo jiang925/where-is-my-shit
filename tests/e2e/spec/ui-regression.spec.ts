@@ -82,8 +82,8 @@ test.describe('UI Regression Tests', () => {
     await searchResponse;
     await page.waitForTimeout(500);
 
-    // Verify the content paragraph has line-clamp-3 class (reduced from 6 to make room for first_user_message)
-    const contentParagraph = page.locator('p.line-clamp-3').first();
+    // Verify the content paragraph exists with font-mono styling (line-clamp-3 applied conditionally based on kwicSnippet)
+    const contentParagraph = page.locator('p.font-mono').first();
     await expect(contentParagraph).toBeVisible();
   });
 

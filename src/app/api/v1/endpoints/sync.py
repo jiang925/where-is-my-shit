@@ -113,7 +113,7 @@ async def sync_changes(
 
         def fetch_changes():
             dim = db_client.get_vector_dim()
-            ts_filter = f"timestamp > '{since_dt.isoformat()}'"
+            ts_filter = f"timestamp > timestamp '{since_dt.isoformat()}'"
             rows = (
                 table.search([0.0] * dim, query_type="vector")
                 .where(ts_filter)
@@ -163,63 +163,66 @@ async def sync_push(request: SyncPushRequest):
     try:
         table = db_client.get_table("messages")
         embedding_service = EmbeddingService()
+        dim = db_client.get_vector_dim()
 
-        def do_push():
-            # Get existing IDs
-            dim = db_client.get_vector_dim()
-            existing_rows = (
+        # Get existing IDs for dedup
+        def get_existing():
+            rows = (
                 table.search([0.0] * dim, query_type="vector")
                 .select(["id"])
                 .limit(100000)
                 .to_list()
             )
-            existing_ids = {r["id"] for r in existing_rows}
+            return {r["id"] for r in rows}
 
-            to_insert = []
-            skipped = 0
+        existing_ids = await run_in_threadpool(get_existing)
 
-            for msg in request.messages:
-                msg_id = msg.id or str(uuid.uuid4())
-                if msg_id in existing_ids:
-                    skipped += 1
-                    continue
+        to_insert = []
+        skipped = 0
 
-                # Parse timestamp
-                try:
-                    if "T" in msg.timestamp:
-                        ts = datetime.fromisoformat(
-                            msg.timestamp.replace("Z", "+00:00")
-                        ).replace(tzinfo=None)
-                    else:
-                        ts = datetime.fromtimestamp(
-                            float(msg.timestamp), tz=UTC
-                        ).replace(tzinfo=None)
-                except (ValueError, TypeError):
-                    ts = datetime.now(UTC).replace(tzinfo=None)
+        for msg in request.messages:
+            msg_id = msg.id or str(uuid.uuid4())
+            if msg_id in existing_ids:
+                skipped += 1
+                continue
 
-                # Generate embedding
-                vector = embedding_service.embed_text(msg.content)
-                if not vector:
-                    vector = [0.0] * dim
+            # Parse timestamp
+            try:
+                if "T" in msg.timestamp:
+                    ts = datetime.fromisoformat(
+                        msg.timestamp.replace("Z", "+00:00")
+                    ).replace(tzinfo=None)
+                else:
+                    ts = datetime.fromtimestamp(
+                        float(msg.timestamp), tz=UTC
+                    ).replace(tzinfo=None)
+            except (ValueError, TypeError):
+                ts = datetime.now(UTC).replace(tzinfo=None)
 
-                to_insert.append({
-                    "id": msg_id,
-                    "conversation_id": msg.conversation_id,
-                    "platform": msg.platform,
-                    "title": msg.title,
-                    "content": msg.content,
-                    "role": msg.role,
-                    "timestamp": ts,
-                    "url": msg.url,
-                    "vector": vector,
-                })
+            # Generate embedding
+            vector = await run_in_threadpool(
+                embedding_service.embed_text, msg.content
+            )
+            if not vector:
+                vector = [0.0] * dim
 
-            if to_insert:
-                table.add(to_insert)
+            to_insert.append({
+                "id": msg_id,
+                "conversation_id": msg.conversation_id,
+                "platform": msg.platform,
+                "title": msg.title,
+                "content": msg.content,
+                "role": msg.role,
+                "timestamp": ts,
+                "url": msg.url,
+                "vector": vector,
+                "embedding_model": embedding_service.get_model_name(),
+            })
 
-            return len(to_insert), skipped
+        if to_insert:
+            await run_in_threadpool(table.add, to_insert)
 
-        inserted, skipped = await run_in_threadpool(do_push)
+        inserted = len(to_insert)
 
     except Exception as e:
         raise HTTPException(

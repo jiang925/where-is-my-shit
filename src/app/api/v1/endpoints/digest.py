@@ -38,7 +38,7 @@ async def get_digest(period: str = Query("today", pattern="^(today|this_week)$")
         dim = db_client.get_vector_dim()
         rows = (
             table.search([0.0] * dim, query_type="vector")
-            .where(f"timestamp >= '{naive_start}'")
+            .where(f"timestamp >= timestamp '{naive_start}'")
             .select(["conversation_id", "platform", "title", "role", "content", "timestamp"])
             .limit(100000)
             .to_list()

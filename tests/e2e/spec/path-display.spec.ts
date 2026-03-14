@@ -68,9 +68,9 @@ test('path display: Claude Code conversations show file path instead of Open lin
   await expect(page.getByPlaceholder('Search your history...')).toBeVisible();
   console.log('Authenticated successfully');
 
-  // Search for "React" (matches both Claude Code and ChatGPT)
-  console.log('Searching for "React"...');
-  await page.getByPlaceholder('Search your history...').fill('React');
+  // Search for "React components" (matches both Claude Code and ChatGPT documents)
+  console.log('Searching for "React components"...');
+  await page.getByPlaceholder('Search your history...').fill('React components');
   await page.waitForResponse((response) => response.url().includes('/api/v1/search') && response.status() === 200);
   console.log('Search response received');
 
