@@ -16,6 +16,12 @@ class UpdateTitleRequest(BaseModel):
     title: str
 
 
+class MergeConversationsRequest(BaseModel):
+    source_ids: list[str]
+    target_id: str
+    new_title: str | None = None
+
+
 # Only allow alphanumeric, hyphens, and underscores in conversation_id
 CONVERSATION_ID_PATTERN = re.compile(r"^[a-zA-Z0-9\-_]+$")
 
@@ -260,6 +266,79 @@ async def get_related_conversations(conversation_id: str, limit: int = 5):
         )
 
     return {"items": items, "total": len(items)}
+
+
+@router.post("/conversations/merge")
+async def merge_conversations(request: MergeConversationsRequest):
+    """
+    Merge multiple conversations into one. All messages from source_ids
+    are reassigned to target_id. Source conversations are effectively
+    absorbed into the target.
+    """
+    all_ids = set(request.source_ids) | {request.target_id}
+    for cid in all_ids:
+        if not CONVERSATION_ID_PATTERN.match(cid):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid conversation_id: {cid}",
+            )
+
+    if not request.source_ids:
+        raise HTTPException(status_code=400, detail="source_ids must not be empty")
+
+    if request.target_id in request.source_ids:
+        raise HTTPException(
+            status_code=400,
+            detail="target_id must not be in source_ids",
+        )
+
+    try:
+        table = db_client.get_table("messages")
+        new_title = request.new_title
+
+        def do_merge():
+            moved = 0
+            for src_id in request.source_ids:
+                update_vals: dict = {"conversation_id": request.target_id}
+                if new_title:
+                    update_vals["title"] = new_title
+                table.update(
+                    where=f"conversation_id = '{src_id}'",
+                    values=update_vals,
+                )
+                # Count how many were moved
+                rows = (
+                    table.search(
+                        [0.0] * db_client.get_vector_dim(),
+                        query_type="vector",
+                    )
+                    .where(f"conversation_id = '{request.target_id}'")
+                    .select(["id"])
+                    .limit(10000)
+                    .to_list()
+                )
+                moved = len(rows)
+
+            # Update title on target if specified
+            if new_title:
+                table.update(
+                    where=f"conversation_id = '{request.target_id}'",
+                    values={"title": new_title},
+                )
+            return moved
+
+        total = await run_in_threadpool(do_merge)
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Merge failed: {str(e)}"
+        )
+
+    return {
+        "target_id": request.target_id,
+        "merged_sources": request.source_ids,
+        "total_messages": total,
+    }
 
 
 @router.get("/tags/{conversation_id}")

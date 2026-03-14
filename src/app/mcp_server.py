@@ -14,8 +14,9 @@ from src.app.db.client import db_client, init_db
 from src.app.services.embedding import EmbeddingService
 
 ALLOWED_PLATFORMS = [
-    "antigravity", "chatgpt", "claude", "claude-code", "continue",
-    "cursor", "deepseek", "gemini", "huggingchat", "lechat", "perplexity",
+    "aider", "antigravity", "chatgpt", "claude", "claude-code", "cline",
+    "continue", "copilot", "cursor", "deepseek", "doubao", "gemini",
+    "grok", "huggingchat", "jan", "kimi", "lechat", "perplexity", "poe", "qwen",
 ]
 
 mcp = FastMCP("WIMS")

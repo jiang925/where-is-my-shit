@@ -12,11 +12,20 @@
     "matches": [
       "https://chatgpt.com/*",
       "https://claude.ai/*",
+      "https://copilot.microsoft.com/*",
       "https://chat.deepseek.com/*",
+      "https://www.doubao.com/*",
+      "https://doubao.com/*",
       "https://gemini.google.com/*",
+      "https://grok.com/*",
       "https://huggingface.co/chat/*",
+      "https://kimi.com/*",
+      "https://kimi.moonshot.cn/*",
       "https://chat.mistral.ai/*",
-      "https://www.perplexity.ai/*"
+      "https://www.perplexity.ai/*",
+      "https://poe.com/*",
+      "https://chat.qwen.ai/*",
+      "https://qwen.aliyun.com/*"
     ],
     "js": ["content/index.js"],
     "run_at": "document_idle"

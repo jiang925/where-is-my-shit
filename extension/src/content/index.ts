@@ -4,11 +4,17 @@ import { BaseExtractor } from './extractors/base';
 import { MessageObserver } from './observers/mutation-observer';
 import { ChatGPTExtractor } from './extractors/chatgpt';
 import { ClaudeExtractor } from './extractors/claude';
+import { CopilotExtractor } from './extractors/copilot';
 import { DeepSeekExtractor } from './extractors/deepseek';
+import { DoubaoExtractor } from './extractors/doubao';
 import { GeminiExtractor } from './extractors/gemini';
+import { GrokExtractor } from './extractors/grok';
 import { HuggingChatExtractor } from './extractors/huggingchat';
+import { KimiExtractor } from './extractors/kimi';
 import { LeChatExtractor } from './extractors/lechat';
 import { PerplexityExtractor } from './extractors/perplexity';
+import { PoeExtractor } from './extractors/poe';
+import { QwenExtractor } from './extractors/qwen';
 
 console.log('[WIMS Content] Script loaded on:', window.location.href);
 
@@ -29,11 +35,17 @@ async function init() {
   const extractors: BaseExtractor[] = [
     new ChatGPTExtractor(),
     new ClaudeExtractor(),
+    new CopilotExtractor(),
     new DeepSeekExtractor(),
+    new DoubaoExtractor(),
     new GeminiExtractor(),
+    new GrokExtractor(),
     new HuggingChatExtractor(),
+    new KimiExtractor(),
     new LeChatExtractor(),
-    new PerplexityExtractor()
+    new PerplexityExtractor(),
+    new PoeExtractor(),
+    new QwenExtractor(),
   ];
 
   // Find matching extractor
