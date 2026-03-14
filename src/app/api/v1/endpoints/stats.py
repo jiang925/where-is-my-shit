@@ -12,7 +12,8 @@ from src.app.schemas.stats import ActivityEntry, StatsResponse
 ALLOWED_PLATFORMS = [
     "aider", "antigravity", "chatgpt", "claude", "claude-code", "cline",
     "continue", "copilot", "cursor", "deepseek", "doubao", "gemini",
-    "grok", "huggingchat", "jan", "kimi", "lechat", "perplexity", "poe", "qwen",
+    "grok", "huggingchat", "jan", "kimi", "lechat", "open-webui",
+    "perplexity", "poe", "qwen",
 ]
 
 router = APIRouter(dependencies=[Depends(verify_api_key)])
