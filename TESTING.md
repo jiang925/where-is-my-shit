@@ -16,7 +16,7 @@ Test inventory, coverage gaps, and implementation plan. This file is the source 
 
 ## 2. Backend Unit Tests
 
-### Existing (20 files, ~176 tests)
+### Existing (22 files, ~194 tests)
 
 | File | Tests | Covers |
 |------|-------|--------|
@@ -33,6 +33,8 @@ Test inventory, coverage gaps, and implementation plan. This file is the source 
 | `tests/test_stats.py` | 10 | Stats counts, platform breakdown, granularity, filters, auth |
 | `tests/test_terminal.py` | 4 | Terminal open: auth, path validation, directory/file handling |
 | `tests/test_thread.py` | 10 | Thread retrieval, ordering, role, delete, SQL injection defense |
+| `tests/test_import.py` | 11 | WIMS archive import, ChatGPT import, Claude import, JSON export, roundtrip |
+| `tests/test_mcp_server.py` | 7 | MCP tools: search, get conversation, get recent, platform filter |
 
 ### Missing — Must Add
 

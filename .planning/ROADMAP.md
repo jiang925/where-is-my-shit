@@ -19,6 +19,7 @@
 - ✅ **v2.4 Dark Mode** - Phase 39 (shipped 2026-03-12)
 - ✅ **v2.5 Platform Coverage & Polish** - Phases 40-42 (shipped 2026-03-12)
 - ✅ **v2.6 Organization** - Phases 43-45 (shipped 2026-03-13)
+- ✅ **v3.0 Active Context** - Phases 46-48 (shipped 2026-03-13)
 
 ## Phases
 
@@ -321,6 +322,31 @@ Plans:
 Plans:
 - [x] 39-01: useTheme hook, darkMode config, dark: variants on all components, theme toggle in NavHeader
 
+### ✅ v3.0 Active Context (Shipped 2026-03-13)
+
+**Milestone Goal:** Transform WIMS from a passive archive into an active context provider for AI tools with MCP integration, JSON import/export, and platform import.
+
+#### Phase 46: MCP Server
+**Goal**: Expose WIMS as MCP tools for AI assistants
+**Plans**: 1 plan
+
+Plans:
+- [x] 46-01: FastMCP server with search_conversations, get_conversation, get_recent_conversations tools, CLI `wims mcp` command
+
+#### Phase 47: WIMS JSON Import/Export
+**Goal**: Enable data portability between WIMS instances
+**Plans**: 1 plan
+
+Plans:
+- [x] 47-01: JSON export format, POST /api/v1/import endpoint, CLI `wims import` command, 11 tests
+
+#### Phase 48: Platform Import
+**Goal**: Import from ChatGPT and Claude native exports
+**Plans**: 1 plan
+
+Plans:
+- [x] 48-01: POST /api/v1/import/chatgpt and /import/claude endpoints, ChatGPT conversations.json parser, Claude data export parser, 7 tests
+
 ### ✅ v2.6 Organization (Shipped 2026-03-13)
 
 **Milestone Goal:** Help users organize and manage growing conversation libraries with bookmarks, search history, and title editing.
@@ -541,3 +567,6 @@ Phases execute in numeric order: 26 → 27 → 28
 | 43. Conversation Bookmarks | v2.6 | 1/1 | Complete | 2026-03-13 |
 | 44. Search History | v2.6 | 1/1 | Complete | 2026-03-13 |
 | 45. Title Editing | v2.6 | 1/1 | Complete | 2026-03-13 |
+| 46. MCP Server | v3.0 | 1/1 | Complete | 2026-03-13 |
+| 47. WIMS JSON Import/Export | v3.0 | 1/1 | Complete | 2026-03-13 |
+| 48. Platform Import | v3.0 | 1/1 | Complete | 2026-03-13 |

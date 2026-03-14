@@ -17,6 +17,7 @@ ALLOWED_PLATFORMS = ["chatgpt", "claude", "claude-code", "gemini", "perplexity",
 
 class ExportRequest(BaseModel):
     platforms: list[str] | None = None
+    format: str = "markdown"  # "markdown" (zip) or "json" (wims-archive)
 
 
 def _to_unix_ms(val) -> int:
@@ -69,9 +70,20 @@ def _conversation_to_markdown(messages: list[dict], title: str, platform: str) -
     return "\n".join(lines)
 
 
+def _to_iso(val) -> str:
+    if isinstance(val, str):
+        return val
+    if isinstance(val, datetime):
+        return val.isoformat()
+    return ""
+
+
 @router.post("/export")
 async def export_conversations(request: ExportRequest):
-    """Export all conversations as a zip of markdown files."""
+    """Export all conversations as a zip of markdown files or WIMS JSON archive.
+
+    Set format to "json" to get a WIMS archive that can be re-imported via POST /api/v1/import.
+    """
 
     platforms_filter = []
     if request.platforms:
@@ -108,7 +120,44 @@ async def export_conversations(request: ExportRequest):
     for messages in conversations.values():
         messages.sort(key=lambda m: _to_unix_ms(m.get("timestamp")))
 
-    # Build zip in memory
+    # JSON format: return WIMS archive
+    if request.format == "json":
+        archive = {
+            "version": "1.0",
+            "exported_at": datetime.now().isoformat(),
+            "source": "wims",
+            "conversations": [],
+        }
+        for conv_id, messages in conversations.items():
+            conv_data = {
+                "conversation_id": conv_id,
+                "platform": messages[0].get("platform", "unknown"),
+                "title": messages[0].get("title", ""),
+                "url": messages[0].get("url", ""),
+                "messages": [
+                    {
+                        "id": m.get("id", ""),
+                        "role": m.get("role", "user"),
+                        "content": m.get("content", ""),
+                        "timestamp": _to_iso(m.get("timestamp")),
+                    }
+                    for m in messages
+                ],
+            }
+            archive["conversations"].append(conv_data)
+
+        import json
+
+        json_bytes = json.dumps(archive, ensure_ascii=False, indent=2).encode("utf-8")
+        return StreamingResponse(
+            io.BytesIO(json_bytes),
+            media_type="application/json",
+            headers={
+                "Content-Disposition": f'attachment; filename="wims-archive-{datetime.now().strftime("%Y%m%d")}.json"'
+            },
+        )
+
+    # Markdown format (default): return zip
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
         used_names: set[str] = set()

@@ -109,6 +109,103 @@ def reembed_command(args):
     print("\nRe-embedding completed successfully!")
 
 
+def import_command(args):
+    """Import conversations from a file."""
+    import json
+    from pathlib import Path
+
+    from src.app.db.client import init_db
+
+    file_path = Path(args.file)
+    if not file_path.exists():
+        print(f"Error: File not found: {file_path}")
+        sys.exit(1)
+
+    print(f"Reading {file_path}...")
+    with open(file_path, encoding="utf-8") as f:
+        data = json.load(f)
+
+    fmt = args.format
+
+    # Auto-detect format if not specified
+    if fmt == "auto":
+        if isinstance(data, dict) and "conversations" in data and "version" in data:
+            fmt = "wims"
+        elif isinstance(data, list) and len(data) > 0 and "mapping" in data[0]:
+            fmt = "chatgpt"
+        elif isinstance(data, list) and len(data) > 0 and ("chat_messages" in data[0] or "messages" in data[0]):
+            fmt = "claude"
+        else:
+            print("Error: Could not auto-detect format. Use --format to specify.")
+            sys.exit(1)
+        print(f"Auto-detected format: {fmt}")
+
+    # Initialize DB
+    init_db()
+
+    if fmt == "wims":
+        from src.app.api.v1.endpoints.import_data import _embed_and_insert
+
+        conversations = data.get("conversations", [])
+        messages = []
+        import uuid as _uuid
+
+        for conv in conversations:
+            conv_id = conv.get("conversation_id", str(_uuid.uuid4()))
+            platform = conv.get("platform", "unknown")
+            title = conv.get("title", "")
+            url = conv.get("url", "")
+            for msg in conv.get("messages", []):
+                content = msg.get("content", "")
+                if not content or not content.strip():
+                    continue
+                messages.append(
+                    {
+                        "id": msg.get("id", str(_uuid.uuid4())),
+                        "conversation_id": conv_id,
+                        "platform": platform,
+                        "title": title,
+                        "url": url,
+                        "role": msg.get("role", "user"),
+                        "content": content,
+                        "timestamp": msg.get("timestamp"),
+                    }
+                )
+
+        print(f"Found {len(messages)} messages in {len(conversations)} conversations")
+        imported = _embed_and_insert(messages)
+
+    elif fmt == "chatgpt":
+        from src.app.api.v1.endpoints.import_data import _embed_and_insert, _parse_chatgpt_export
+
+        messages = _parse_chatgpt_export(data)
+        conv_count = len({m["conversation_id"] for m in messages})
+        print(f"Found {len(messages)} messages in {conv_count} conversations")
+        imported = _embed_and_insert(messages)
+
+    elif fmt == "claude":
+        from src.app.api.v1.endpoints.import_data import _embed_and_insert, _parse_claude_export
+
+        messages = _parse_claude_export(data)
+        conv_count = len({m["conversation_id"] for m in messages})
+        print(f"Found {len(messages)} messages in {conv_count} conversations")
+        imported = _embed_and_insert(messages)
+
+    else:
+        print(f"Error: Unknown format: {fmt}")
+        sys.exit(1)
+
+    print(f"Successfully imported {imported} messages.")
+
+
+def mcp_command(args):
+    """Start the MCP server."""
+    from src.app.mcp_server import mcp
+
+    print("Starting WIMS MCP server (stdio)...")
+    mcp.run()
+
+
 def main():
     parser = argparse.ArgumentParser(description="WIMS Management CLI")
     # Global args
@@ -129,6 +226,19 @@ def main():
     reembed_parser.add_argument("--status", action="store_true", help="Show migration status only")
     reembed_parser.add_argument("--promote", action="store_true", help="Force promote v2 to v1 without re-embedding")
 
+    # import command
+    import_parser = subparsers.add_parser("import", help="Import conversations from a file")
+    import_parser.add_argument("file", help="Path to the file to import")
+    import_parser.add_argument(
+        "--format",
+        default="auto",
+        choices=["auto", "wims", "chatgpt", "claude"],
+        help="Import format (default: auto-detect)",
+    )
+
+    # mcp command
+    subparsers.add_parser("mcp", help="Start the MCP server (stdio transport)")
+
     args = parser.parse_args()
 
     # Update config path if provided
@@ -139,6 +249,10 @@ def main():
         start_server(args)
     elif args.command == "reembed":
         reembed_command(args)
+    elif args.command == "import":
+        import_command(args)
+    elif args.command == "mcp":
+        mcp_command(args)
     else:
         # Default to help if no command
         parser.print_help()

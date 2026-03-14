@@ -14,7 +14,7 @@ Key files:
 - `PROJECT.md` — This file. Dev workflow, testing, and pending work.
 - `TESTING.md` — Test inventory, coverage gaps, and implementation checklist. Audit before shipping.
 
-Completed: v1.0 through v2.6 (45 phases, 81 plans).
+Completed: v1.0 through v3.0 (48 phases, 84 plans).
 
 ## 2. Development Cycle
 
@@ -54,7 +54,7 @@ Between milestones, brainstorm the next set of features before writing any code.
 
 | Layer | Tool | Command | Count | What it covers |
 |-------|------|---------|-------|----------------|
-| Backend unit/integration | pytest | `uv run pytest` | 176 tests | API endpoints, DB operations, auth, search, browse, thread, delete, terminal, stats, export, embeddings, reranker, migration, compaction, config, schemas, SPA, health, ingest |
+| Backend unit/integration | pytest | `uv run pytest` | 194 tests | API endpoints, DB operations, auth, search, browse, thread, delete, terminal, stats, export, import, embeddings, reranker, migration, compaction, config, schemas, SPA, health, ingest, MCP server |
 | Frontend unit | vitest | `cd ui && npm test` | 82 tests (12 files) | ResultCard (13), SearchBar (5), useKeyboardNavigation (12), SourceFilterUI (7), PresetButtons (6), DateRangeFilter (5), CopyablePath (5), TimelineSection (4), useTheme (6), dateGroups (9), pathUtils (9), App smoke (1) |
 | E2E (browser) | Playwright (Chromium) | `npx playwright test` | 70 CI tests | Full-stack flows: auth, search, browse, filters, path display, relevance, timeline, keyboard nav, export, thread search, delete, open terminal, UI regressions, stats page, dark mode |
 | E2E (manual) | Playwright | `npx playwright test tests/e2e/spec/exploratory.spec.ts` | 11 tests | Exploratory tests against a live server (excluded from CI) |
@@ -277,6 +277,107 @@ Mix of coverage, readability, and organization.
 - [ ] Settings/preferences UI page
 - [ ] Bulk delete UI
 - [ ] Conversation dedup detection
+
+### v3.0 — Active Context (complete)
+
+Brainstormed 2026-03-13. Transform WIMS from a passive archive into an active context provider for AI tools.
+
+**Phase 46: MCP Server** — Created `src/app/mcp_server.py` with FastMCP. Three tools: `search_conversations` (semantic search with platform filter), `get_conversation` (full thread retrieval), `get_recent_conversations` (latest activity). Runs via `python -m src.app.mcp_server` or `wims mcp` CLI command. Fully local, stdio transport.
+
+**Phase 47: WIMS JSON Round-trip** — Added `format: "json"` option to `POST /api/v1/export` returning `wims-archive.json` with full metadata. Added `POST /api/v1/import` endpoint accepting WIMS archive uploads, re-generating embeddings on the target machine. CLI: `wims import file.json`.
+
+**Phase 48: Platform Import** — Added `POST /api/v1/import/chatgpt` (parses `conversations.json` mapping/content structure) and `POST /api/v1/import/claude` (parses `chat_messages` and content arrays). CLI: `wims import --format chatgpt conversations.json` with auto-detection. Added `python-multipart` and `fastmcp` dependencies.
+
+**Status**: Complete. 194 backend + 82 vitest + 70 e2e tests pass.
+
+### Feature Research (2026-03-13)
+
+Comprehensive research conducted with 4 parallel Opus agents across UX, platform expansion, new features, and dev tooling. Full findings below, organized into a proposed roadmap.
+
+#### v3.1 — Search UX
+
+Fix the 3 known UX problems and add power-user search features.
+
+- **Jump-to-match in thread** (P0) — When opening a conversation from search, scroll to and highlight the specific matching message. Currently users must scroll manually through long threads. Pass `matchedMessageId` to ConversationPanel, call `scrollIntoView()`.
+- **Smart snippet selection** (P0) — Show the best-matching passage (KWIC — Keyword in Context), not the last AI message. Fixes "Let me know if you need anything else" problem.
+- **Question-first card layout** (P0) — Lead ResultCard with the user's question (already available as `first_user_message`). People remember conversations by what they asked.
+- **Date range filter on search** (P0) — Reuse existing `DateRangeFilter` component from BrowsePage. Add `date_start`/`date_end` to search API.
+- **Search result sorting** (P1) — Toggle: "Best Match" (relevance) vs "Most Recent" (timestamp). Client-side sort, no backend change.
+- **Search operators** (P1) — `from:chatgpt`, `before:2026-03-01`, `has:code`. Parse from search input, translate to backend filters. Aligns with keyboard-driven workflow.
+- **Result count + timing** (P1) — "Found N results in X ms" above results. `total` field already in API response.
+- **Copy individual messages** (P1) — Clipboard icon on hover in ConversationPanel message bubbles.
+- **Collapsible messages** (P1) — Collapse long AI responses (>500 chars) in thread view. Similar to existing ResultCard expand/collapse.
+- **Prev/next navigation** (P1) — Arrow buttons in ConversationPanel header to jump between search results without closing the panel.
+- **Compact card mode** (P1) — Single-line result rows for 3x density. Toggle between detailed and compact views.
+- **Bulk selection & actions** (P1) — Checkboxes on result cards, floating action bar for bulk delete/export/bookmark. Addresses backlog item.
+- **Empty state suggestions** (P1) — Show recent queries from search history when no results found.
+
+#### v3.2 — Platform Expansion
+
+New Chrome extension extractors and watcher daemon integrations.
+
+**Watcher daemon (file-based):**
+| Platform | Stars/Users | Feasibility | Storage format |
+|----------|-------------|-------------|----------------|
+| Gemini CLI | 97.6k stars | Easy | JSON sessions in `~/.gemini/tmp/*/chats/` |
+| Windsurf/Antigravity | $3B acquisition | Medium | Already partially implemented in `antigravity.py` |
+| Continue.dev | 31.8k stars, 2.3M installs | Easy | JSON sessions in `~/.continue/sessions/` |
+| Cline | 59k stars, 3.3M installs | Medium | JSON tasks in VS Code globalStorage |
+| Aider | 41.9k stars, 680k PyPI/mo | Medium | Markdown history `.aider.chat.history.md` per project |
+| Qwen Code | 20.5k stars | Easy-Medium | Open-source terminal agent, format TBD |
+| Cherry Studio | 41.4k stars | Easy-Medium | Open-source Electron app, local storage |
+| Jan.ai | 41k stars | Easy | Offline-first, JSON in `~/jan/` |
+
+**Chrome extension extractors:**
+| Platform | Visits/Users | Feasibility | Notes |
+|----------|--------------|-------------|-------|
+| DeepSeek Chat | 40-60M MAU | Medium | Largest unserved global AI chat, mirrors ChatGPT pattern |
+| Microsoft Copilot | 50-80M MAU | Medium | Watch for Shadow DOM (Fluent UI) |
+| Le Chat (Mistral) | 5-10M MAU | Easy | Clean React SPA, strong EU/developer audience |
+| Poe | 10-20M MAU | Medium | Multi-model users = ideal WIMS audience |
+| Doubao | 60M MAU | Medium-Hard | China's #1 AI chat (ByteDance) |
+| Grok | 30-50M MAU | Hard | Target grok.com, not x.com |
+| Kimi | 20-35M MAU | Medium | kimi.com, strong in China |
+| Qwen Chat | 15-30M MAU | Medium | chat.qwen.ai, multiple redirect domains |
+| HuggingChat | 2-5M MAU | Easy | Open-source codebase = easy selectors |
+
+**Self-hosted / API integration:**
+| Platform | Stars/Users | Feasibility | Notes |
+|----------|-------------|-------------|-------|
+| Open WebUI | 50k stars | Easy | REST API at `/api/v1/chats`, covers all Ollama/LLM self-hosted users |
+
+**Browser expansion:** Firefox (P2 — privacy-focused audience aligns), Safari (P2 — requires Xcode + App Store), Mobile (defer — consider companion app instead).
+
+#### v3.3 — Smart Organization
+
+Intelligence features that help users navigate growing conversation libraries.
+
+- **Related conversations** (P1) — Vector similarity search from ConversationPanel. Show 3-5 related conversations at panel bottom. New `GET /api/v1/related/{conversation_id}` endpoint.
+- **Auto-tagging** (P1) — Extract tags from content: programming languages, frameworks, topics. Keyword-based, no LLM needed. Tags as clickable filter chips.
+- **Daily/weekly digest** (P1) — `GET /api/v1/digest?period=today|this_week`. Tier 1 (no LLM): stats + keyword frequency ("12 conversations: 5 Claude Code debugging auth, 4 ChatGPT React hooks"). Tier 2 (optional LLM): prose summary.
+- **Obsidian-compatible export** (P1) — Markdown files with YAML frontmatter (title, date, platform, tags). Folder structure by platform. Low effort formatting layer on existing export.
+- **Conversation notes** (P2) — Free-text annotations per conversation. Stored in DB, searchable.
+- **Pinned conversations** (P2) — Extend bookmarks with persistent top-of-browse pinning.
+- **Copy context for new chat** (P2) — Extract key decisions + code snippets from a conversation into LLM-friendly format for pasting into new sessions.
+- **Conversation merge** (P2) — Combine multiple conversations on the same topic into a single thread.
+- **Share as HTML** (P2) — Export conversation as self-contained HTML file with embedded styling.
+
+#### v3.4 — Dev Foundation
+
+Tooling improvements for maintainability and contributor experience.
+
+- **pytest-cov** (P0) — `--cov=src/app --cov-branch --cov-fail-under=60`. Start at 60%, ratchet up over time.
+- **vitest coverage** (P0) — v8 provider, 50% threshold. `npm run test -- --run --coverage`.
+- **Dependabot config** (P0) — Create `.github/dependabot.yml` for pip, npm (ui + extension), Docker, GitHub Actions. Grouped PRs to reduce noise.
+- **Pyright** (P1) — `typeCheckingMode = "basic"`. Catches type bugs in FastAPI/Pydantic code. Graduate to `standard` after initial cleanup.
+- **justfile** (P1) — Unified task runner: `just test-all`, `just lint-all`, `just ci`, `just dev`.
+- **Pre-commit hooks** (P1) — ruff format + lint, trailing whitespace, large file check, merge conflict detection.
+- **Codecov** (P1) — Coverage badges for README, PR delta comments, trend tracking. Free for open source.
+- **Extension unit tests** (P1) — Biggest test gap: 2,200 lines, zero tests. vitest + jest-chrome for mocking `chrome.*` APIs. Target 20-30 initial tests.
+- **Devcontainer** (P1) — `.devcontainer/devcontainer.json` for VS Code / GitHub Codespaces. One-click contributor setup.
+- **Trivy Docker scanning** (P1) — Scan images before publishing to GHCR. Integrate with GitHub Security tab via SARIF upload.
+- **PR/issue templates** (P2) — Bug report YAML template, PR template with test plan checklist.
+- **git-cliff changelog** (P2) — Automated release notes from commit messages.
 
 ## 6. Lessons Learned
 
