@@ -50,9 +50,9 @@ class SearchRequest(BaseModel):
     query: str
     limit: int = 50
     offset: int = 0
-    # Optional filters could be added here in the future
     conversation_id: str | None = None
     platform: list[str] | str | None = None
+    date_range: str | None = None  # "today", "this_week", "this_month" or None
 
 
 class SearchResultMeta(BaseModel):

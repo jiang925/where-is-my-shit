@@ -42,18 +42,50 @@ def _parse_timestamp(val) -> datetime:
     return datetime.now(UTC).replace(tzinfo=None)
 
 
-def _embed_and_insert(messages: list[dict]) -> int:
-    """Generate embeddings and insert messages into LanceDB. Returns count inserted."""
+def _get_existing_ids(table, conversation_ids: set[str]) -> set[str]:
+    """Look up which message IDs already exist for the given conversations."""
+    if not conversation_ids:
+        return set()
+    try:
+        cid_list = "', '".join(conversation_ids)
+        where = f"conversation_id IN ('{cid_list}')"
+        dim = db_client.get_vector_dim()
+        dummy_vector = [0.0] * dim
+        rows = (
+            table.search(dummy_vector, query_type="vector")
+            .where(where)
+            .select(["id"])
+            .limit(100000)
+            .to_list()
+        )
+        return {r["id"] for r in rows}
+    except Exception:
+        return set()
+
+
+def _embed_and_insert(messages: list[dict]) -> tuple[int, int]:
+    """Generate embeddings and insert messages into LanceDB.
+
+    Returns (inserted_count, skipped_duplicates).
+    """
     if not messages:
-        return 0
+        return 0, 0
 
     embedding_service = EmbeddingService()
     table = db_client.get_table("messages")
 
-    # Build records with embeddings
+    # Dedup: check which messages already exist
+    conv_ids = {m["conversation_id"] for m in messages}
+    existing_ids = _get_existing_ids(table, conv_ids)
+
+    # Build records with embeddings, skipping duplicates
     records = []
+    skipped = 0
     model_name = embedding_service.get_model_name()
     for msg in messages:
+        if msg["id"] in existing_ids:
+            skipped += 1
+            continue
         vector = embedding_service.embed_text(msg["content"])
         if not vector:
             continue
@@ -76,7 +108,7 @@ def _embed_and_insert(messages: list[dict]) -> int:
         table.add(records)
         compaction_manager.record_write()
 
-    return len(records)
+    return len(records), skipped
 
 
 @router.post("/import")
@@ -121,10 +153,11 @@ async def import_wims_archive(file: UploadFile):
                 }
             )
 
-    imported = await run_in_threadpool(_embed_and_insert, messages)
+    imported, skipped = await run_in_threadpool(_embed_and_insert, messages)
 
     return {
         "imported": imported,
+        "skipped_duplicates": skipped,
         "conversations": len(conversations),
         "archive_version": archive_version,
     }
@@ -269,8 +302,13 @@ async def import_chatgpt(file: UploadFile):
     if not messages:
         raise HTTPException(status_code=400, detail="No valid messages found in ChatGPT export")
 
-    imported = await run_in_threadpool(_embed_and_insert, messages)
-    return {"imported": imported, "conversations": len({m["conversation_id"] for m in messages}), "platform": "chatgpt"}
+    imported, skipped = await run_in_threadpool(_embed_and_insert, messages)
+    return {
+        "imported": imported,
+        "skipped_duplicates": skipped,
+        "conversations": len({m["conversation_id"] for m in messages}),
+        "platform": "chatgpt",
+    }
 
 
 @router.post("/import/claude")
@@ -282,5 +320,10 @@ async def import_claude(file: UploadFile):
     if not messages:
         raise HTTPException(status_code=400, detail="No valid messages found in Claude export")
 
-    imported = await run_in_threadpool(_embed_and_insert, messages)
-    return {"imported": imported, "conversations": len({m["conversation_id"] for m in messages}), "platform": "claude"}
+    imported, skipped = await run_in_threadpool(_embed_and_insert, messages)
+    return {
+        "imported": imported,
+        "skipped_duplicates": skipped,
+        "conversations": len({m["conversation_id"] for m in messages}),
+        "platform": "claude",
+    }

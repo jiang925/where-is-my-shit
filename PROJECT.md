@@ -14,7 +14,7 @@ Key files:
 - `PROJECT.md` — This file. Dev workflow, testing, and pending work.
 - `TESTING.md` — Test inventory, coverage gaps, and implementation checklist. Audit before shipping.
 
-Completed: v1.0 through v3.0 (48 phases, 84 plans).
+Completed: v1.0 through v3.1 (48+ phases). v3.4 Dev Foundation partially complete.
 
 ## 2. Development Cycle
 
@@ -130,13 +130,13 @@ uv run ruff check src/ tests/
 
 The core indexing pipeline works well — web chats (ChatGPT, Claude, Gemini, Perplexity) and dev sessions (Claude Code, Cursor) are captured and searchable. The infrastructure is solid: Docker distribution, Chrome extension, daemon installer, CI/CD.
 
-### Known UX problems
+### Known UX problems (addressed in v3.1)
 
-The **search and browse experience needs improvement**:
+~~The **search and browse experience needs improvement**:~~
 
-1. **Truncated content** — Search and browse results show a short snippet that's often not enough to recognize the conversation. The text is cut off mid-sentence.
-2. **Last message only** — Results show only the last AI message, which doesn't convey what the conversation was about. A conversation about "debugging React hooks" might show a generic "Let me know if you need anything else" as the snippet.
-3. **Hard to identify conversations** — Without seeing the user's question or the conversation topic, it's hard to tell conversations apart in search results.
+1. ~~**Truncated content**~~ — Fixed: KWIC (Keyword in Context) snippets show the most relevant passage centered on matching terms.
+2. ~~**Last message only**~~ — Fixed: Smart snippet selection shows the matched content, not the last generic AI message.
+3. ~~**Hard to identify conversations**~~ — Fixed: Question-first card layout with prominent `first_user_message` display (since v1.9), plus jump-to-match in thread.
 
 ### Pending features to brainstorm
 
@@ -275,8 +275,8 @@ Mix of coverage, readability, and organization.
 - [x] Dark mode toggle button not working — Fixed: Tailwind v4 ignores `tailwind.config.js`; added `@custom-variant dark` and `@plugin` directives to `index.css`
 - [ ] Multi-device sync
 - [ ] Settings/preferences UI page
-- [ ] Bulk delete UI
-- [ ] Conversation dedup detection
+- [x] Bulk delete UI — Added checkboxes on BrowsePage result cards, floating action bar with bulk delete/cancel, selection toggle button in header
+- [x] Conversation dedup detection — Import endpoints now check for existing message IDs before inserting, reporting `skipped_duplicates` count
 
 ### v3.0 — Active Context (complete)
 
@@ -290,27 +290,57 @@ Brainstormed 2026-03-13. Transform WIMS from a passive archive into an active co
 
 **Status**: Complete. 194 backend + 82 vitest + 70 e2e tests pass.
 
+### v3.1 — Search UX (complete)
+
+Implements the P0 and P1 features from the Feature Research section below.
+
+**P0 (all complete):**
+- **Jump-to-match in thread** — ConversationPanel accepts `matchedMessageId` prop, scrolls to and highlights the matched message with a yellow ring after loading.
+- **Smart snippet selection (KWIC)** — ResultCard extracts a ~200 char window around the first matching term instead of showing truncated full content. Falls back to full content when expanded.
+- **Question-first card layout** — Already in place from v1.9 (`first_user_message` in blue highlight box).
+- **Date range filter on search** — Added `date_range` field to `SearchRequest`, timestamp filtering in search endpoint, `DateRangeFilter` component on SearchPage, date range passed through `useSearch` hook.
+
+**P1 (complete):**
+- **Search result sorting** — Toggle "Best Match" (relevance) vs "Most Recent" (timestamp). Client-side sort.
+- **Result count + timing** — "Found N results (+M less relevant)" above results grid.
+- **Copy individual messages** — Clipboard icon on hover in ConversationPanel message bubbles.
+- **Collapsible messages** — Long AI responses (>500 chars) collapsed by default with "Show full message" toggle.
+- **Bulk selection & actions** — Checkboxes on BrowsePage result cards, floating action bar for bulk delete.
+- **Empty state suggestions** — Shows recent queries from search history when no results found.
+
+**Status**: Complete. 194 backend + 82 vitest tests pass.
+
+### v3.4 — Dev Foundation (partial)
+
+**Completed (P0):**
+- **pytest-cov** — Added to dev dependencies, configured in `pyproject.toml` with `fail_under = 60`, `show_missing = true`.
+- **vitest coverage** — Added `@vitest/coverage-v8`, configured in `vite.config.ts` with `thresholds: { lines: 50 }`.
+- **Dependabot config** — Created `.github/dependabot.yml` for pip, npm (ui + extension), Docker, GitHub Actions with grouped PRs.
+- **justfile** — Unified task runner with `just test-all`, `just lint-all`, `just ci`, `just dev`, and more.
+
+**Status**: P0 items complete. P1 items (pyright, pre-commit hooks, codecov, extension tests, devcontainer, trivy, PR templates) deferred.
+
 ### Feature Research (2026-03-13)
 
 Comprehensive research conducted with 4 parallel Opus agents across UX, platform expansion, new features, and dev tooling. Full findings below, organized into a proposed roadmap.
 
-#### v3.1 — Search UX
+#### v3.1 — Search UX (implemented above)
 
 Fix the 3 known UX problems and add power-user search features.
 
-- **Jump-to-match in thread** (P0) — When opening a conversation from search, scroll to and highlight the specific matching message. Currently users must scroll manually through long threads. Pass `matchedMessageId` to ConversationPanel, call `scrollIntoView()`.
-- **Smart snippet selection** (P0) — Show the best-matching passage (KWIC — Keyword in Context), not the last AI message. Fixes "Let me know if you need anything else" problem.
-- **Question-first card layout** (P0) — Lead ResultCard with the user's question (already available as `first_user_message`). People remember conversations by what they asked.
-- **Date range filter on search** (P0) — Reuse existing `DateRangeFilter` component from BrowsePage. Add `date_start`/`date_end` to search API.
-- **Search result sorting** (P1) — Toggle: "Best Match" (relevance) vs "Most Recent" (timestamp). Client-side sort, no backend change.
-- **Search operators** (P1) — `from:chatgpt`, `before:2026-03-01`, `has:code`. Parse from search input, translate to backend filters. Aligns with keyboard-driven workflow.
-- **Result count + timing** (P1) — "Found N results in X ms" above results. `total` field already in API response.
-- **Copy individual messages** (P1) — Clipboard icon on hover in ConversationPanel message bubbles.
-- **Collapsible messages** (P1) — Collapse long AI responses (>500 chars) in thread view. Similar to existing ResultCard expand/collapse.
-- **Prev/next navigation** (P1) — Arrow buttons in ConversationPanel header to jump between search results without closing the panel.
-- **Compact card mode** (P1) — Single-line result rows for 3x density. Toggle between detailed and compact views.
-- **Bulk selection & actions** (P1) — Checkboxes on result cards, floating action bar for bulk delete/export/bookmark. Addresses backlog item.
-- **Empty state suggestions** (P1) — Show recent queries from search history when no results found.
+- ~~**Jump-to-match in thread** (P0)~~ — Done.
+- ~~**Smart snippet selection** (P0)~~ — Done (KWIC).
+- ~~**Question-first card layout** (P0)~~ — Done (v1.9).
+- ~~**Date range filter on search** (P0)~~ — Done.
+- ~~**Search result sorting** (P1)~~ — Done.
+- **Search operators** (P1) — `from:chatgpt`, `before:2026-03-01`, `has:code`. Parse from search input, translate to backend filters.
+- ~~**Result count + timing** (P1)~~ — Done.
+- ~~**Copy individual messages** (P1)~~ — Done.
+- ~~**Collapsible messages** (P1)~~ — Done.
+- **Prev/next navigation** (P1) — Arrow buttons in ConversationPanel header to jump between results.
+- **Compact card mode** (P1) — Single-line result rows for 3x density.
+- ~~**Bulk selection & actions** (P1)~~ — Done (BrowsePage).
+- ~~**Empty state suggestions** (P1)~~ — Done.
 
 #### v3.2 — Platform Expansion
 
@@ -362,20 +392,20 @@ Intelligence features that help users navigate growing conversation libraries.
 - **Conversation merge** (P2) — Combine multiple conversations on the same topic into a single thread.
 - **Share as HTML** (P2) — Export conversation as self-contained HTML file with embedded styling.
 
-#### v3.4 — Dev Foundation
+#### v3.4 — Dev Foundation (partially implemented above)
 
 Tooling improvements for maintainability and contributor experience.
 
-- **pytest-cov** (P0) — `--cov=src/app --cov-branch --cov-fail-under=60`. Start at 60%, ratchet up over time.
-- **vitest coverage** (P0) — v8 provider, 50% threshold. `npm run test -- --run --coverage`.
-- **Dependabot config** (P0) — Create `.github/dependabot.yml` for pip, npm (ui + extension), Docker, GitHub Actions. Grouped PRs to reduce noise.
-- **Pyright** (P1) — `typeCheckingMode = "basic"`. Catches type bugs in FastAPI/Pydantic code. Graduate to `standard` after initial cleanup.
-- **justfile** (P1) — Unified task runner: `just test-all`, `just lint-all`, `just ci`, `just dev`.
-- **Pre-commit hooks** (P1) — ruff format + lint, trailing whitespace, large file check, merge conflict detection.
-- **Codecov** (P1) — Coverage badges for README, PR delta comments, trend tracking. Free for open source.
-- **Extension unit tests** (P1) — Biggest test gap: 2,200 lines, zero tests. vitest + jest-chrome for mocking `chrome.*` APIs. Target 20-30 initial tests.
-- **Devcontainer** (P1) — `.devcontainer/devcontainer.json` for VS Code / GitHub Codespaces. One-click contributor setup.
-- **Trivy Docker scanning** (P1) — Scan images before publishing to GHCR. Integrate with GitHub Security tab via SARIF upload.
+- ~~**pytest-cov** (P0)~~ — Done.
+- ~~**vitest coverage** (P0)~~ — Done.
+- ~~**Dependabot config** (P0)~~ — Done.
+- **Pyright** (P1) — `typeCheckingMode = "basic"`. Catches type bugs in FastAPI/Pydantic code.
+- ~~**justfile** (P1)~~ — Done.
+- **Pre-commit hooks** (P1) — ruff format + lint, trailing whitespace, large file check.
+- **Codecov** (P1) — Coverage badges for README, PR delta comments, trend tracking.
+- **Extension unit tests** (P1) — Biggest test gap: 2,200 lines, zero tests.
+- **Devcontainer** (P1) — `.devcontainer/devcontainer.json` for VS Code / GitHub Codespaces.
+- **Trivy Docker scanning** (P1) — Scan images before publishing to GHCR.
 - **PR/issue templates** (P2) — Bug report YAML template, PR template with test plan checklist.
 - **git-cliff changelog** (P2) — Automated release notes from commit messages.
 

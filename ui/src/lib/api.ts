@@ -75,12 +75,14 @@ export const search = async ({
   query,
   limit = 20,
   offset = 0,
-  platforms
+  platforms,
+  dateRange,
 }: {
   query: string;
   limit?: number;
   offset?: number;
   platforms?: string[];
+  dateRange?: string;
 }): Promise<SearchResponse> => {
   if (!query.trim()) {
     return {
@@ -99,6 +101,7 @@ export const search = async ({
     limit,
     offset,
     ...(platforms && platforms.length > 0 && { platform: platforms }),
+    ...(dateRange && dateRange !== 'all_time' && { date_range: dateRange }),
   });
 
   // Flatten groups into results for the current UI
@@ -122,11 +125,11 @@ export const search = async ({
   };
 };
 
-export const useSearch = (query: string, platforms: string[] = []) => {
+export const useSearch = (query: string, platforms: string[] = [], dateRange?: string) => {
   return useInfiniteQuery({
-    queryKey: ['search', query, platforms.sort() /* sort for consistency */],
+    queryKey: ['search', query, platforms.sort(), dateRange],
     queryFn: async ({ pageParam = 0 }) => {
-      return search({ query, offset: pageParam as number, platforms });
+      return search({ query, offset: pageParam as number, platforms, dateRange });
     },
     getNextPageParam: (lastPage) => {
       return lastPage.has_more ? lastPage.next_offset : undefined;

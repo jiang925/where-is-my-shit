@@ -10,6 +10,8 @@ interface TimelineSectionProps {
   selectedConversation?: string | null;
   isBookmarked?: (conversationId: string) => boolean;
   onToggleBookmark?: (conversationId: string) => void;
+  isChecked?: (conversationId: string) => boolean;
+  onToggleCheck?: (conversationId: string) => void;
 }
 
 /**
@@ -34,7 +36,7 @@ function browseItemToSearchResult(item: BrowseItem): SearchResult {
   };
 }
 
-export function TimelineSection({ title, items, isEmpty, onSelect, selectedConversation, isBookmarked, onToggleBookmark }: TimelineSectionProps) {
+export function TimelineSection({ title, items, isEmpty, onSelect, selectedConversation, isBookmarked, onToggleBookmark, isChecked, onToggleCheck }: TimelineSectionProps) {
   return (
     <section className="mb-6">
       {/* Inline section header (Claude's discretion: inline chosen over sticky
@@ -61,6 +63,8 @@ export function TimelineSection({ title, items, isEmpty, onSelect, selectedConve
               isSelected={item.conversation_id === selectedConversation}
               isBookmarked={isBookmarked?.(item.conversation_id)}
               onToggleBookmark={onToggleBookmark}
+              isChecked={isChecked?.(item.conversation_id)}
+              onToggleCheck={onToggleCheck}
             />
           ))}
         </div>

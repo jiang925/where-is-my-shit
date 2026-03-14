@@ -1,5 +1,5 @@
-import { useEffect, useCallback, useState, useMemo } from 'react';
-import { X, ExternalLink, Download, Search, Loader2, MessageSquare, Terminal, FileCode, Trash2, Star, Pencil, Check } from 'lucide-react';
+import { useEffect, useCallback, useState, useMemo, useRef } from 'react';
+import { X, ExternalLink, Download, Search, Loader2, MessageSquare, Terminal, FileCode, Trash2, Star, Pencil, Check, Copy, ChevronDown, ChevronUp } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { useConversation, deleteConversation, openTerminal, updateConversationTitle, type ThreadItem } from '../lib/api';
 import { useQueryClient } from '@tanstack/react-query';
@@ -12,6 +12,7 @@ interface ConversationPanelProps {
   onDeleted?: () => void;
   isBookmarked?: boolean;
   onToggleBookmark?: (conversationId: string) => void;
+  matchedMessageId?: string | null;
 }
 
 // Platform configuration (mirrors ResultCard for consistency)
@@ -114,18 +115,35 @@ function messageMatchesQuery(content: string, query: string): boolean {
   return query.trim().split(/\s+/).some(word => lower.includes(word.toLowerCase()));
 }
 
-function MessageBubble({ item, searchQuery, isMatch }: { item: ThreadItem; searchQuery?: string; isMatch?: boolean }) {
+function MessageBubble({ item, searchQuery, isMatch, isHighlighted, messageRef }: {
+  item: ThreadItem;
+  searchQuery?: string;
+  isMatch?: boolean;
+  isHighlighted?: boolean;
+  messageRef?: React.Ref<HTMLDivElement>;
+}) {
   const isUser = isUserRole(item.role);
   const dimmed = searchQuery && !isMatch;
+  const isLong = !isUser && item.content.length > 500;
+  const [collapsed, setCollapsed] = useState(isLong);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(async () => {
+    await navigator.clipboard.writeText(item.content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }, [item.content]);
 
   return (
     <div
+      ref={messageRef}
       className={cn(
-        'rounded-lg p-4 border-l-4 transition-opacity',
+        'group/msg rounded-lg p-4 border-l-4 transition-all',
         isUser
           ? 'bg-blue-50 dark:bg-blue-900/30 border-l-blue-300'
           : 'bg-white dark:bg-gray-800 border-l-gray-300 dark:border-l-gray-600',
-        dimmed && 'opacity-30'
+        dimmed && 'opacity-30',
+        isHighlighted && 'ring-2 ring-yellow-400 dark:ring-yellow-500'
       )}
     >
       <div className="flex items-center justify-between mb-2">
@@ -135,18 +153,46 @@ function MessageBubble({ item, searchQuery, isMatch }: { item: ThreadItem; searc
         )}>
           {isUser ? 'You' : 'Assistant'}
         </span>
-        <time className="text-xs text-gray-400">
-          {formatTimestamp(item.timestamp)}
-        </time>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleCopy}
+            className="opacity-0 group-hover/msg:opacity-100 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-all cursor-pointer"
+            aria-label="Copy message"
+            title={copied ? 'Copied!' : 'Copy message'}
+          >
+            <Copy className="h-3.5 w-3.5" />
+          </button>
+          <time className="text-xs text-gray-400">
+            {formatTimestamp(item.timestamp)}
+          </time>
+        </div>
       </div>
       {searchQuery && isMatch ? (
-        <div className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words font-mono">
+        <div className={cn(
+          "text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words font-mono",
+          collapsed && "line-clamp-6"
+        )}>
           {highlightText(item.content, searchQuery)}
         </div>
       ) : (
-        <div className="text-sm text-gray-800 dark:text-gray-200 break-words prose prose-sm dark:prose-invert max-w-none prose-pre:bg-gray-100 dark:prose-pre:bg-gray-900 prose-pre:rounded-md prose-pre:p-3 prose-pre:text-xs prose-code:text-xs prose-code:before:content-none prose-code:after:content-none prose-p:my-1.5 prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5 prose-headings:my-2">
+        <div className={cn(
+          "text-sm text-gray-800 dark:text-gray-200 break-words prose prose-sm dark:prose-invert max-w-none prose-pre:bg-gray-100 dark:prose-pre:bg-gray-900 prose-pre:rounded-md prose-pre:p-3 prose-pre:text-xs prose-code:text-xs prose-code:before:content-none prose-code:after:content-none prose-p:my-1.5 prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5 prose-headings:my-2",
+          collapsed && "max-h-36 overflow-hidden"
+        )}>
           <Markdown>{item.content}</Markdown>
         </div>
+      )}
+      {isLong && (
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 mt-2 transition-colors cursor-pointer"
+        >
+          {collapsed ? (
+            <><ChevronDown className="h-3 w-3" /> Show full message</>
+          ) : (
+            <><ChevronUp className="h-3 w-3" /> Collapse</>
+          )}
+        </button>
       )}
     </div>
   );
@@ -188,7 +234,7 @@ function downloadMarkdown(content: string, filename: string) {
   URL.revokeObjectURL(url);
 }
 
-export function ConversationPanel({ conversationId, onClose, onDeleted, isBookmarked, onToggleBookmark }: ConversationPanelProps) {
+export function ConversationPanel({ conversationId, onClose, onDeleted, isBookmarked, onToggleBookmark, matchedMessageId }: ConversationPanelProps) {
   const { data, isLoading, isError, error } = useConversation(conversationId);
   const [threadSearch, setThreadSearch] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -197,12 +243,27 @@ export function ConversationPanel({ conversationId, onClose, onDeleted, isBookma
   const [editTitle, setEditTitle] = useState('');
   const [isSavingTitle, setIsSavingTitle] = useState(false);
   const queryClient = useQueryClient();
+  const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const hasScrolled = useRef(false);
 
   // Reset search and editing state when conversation changes
   useEffect(() => {
     setThreadSearch('');
     setIsEditingTitle(false);
+    hasScrolled.current = false;
   }, [conversationId]);
+
+  // Scroll to matched message after loading
+  useEffect(() => {
+    if (!matchedMessageId || isLoading || hasScrolled.current) return;
+    const el = messageRefs.current.get(matchedMessageId);
+    if (el) {
+      setTimeout(() => {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        hasScrolled.current = true;
+      }, 100);
+    }
+  }, [matchedMessageId, isLoading, data]);
 
   // Esc key listener
   useEffect(() => {
@@ -465,6 +526,11 @@ export function ConversationPanel({ conversationId, onClose, onDeleted, isBookma
                 item={item}
                 searchQuery={threadSearch}
                 isMatch={messageMatchesQuery(item.content, threadSearch)}
+                isHighlighted={!threadSearch && matchedMessageId === item.id}
+                messageRef={(el: HTMLDivElement | null) => {
+                  if (el) messageRefs.current.set(item.id, el);
+                  else messageRefs.current.delete(item.id);
+                }}
               />
             ))}
           </div>

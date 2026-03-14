@@ -70,7 +70,7 @@ describe('ResultCard', () => {
     const onSelect = vi.fn();
     render(<ResultCard result={makeResult()} onSelect={onSelect} />);
     fireEvent.click(screen.getByRole('button'));
-    expect(onSelect).toHaveBeenCalledWith('conv-123');
+    expect(onSelect).toHaveBeenCalledWith('conv-123', 'test-1');
   });
 
   it('shows focus ring when isFocused is true', () => {

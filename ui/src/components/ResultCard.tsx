@@ -9,13 +9,15 @@ interface ResultCardProps {
   result: SearchResult;
   className?: string;
   hideScore?: boolean;
-  onSelect?: (conversationId: string) => void;
+  onSelect?: (conversationId: string, messageId?: string) => void;
   isSelected?: boolean;
   isFocused?: boolean;
   highlightQuery?: string;
   cardRef?: (el: HTMLDivElement | null) => void;
   isBookmarked?: boolean;
   onToggleBookmark?: (conversationId: string) => void;
+  isChecked?: boolean;
+  onToggleCheck?: (conversationId: string) => void;
 }
 
 // Platform configuration matching SourceFilterUI for consistency
@@ -104,6 +106,37 @@ function getPlatformConfig(source?: string) {
 }
 
 /**
+ * Extract a KWIC (Keyword in Context) snippet around the first match.
+ * Returns a ~200 char window centered on the match, or null if no match.
+ */
+function extractKwicSnippet(text: string, query: string, windowSize: number = 200): string | null {
+  if (!query.trim() || !text) return null;
+  const words = query.trim().split(/\s+/).filter(Boolean);
+  const escaped = words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const pattern = new RegExp(escaped.join('|'), 'i');
+  const match = pattern.exec(text);
+  if (!match) return null;
+
+  const half = Math.floor(windowSize / 2);
+  let start = Math.max(0, match.index - half);
+  let end = Math.min(text.length, match.index + match[0].length + half);
+
+  // Snap to word boundaries
+  if (start > 0) {
+    const nextSpace = text.indexOf(' ', start);
+    if (nextSpace !== -1 && nextSpace < match.index) start = nextSpace + 1;
+  }
+  if (end < text.length) {
+    const prevSpace = text.lastIndexOf(' ', end);
+    if (prevSpace > match.index) end = prevSpace;
+  }
+
+  const prefix = start > 0 ? '...' : '';
+  const suffix = end < text.length ? '...' : '';
+  return prefix + text.slice(start, end) + suffix;
+}
+
+/**
  * Highlight matching query terms in text.
  * Splits on word boundaries and wraps matches in <mark>.
  */
@@ -122,7 +155,7 @@ function highlightText(text: string, query: string): React.ReactNode {
   );
 }
 
-export function ResultCard({ result, className, hideScore, onSelect, isSelected, isFocused, highlightQuery, cardRef, isBookmarked, onToggleBookmark }: ResultCardProps) {
+export function ResultCard({ result, className, hideScore, onSelect, isSelected, isFocused, highlightQuery, cardRef, isBookmarked, onToggleBookmark, isChecked, onToggleCheck }: ResultCardProps) {
   const { content, meta } = result;
   const platform = getPlatformConfig(meta.source);
   const Icon = platform?.icon || MessageSquare;
@@ -131,11 +164,15 @@ export function ResultCard({ result, className, hideScore, onSelect, isSelected,
   const messageCount = (meta.message_count as number) || 0;
   const firstUserMessage = (meta.first_user_message as string) || '';
 
+  // Use KWIC snippet when searching, full content when expanded
+  const kwicSnippet = highlightQuery ? extractKwicSnippet(content, highlightQuery) : null;
+  const displayContent = kwicSnippet || content;
+
   const [expanded, setExpanded] = useState(false);
 
   const handleClick = () => {
     if (onSelect && meta.conversation_id) {
-      onSelect(meta.conversation_id);
+      onSelect(meta.conversation_id, result.id);
     }
   };
 
@@ -164,6 +201,16 @@ export function ResultCard({ result, className, hideScore, onSelect, isSelected,
     >
       <div className="flex items-center justify-between mb-2 text-xs">
         <div className="flex items-center gap-2">
+          {onToggleCheck && meta.conversation_id && (
+            <input
+              type="checkbox"
+              checked={!!isChecked}
+              onChange={(e) => { e.stopPropagation(); onToggleCheck(meta.conversation_id!); }}
+              onClick={(e) => e.stopPropagation()}
+              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+              aria-label={`Select ${title}`}
+            />
+          )}
           {/* Source badge with icon and color */}
           <div className={cn(
             "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border font-medium",
@@ -236,9 +283,9 @@ export function ResultCard({ result, className, hideScore, onSelect, isSelected,
         )}
         <p className={cn(
           "text-sm text-gray-600 dark:text-gray-300 font-mono bg-gray-50 dark:bg-gray-700/50 p-2 rounded break-words whitespace-pre-wrap",
-          !expanded && "line-clamp-3"
+          !expanded && !kwicSnippet && "line-clamp-3"
         )}>
-          {highlightQuery ? highlightText(content, highlightQuery) : content}
+          {highlightQuery ? highlightText(expanded ? content : displayContent, highlightQuery) : content}
         </p>
         {content.length > 200 && (
           <button

@@ -1,3 +1,5 @@
+from datetime import UTC, datetime, timedelta
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.concurrency import run_in_threadpool
 
@@ -57,6 +59,25 @@ async def search_documents(request: SearchRequest):
             if platforms_to_filter:
                 platform_list = "', '".join(platforms_to_filter)
                 filters.append(f"platform IN ('{platform_list}')")
+
+        # Date range filter
+        if request.date_range:
+            now = datetime.now(UTC)
+            if request.date_range == "today":
+                start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            elif request.date_range == "this_week":
+                start = (now - timedelta(days=now.weekday())).replace(
+                    hour=0, minute=0, second=0, microsecond=0
+                )
+            elif request.date_range == "this_month":
+                start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            else:
+                start = None
+
+            if start:
+                # LanceDB stores naive timestamps, strip tzinfo
+                naive_start = start.replace(tzinfo=None).isoformat()
+                filters.append(f"timestamp >= '{naive_start}'")
 
         where_clause = " AND ".join(filters) if filters else None
 

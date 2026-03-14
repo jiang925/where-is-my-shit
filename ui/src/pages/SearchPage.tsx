@@ -5,11 +5,12 @@ import { ResultCard } from '../components/ResultCard';
 import { ConversationPanel } from '../components/ConversationPanel';
 import { SourceFilterUI, AVAILABLE_PLATFORMS, type PlatformId } from '../components/SourceFilterUI';
 import { PresetButtons } from '../components/PresetButtons';
-import { useSearch } from '../lib/api';
+import { DateRangeFilter } from '../components/DateRangeFilter';
+import { useSearch, type DateRangeOption } from '../lib/api';
 import { useKeyboardNavigation } from '../hooks/useKeyboardNavigation';
 import { useBookmarks } from '../hooks/useBookmarks';
 import { useSearchHistory } from '../hooks/useSearchHistory';
-import { Loader2, LogOut, ChevronDown, ChevronRight, Star } from 'lucide-react';
+import { Loader2, LogOut, ChevronDown, ChevronRight, Star, ArrowUpDown } from 'lucide-react';
 
 interface SearchPageProps {
   onLogout: () => void;
@@ -25,13 +26,15 @@ export function SearchPage({ onLogout }: SearchPageProps) {
   // Conversation panel state from URL
   const selectedConversation = searchParams.get('conversation') || null;
 
-  const handleSelectConversation = (conversationId: string) => {
+  const handleSelectConversation = (conversationId: string, messageId?: string) => {
     const newParams = new URLSearchParams(searchParams);
     if (selectedConversation === conversationId) {
       // Toggle off
       newParams.delete('conversation');
+      setMatchedMessageId(null);
     } else {
       newParams.set('conversation', conversationId);
+      setMatchedMessageId(messageId || null);
     }
     setSearchParams(newParams);
   };
@@ -40,6 +43,7 @@ export function SearchPage({ onLogout }: SearchPageProps) {
     const newParams = new URLSearchParams(searchParams);
     newParams.delete('conversation');
     setSearchParams(newParams);
+    setMatchedMessageId(null);
   };
 
   // Default to all platforms selected
@@ -52,6 +56,15 @@ export function SearchPage({ onLogout }: SearchPageProps) {
 
   // Search history
   const searchHistory = useSearchHistory();
+
+  // Sort mode
+  const [sortBy, setSortBy] = useState<'relevance' | 'recent'>('relevance');
+
+  // Matched message ID for jump-to-match in ConversationPanel
+  const [matchedMessageId, setMatchedMessageId] = useState<string | null>(null);
+
+  // Date range from URL params
+  const dateRange = (searchParams.get('range') as DateRangeOption) || 'all_time';
 
   // State for collapsible secondary results
   const [showSecondary, setShowSecondary] = useState(false);
@@ -102,19 +115,22 @@ export function SearchPage({ onLogout }: SearchPageProps) {
     isFetchingNextPage,
     status,
     error
-  } = useSearch(query, selectedPlatforms);
+  } = useSearch(query, selectedPlatforms, dateRange);
 
   // Collect all results from all pages, optionally filter by bookmarks
   const allResultsRaw = useMemo(
     () => data?.pages.flatMap(p => p.results) || [],
     [data?.pages]
   );
-  const allResults = useMemo(
-    () => showBookmarkedOnly
+  const allResults = useMemo(() => {
+    let filtered = showBookmarkedOnly
       ? allResultsRaw.filter(r => r.meta.conversation_id && bookmarks.isBookmarked(r.meta.conversation_id))
-      : allResultsRaw,
-    [allResultsRaw, showBookmarkedOnly, bookmarks]
-  );
+      : allResultsRaw;
+    if (sortBy === 'recent') {
+      filtered = [...filtered].sort((a, b) => (b.meta.created_at || 0) - (a.meta.created_at || 0));
+    }
+    return filtered;
+  }, [allResultsRaw, showBookmarkedOnly, bookmarks, sortBy]);
   const secondaryResults = data?.pages.flatMap(p => p.secondary_results || []) || [];
   const secondaryCount = data?.pages[0]?.secondary_total || 0;
 
@@ -124,7 +140,7 @@ export function SearchPage({ onLogout }: SearchPageProps) {
     onSelect: (index) => {
       const result = allResults[index];
       if (result?.meta.conversation_id) {
-        handleSelectConversation(result.meta.conversation_id);
+        handleSelectConversation(result.meta.conversation_id, result.id);
       }
     },
     onEscape: handleClosePanel,
@@ -237,6 +253,11 @@ export function SearchPage({ onLogout }: SearchPageProps) {
               </button>
             )}
           </div>
+
+          {/* Date Range Filter */}
+          <div className="mt-3">
+            <DateRangeFilter />
+          </div>
         </div>
       </div>
 
@@ -272,7 +293,7 @@ export function SearchPage({ onLogout }: SearchPageProps) {
             </div>
           )}
 
-          {/* Empty State (with filter hint) */}
+          {/* Empty State (with filter hint + recent query suggestions) */}
           {showEmptyState && (
             <div className="flex-1 flex flex-col items-center justify-center text-gray-500 mt-20">
               <p className="text-lg font-medium">No results found</p>
@@ -289,6 +310,40 @@ export function SearchPage({ onLogout }: SearchPageProps) {
                   Clear filters
                 </button>
               )}
+              {searchHistory.history.length > 0 && (
+                <div className="mt-6 text-center">
+                  <p className="text-xs text-gray-400 mb-2">Try a recent search:</p>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {searchHistory.history.slice(0, 5).map((h) => (
+                      <button
+                        key={h}
+                        onClick={() => { setQuery(h); searchHistory.add(h); }}
+                        className="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
+                      >
+                        {h}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Result count + sort toggle */}
+          {query && allResults.length > 0 && (
+            <div className="flex items-center justify-between mb-3 text-xs text-gray-500 dark:text-gray-400">
+              <span>
+                Found {data?.pages[0]?.total || allResults.length} result{(data?.pages[0]?.total || allResults.length) !== 1 ? 's' : ''}
+                {secondaryCount > 0 && ` (+${secondaryCount} less relevant)`}
+              </span>
+              <button
+                onClick={() => setSortBy(sortBy === 'relevance' ? 'recent' : 'relevance')}
+                className="inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                aria-label={`Sort by ${sortBy === 'relevance' ? 'most recent' : 'best match'}`}
+              >
+                <ArrowUpDown className="h-3 w-3" />
+                {sortBy === 'relevance' ? 'Best Match' : 'Most Recent'}
+              </button>
             </div>
           )}
 
@@ -374,6 +429,7 @@ export function SearchPage({ onLogout }: SearchPageProps) {
                   onClose={handleClosePanel}
                   isBookmarked={bookmarks.isBookmarked(selectedConversation)}
                   onToggleBookmark={bookmarks.toggle}
+                  matchedMessageId={matchedMessageId}
                 />
               </div>
             </div>
@@ -390,6 +446,7 @@ export function SearchPage({ onLogout }: SearchPageProps) {
                   onClose={handleClosePanel}
                   isBookmarked={bookmarks.isBookmarked(selectedConversation)}
                   onToggleBookmark={bookmarks.toggle}
+                  matchedMessageId={matchedMessageId}
                 />
               </div>
             </div>

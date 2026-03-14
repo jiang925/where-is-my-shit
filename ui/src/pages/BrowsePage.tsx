@@ -5,10 +5,11 @@ import { PresetButtons } from '../components/PresetButtons';
 import { DateRangeFilter } from '../components/DateRangeFilter';
 import { TimelineSection } from '../components/TimelineSection';
 import { ConversationPanel } from '../components/ConversationPanel';
-import { useBrowse, exportAll, type DateRangeOption } from '../lib/api';
+import { useBrowse, exportAll, deleteConversation, type DateRangeOption } from '../lib/api';
 import { flattenAndGroup, TIMELINE_SECTIONS, totalGroupedItems, sectionsForDateRange } from '../lib/dateGroups';
 import { useBookmarks } from '../hooks/useBookmarks';
-import { Loader2, LogOut, Download } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { Loader2, LogOut, Download, Trash2, X, CheckSquare } from 'lucide-react';
 
 interface BrowsePageProps {
   onLogout: () => void;
@@ -22,6 +23,38 @@ export function BrowsePage({ onLogout }: BrowsePageProps) {
 
   // Bookmarks
   const bookmarks = useBookmarks();
+  const queryClient = useQueryClient();
+
+  // Bulk selection
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  const toggleCheck = useCallback((conversationId: string) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(conversationId)) next.delete(conversationId);
+      else next.add(conversationId);
+      return next;
+    });
+  }, []);
+
+  const isChecked = useCallback((conversationId: string) => selected.has(conversationId), [selected]);
+
+  const handleBulkDelete = useCallback(async () => {
+    if (selected.size === 0) return;
+    setIsBulkDeleting(true);
+    try {
+      for (const id of selected) {
+        await deleteConversation(id);
+      }
+      setSelected(new Set());
+      queryClient.invalidateQueries({ queryKey: ['browse'] });
+      queryClient.invalidateQueries({ queryKey: ['search'] });
+      queryClient.invalidateQueries({ queryKey: ['stats'] });
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  }, [selected, queryClient]);
 
   // Conversation panel state from URL
   const selectedConversation = searchParams.get('conversation') || null;
@@ -137,6 +170,18 @@ export function BrowsePage({ onLogout }: BrowsePageProps) {
             </h1>
             <div className="flex items-center gap-1">
               <button
+                onClick={() => setSelected(prev => prev.size > 0 ? new Set() : prev)}
+                className={`p-2 rounded-lg transition-colors cursor-pointer ${
+                  selected.size > 0
+                    ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/30'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30'
+                }`}
+                title={selected.size > 0 ? `${selected.size} selected` : "Select conversations"}
+                aria-label="Toggle selection mode"
+              >
+                <CheckSquare className="w-5 h-5" />
+              </button>
+              <button
                 onClick={handleExportAll}
                 disabled={isExporting}
                 className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
@@ -249,6 +294,8 @@ export function BrowsePage({ onLogout }: BrowsePageProps) {
                   selectedConversation={selectedConversation}
                   isBookmarked={bookmarks.isBookmarked}
                   onToggleBookmark={bookmarks.toggle}
+                  isChecked={isChecked}
+                  onToggleCheck={toggleCheck}
                 />
               ))}
             </div>
@@ -302,6 +349,32 @@ export function BrowsePage({ onLogout }: BrowsePageProps) {
           </>
         )}
       </div>
+
+      {/* Floating Bulk Action Bar */}
+      {selected.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg px-5 py-3">
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            {selected.size} selected
+          </span>
+          <button
+            onClick={handleBulkDelete}
+            disabled={isBulkDeleting}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+            aria-label="Delete selected conversations"
+          >
+            {isBulkDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+            Delete
+          </button>
+          <button
+            onClick={() => setSelected(new Set())}
+            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors cursor-pointer"
+            aria-label="Clear selection"
+          >
+            <X className="h-4 w-4" />
+            Cancel
+          </button>
+        </div>
+      )}
     </div>
   );
 }

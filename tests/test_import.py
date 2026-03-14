@@ -330,7 +330,10 @@ class TestJsonExport:
         assert export_response.status_code == 200
         archive = export_response.json()
 
-        # Import the exported data
+        # Import the exported data (re-import detects duplicates)
         import_response = _upload_json(client, "/api/v1/import", archive, test_api_key)
         assert import_response.status_code == 200
-        assert import_response.json()["imported"] >= 1
+        result = import_response.json()
+        # Dedup: existing messages are skipped
+        assert result["skipped_duplicates"] >= 1
+        assert result["imported"] + result["skipped_duplicates"] >= 1
