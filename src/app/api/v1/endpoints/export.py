@@ -17,7 +17,7 @@ ALLOWED_PLATFORMS = ["chatgpt", "claude", "claude-code", "gemini", "perplexity",
 
 class ExportRequest(BaseModel):
     platforms: list[str] | None = None
-    format: str = "markdown"  # "markdown" (zip) or "json" (wims-archive)
+    format: str = "markdown"  # "markdown" (zip), "json" (wims-archive), or "obsidian" (YAML frontmatter)
 
 
 def _to_unix_ms(val) -> int:
@@ -58,6 +58,44 @@ def _conversation_to_markdown(messages: list[dict], title: str, platform: str) -
         lines.append(f"**Date:** {_format_date(messages[0].get('timestamp'))}")
         lines.append(f"**Messages:** {len(messages)}")
     lines.extend(["", "---", ""])
+
+    for msg in messages:
+        role = "User" if _is_user_role(msg.get("role", "user")) else "Assistant"
+        time_str = _format_time(msg.get("timestamp"))
+        lines.append(f"## {role} *({time_str})*")
+        lines.append("")
+        lines.append(msg.get("content", ""))
+        lines.append("")
+
+    return "\n".join(lines)
+
+
+def _conversation_to_obsidian(messages: list[dict], title: str, platform: str, conv_id: str) -> str:
+    """Convert conversation to Obsidian-compatible markdown with YAML frontmatter."""
+    date_str = ""
+    if messages:
+        ts = messages[0].get("timestamp")
+        if isinstance(ts, str):
+            ts = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+        if ts:
+            date_str = ts.strftime("%Y-%m-%d")
+
+    safe_title = title.replace('"', "'")
+    lines = [
+        "---",
+        f'title: "{safe_title}"',
+        f"platform: {platform}",
+        f"conversation_id: {conv_id}",
+        f"date: {date_str}",
+        f"messages: {len(messages)}",
+        "tags:",
+        "  - wims",
+        f"  - {platform}",
+        "---",
+        "",
+        f"# {title}",
+        "",
+    ]
 
     for msg in messages:
         role = "User" if _is_user_role(msg.get("role", "user")) else "Assistant"
@@ -157,10 +195,40 @@ async def export_conversations(request: ExportRequest):
             },
         )
 
+    # Obsidian format: markdown with YAML frontmatter, organized by platform
+    if request.format == "obsidian":
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+            used_names: set[str] = set()
+            for conv_id, messages in conversations.items():
+                title = messages[0].get("title", "") or conv_id
+                platform = messages[0].get("platform", "unknown")
+                md = _conversation_to_obsidian(messages, title, platform, conv_id)
+
+                basename = _safe_filename(title, conv_id)
+                filename = f"{platform}/{basename}"
+                full = filename
+                counter = 1
+                while full in used_names:
+                    full = f"{filename}-{counter}"
+                    counter += 1
+                used_names.add(full)
+
+                zf.writestr(f"{full}.md", md)
+
+        buffer.seek(0)
+        return StreamingResponse(
+            buffer,
+            media_type="application/zip",
+            headers={
+                "Content-Disposition": f'attachment; filename="wims-obsidian-{datetime.now().strftime("%Y%m%d")}.zip"'
+            },
+        )
+
     # Markdown format (default): return zip
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
-        used_names: set[str] = set()
+        used_names_md: set[str] = set()
         for conv_id, messages in conversations.items():
             title = messages[0].get("title", "") or conv_id
             platform = messages[0].get("platform", "unknown")
@@ -169,10 +237,10 @@ async def export_conversations(request: ExportRequest):
             basename = _safe_filename(title, conv_id)
             filename = basename
             counter = 1
-            while filename in used_names:
+            while filename in used_names_md:
                 filename = f"{basename}-{counter}"
                 counter += 1
-            used_names.add(filename)
+            used_names_md.add(filename)
 
             zf.writestr(f"{filename}.md", md)
 

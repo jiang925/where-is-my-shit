@@ -269,6 +269,27 @@ export const useStats = (granularity: StatsGranularity = 'day', platforms: strin
   });
 };
 
+// === Related Conversations API ===
+
+export interface RelatedResponse {
+  items: ThreadItem[];
+  total: number;
+}
+
+export const getRelated = async (conversationId: string): Promise<RelatedResponse> => {
+  const response = await api.get<RelatedResponse>(`/related/${conversationId}?limit=5`);
+  return response.data;
+};
+
+export const useRelated = (conversationId: string | null) => {
+  return useQuery({
+    queryKey: ['related', conversationId],
+    queryFn: () => getRelated(conversationId!),
+    enabled: !!conversationId,
+    staleTime: 1000 * 60 * 10,
+  });
+};
+
 // === Terminal API ===
 
 export const openTerminal = async (path: string): Promise<{ opened: string }> => {

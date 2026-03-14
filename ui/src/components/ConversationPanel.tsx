@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useState, useMemo, useRef } from 'react';
 import { X, ExternalLink, Download, Search, Loader2, MessageSquare, Terminal, FileCode, Trash2, Star, Pencil, Check, Copy, ChevronDown, ChevronUp } from 'lucide-react';
 import Markdown from 'react-markdown';
-import { useConversation, deleteConversation, openTerminal, updateConversationTitle, type ThreadItem } from '../lib/api';
+import { useConversation, useRelated, deleteConversation, openTerminal, updateConversationTitle, type ThreadItem } from '../lib/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '../lib/utils';
 import { isFilePath } from '../utils/pathUtils';
@@ -236,6 +236,7 @@ function downloadMarkdown(content: string, filename: string) {
 
 export function ConversationPanel({ conversationId, onClose, onDeleted, isBookmarked, onToggleBookmark, matchedMessageId }: ConversationPanelProps) {
   const { data, isLoading, isError, error } = useConversation(conversationId);
+  const { data: relatedData } = useRelated(conversationId);
   const [threadSearch, setThreadSearch] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -533,6 +534,50 @@ export function ConversationPanel({ conversationId, onClose, onDeleted, isBookma
                 }}
               />
             ))}
+          </div>
+        )}
+
+        {/* Related Conversations */}
+        {relatedData && relatedData.items.length > 0 && (
+          <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3">
+              Related Conversations
+            </h3>
+            <div className="space-y-2">
+              {relatedData.items.map((item) => {
+                const relPlatform = getPlatformConfig(item.platform);
+                const RelIcon = relPlatform?.icon || MessageSquare;
+                return (
+                  <button
+                    key={item.conversation_id}
+                    onClick={() => {
+                      // Navigate to this conversation by updating URL
+                      const url = new URL(window.location.href);
+                      url.searchParams.set('conversation', item.conversation_id);
+                      window.history.pushState({}, '', url.toString());
+                      window.dispatchEvent(new PopStateEvent('popstate'));
+                    }}
+                    className="w-full text-left p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-blue-50/50 dark:hover:bg-blue-900/20 transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className={cn(
+                        "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium",
+                        relPlatform?.bgClass, relPlatform?.colorClass
+                      )}>
+                        <RelIcon className="h-3 w-3" />
+                        {relPlatform?.label}
+                      </div>
+                    </div>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                      {item.title || 'Untitled'}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mt-0.5">
+                      {item.content}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>

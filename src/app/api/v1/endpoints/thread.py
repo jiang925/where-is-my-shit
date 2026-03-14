@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from src.app.core.auth import verify_api_key
 from src.app.db.client import db_client
 from src.app.schemas.message import BrowseItem, BrowseResponse
+from src.app.services.embedding import EmbeddingService
 
 
 class UpdateTitleRequest(BaseModel):
@@ -183,3 +184,78 @@ async def update_conversation_title(conversation_id: str, request: UpdateTitleRe
         raise HTTPException(status_code=404, detail="Conversation not found")
 
     return {"conversation_id": conversation_id, "title": title}
+
+
+@router.get("/related/{conversation_id}")
+async def get_related_conversations(conversation_id: str, limit: int = 5):
+    """Find conversations related to the given one via vector similarity."""
+    if not CONVERSATION_ID_PATTERN.match(conversation_id):
+        raise HTTPException(status_code=400, detail="Invalid conversation_id")
+
+    try:
+        table = db_client.get_table("messages")
+        embedding_service = EmbeddingService()
+
+        def find_related():
+            # Get a representative message from this conversation (first user message)
+            dim = db_client.get_vector_dim()
+            rows = (
+                table.search([0.0] * dim, query_type="vector")
+                .where(f"conversation_id = '{conversation_id}' AND role = 'user'")
+                .select(["content"])
+                .limit(1)
+                .to_list()
+            )
+            if not rows:
+                return []
+
+            # Embed that message and search for similar ones
+            query_vector = embedding_service.embed_text(rows[0]["content"])
+            if not query_vector:
+                return []
+
+            # Search excluding the source conversation
+            similar = (
+                table.search(query_vector, query_type="vector")
+                .where(f"conversation_id != '{conversation_id}'")
+                .select(["id", "conversation_id", "platform", "title", "content", "timestamp", "url", "role"])
+                .limit(limit * 3)
+                .to_list()
+            )
+
+            # Deduplicate by conversation_id, keep best match per conversation
+            seen = {}
+            for r in similar:
+                cid = r.get("conversation_id", "")
+                if cid and cid not in seen:
+                    seen[cid] = r
+                if len(seen) >= limit:
+                    break
+            return list(seen.values())
+
+        results = await run_in_threadpool(find_related)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Related query failed: {str(e)}")
+
+    items = []
+    for r in results:
+        ts = r.get("timestamp")
+        if isinstance(ts, str):
+            ts = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+        unix_ts = int(ts.timestamp()) if ts else 0
+
+        items.append(
+            BrowseItem(
+                id=r.get("id", ""),
+                conversation_id=r.get("conversation_id", ""),
+                timestamp=unix_ts,
+                platform=r.get("platform", ""),
+                title=r.get("title", ""),
+                content=r.get("content", ""),
+                url=r.get("url", ""),
+                role=r.get("role", "user"),
+            )
+        )
+
+    return {"items": items, "total": len(items)}
