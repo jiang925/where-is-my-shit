@@ -122,7 +122,7 @@ uv run ruff check src/ tests/
 ### Infrastructure
 - **GitHub Actions** CI on every push
 - **Docker** images published to GHCR (full + slim variants)
-- **CalVer** versioning (YYYY.MM.DD)
+- **CalVer** versioning (YYYY.MM.DD, with YYYY.MM.DD-N for same-day patches)
 
 ## 5. Pending Work
 
