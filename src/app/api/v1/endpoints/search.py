@@ -15,7 +15,10 @@ from src.app.services.embedding import EmbeddingService
 from src.app.services.reranker import UnifiedReranker
 
 # Whitelist of allowed platforms for security validation
-ALLOWED_PLATFORMS = ["chatgpt", "claude", "claude-code", "gemini", "perplexity", "cursor"]
+ALLOWED_PLATFORMS = [
+    "antigravity", "chatgpt", "claude", "claude-code", "continue",
+    "cursor", "deepseek", "gemini", "huggingchat", "lechat", "perplexity",
+]
 
 router = APIRouter(dependencies=[Depends(verify_api_key)])
 

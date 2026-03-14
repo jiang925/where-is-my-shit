@@ -12,7 +12,10 @@ from src.app.db.client import db_client
 
 router = APIRouter(dependencies=[Depends(verify_api_key)])
 
-ALLOWED_PLATFORMS = ["chatgpt", "claude", "claude-code", "gemini", "perplexity", "cursor"]
+ALLOWED_PLATFORMS = [
+    "antigravity", "chatgpt", "claude", "claude-code", "continue",
+    "cursor", "deepseek", "gemini", "huggingchat", "lechat", "perplexity",
+]
 
 
 class ExportRequest(BaseModel):

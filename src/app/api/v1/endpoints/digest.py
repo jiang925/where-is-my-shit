@@ -7,7 +7,10 @@ from fastapi.concurrency import run_in_threadpool
 from src.app.core.auth import verify_api_key
 from src.app.db.client import db_client
 
-ALLOWED_PLATFORMS = ["chatgpt", "claude", "claude-code", "gemini", "perplexity", "cursor"]
+ALLOWED_PLATFORMS = [
+    "antigravity", "chatgpt", "claude", "claude-code", "continue",
+    "cursor", "deepseek", "gemini", "huggingchat", "lechat", "perplexity",
+]
 
 router = APIRouter(dependencies=[Depends(verify_api_key)])
 

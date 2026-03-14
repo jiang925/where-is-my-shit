@@ -10,7 +10,10 @@ from src.app.db.client import db_client
 from src.app.schemas.message import BrowseItem, BrowseRequest, BrowseResponse
 
 # Whitelist of allowed platforms for security validation
-ALLOWED_PLATFORMS = ["chatgpt", "claude", "claude-code", "gemini", "perplexity", "cursor"]
+ALLOWED_PLATFORMS = [
+    "antigravity", "chatgpt", "claude", "claude-code", "continue",
+    "cursor", "deepseek", "gemini", "huggingchat", "lechat", "perplexity",
+]
 
 router = APIRouter(dependencies=[Depends(verify_api_key)])
 

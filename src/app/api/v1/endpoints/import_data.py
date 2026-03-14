@@ -14,7 +14,10 @@ from src.app.services.embedding import EmbeddingService
 
 router = APIRouter(dependencies=[Depends(verify_api_key)])
 
-ALLOWED_PLATFORMS = ["chatgpt", "claude", "claude-code", "gemini", "perplexity", "cursor"]
+ALLOWED_PLATFORMS = [
+    "antigravity", "chatgpt", "claude", "claude-code", "continue",
+    "cursor", "deepseek", "gemini", "huggingchat", "lechat", "perplexity",
+]
 MAX_UPLOAD_SIZE = 500 * 1024 * 1024  # 500MB
 
 

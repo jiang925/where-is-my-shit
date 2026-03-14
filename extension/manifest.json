@@ -12,7 +12,10 @@
     "matches": [
       "https://chatgpt.com/*",
       "https://claude.ai/*",
+      "https://chat.deepseek.com/*",
       "https://gemini.google.com/*",
+      "https://huggingface.co/chat/*",
+      "https://chat.mistral.ai/*",
       "https://www.perplexity.ai/*"
     ],
     "js": ["content/index.js"],

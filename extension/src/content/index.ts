@@ -4,7 +4,10 @@ import { BaseExtractor } from './extractors/base';
 import { MessageObserver } from './observers/mutation-observer';
 import { ChatGPTExtractor } from './extractors/chatgpt';
 import { ClaudeExtractor } from './extractors/claude';
+import { DeepSeekExtractor } from './extractors/deepseek';
 import { GeminiExtractor } from './extractors/gemini';
+import { HuggingChatExtractor } from './extractors/huggingchat';
+import { LeChatExtractor } from './extractors/lechat';
 import { PerplexityExtractor } from './extractors/perplexity';
 
 console.log('[WIMS Content] Script loaded on:', window.location.href);
@@ -26,7 +29,10 @@ async function init() {
   const extractors: BaseExtractor[] = [
     new ChatGPTExtractor(),
     new ClaudeExtractor(),
+    new DeepSeekExtractor(),
     new GeminiExtractor(),
+    new HuggingChatExtractor(),
+    new LeChatExtractor(),
     new PerplexityExtractor()
   ];
 
