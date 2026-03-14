@@ -352,6 +352,27 @@ export const useRelated = (conversationId: string | null) => {
   });
 };
 
+// === Tags API ===
+
+export interface TagsResponse {
+  conversation_id: string;
+  tags: string[];
+}
+
+export const getTags = async (conversationId: string): Promise<TagsResponse> => {
+  const response = await api.get<TagsResponse>(`/tags/${conversationId}`);
+  return response.data;
+};
+
+export const useTags = (conversationId: string | null) => {
+  return useQuery({
+    queryKey: ['tags', conversationId],
+    queryFn: () => getTags(conversationId!),
+    enabled: !!conversationId,
+    staleTime: 1000 * 60 * 30, // Cache for 30 min (tags don't change often)
+  });
+};
+
 // === Terminal API ===
 
 export const openTerminal = async (path: string): Promise<{ opened: string }> => {

@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useState, useMemo, useRef } from 'react';
 import { X, ExternalLink, Download, Search, Loader2, MessageSquare, Terminal, FileCode, Trash2, Star, Pencil, Check, Copy, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, StickyNote, ClipboardCopy } from 'lucide-react';
 import Markdown from 'react-markdown';
-import { useConversation, useRelated, deleteConversation, openTerminal, updateConversationTitle, type ThreadItem } from '../lib/api';
+import { useConversation, useRelated, useTags, deleteConversation, openTerminal, updateConversationTitle, type ThreadItem } from '../lib/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '../lib/utils';
 import { isFilePath } from '../utils/pathUtils';
@@ -241,6 +241,7 @@ function downloadMarkdown(content: string, filename: string) {
 export function ConversationPanel({ conversationId, onClose, onDeleted, isBookmarked, onToggleBookmark, matchedMessageId, onNavigatePrev, onNavigateNext, note, onNoteChange }: ConversationPanelProps) {
   const { data, isLoading, isError, error } = useConversation(conversationId);
   const { data: relatedData } = useRelated(conversationId);
+  const { data: tagsData } = useTags(conversationId);
   const [threadSearch, setThreadSearch] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -416,6 +417,19 @@ export function ConversationPanel({ conversationId, onClose, onDeleted, isBookma
               )}>
                 <PlatformIcon className="h-3.5 w-3.5" />
                 <span>{platform.label}</span>
+              </div>
+            )}
+            {/* Auto-generated tags */}
+            {tagsData && tagsData.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mb-2">
+                {tagsData.tags.map(tag => (
+                  <span
+                    key={tag}
+                    className="px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
+                  >
+                    {tag}
+                  </span>
+                ))}
               </div>
             )}
             {isEditingTitle ? (

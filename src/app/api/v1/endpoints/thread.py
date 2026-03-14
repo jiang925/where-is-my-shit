@@ -9,6 +9,7 @@ from src.app.core.auth import verify_api_key
 from src.app.db.client import db_client
 from src.app.schemas.message import BrowseItem, BrowseResponse
 from src.app.services.embedding import EmbeddingService
+from src.app.services.tagger import extract_tags
 
 
 class UpdateTitleRequest(BaseModel):
@@ -259,3 +260,36 @@ async def get_related_conversations(conversation_id: str, limit: int = 5):
         )
 
     return {"items": items, "total": len(items)}
+
+
+@router.get("/tags/{conversation_id}")
+async def get_conversation_tags(conversation_id: str):
+    """Auto-extract tags from a conversation's content."""
+    if not CONVERSATION_ID_PATTERN.match(conversation_id):
+        raise HTTPException(status_code=400, detail="Invalid conversation_id")
+
+    try:
+        table = db_client.get_table("messages")
+
+        def fetch_content():
+            dim = db_client.get_vector_dim()
+            rows = (
+                table.search([0.0] * dim, query_type="vector")
+                .where(f"conversation_id = '{conversation_id}'")
+                .select(["content"])
+                .limit(10000)
+                .to_list()
+            )
+            return " ".join(r.get("content", "") for r in rows)
+
+        combined = await run_in_threadpool(fetch_content)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Tag extraction failed: {str(e)}"
+        )
+
+    if not combined.strip():
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    tags = extract_tags(combined)
+    return {"conversation_id": conversation_id, "tags": tags}
