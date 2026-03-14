@@ -312,13 +312,16 @@ Implements the P0 and P1 features from the Feature Research section below.
 
 ### v3.4 — Dev Foundation (partial)
 
-**Completed (P0):**
-- **pytest-cov** — Added to dev dependencies, configured in `pyproject.toml` with `fail_under = 60`, `show_missing = true`.
-- **vitest coverage** — Added `@vitest/coverage-v8`, configured in `vite.config.ts` with `thresholds: { lines: 50 }`.
-- **Dependabot config** — Created `.github/dependabot.yml` for pip, npm (ui + extension), Docker, GitHub Actions with grouped PRs.
-- **justfile** — Unified task runner with `just test-all`, `just lint-all`, `just ci`, `just dev`, and more.
+**Completed:**
+- **pytest-cov** (P0) — Added to dev dependencies, configured in `pyproject.toml` with `fail_under = 60`, `show_missing = true`.
+- **vitest coverage** (P0) — Added `@vitest/coverage-v8`, configured in `vite.config.ts` with `thresholds: { lines: 50 }`.
+- **Dependabot config** (P0) — Created `.github/dependabot.yml` for pip, npm (ui + extension), Docker, GitHub Actions with grouped PRs.
+- **justfile** (P1) — Unified task runner with `just test-all`, `just lint-all`, `just ci`, `just dev`, and more.
+- **Pre-commit hooks** (P1) — `.pre-commit-config.yaml` with ruff format/lint, trailing whitespace, large file check, merge conflict detection, YAML/JSON validation.
+- **Devcontainer** (P1) — `.devcontainer/devcontainer.json` with Python 3.12, Node 20, VS Code extensions, auto port forwarding.
+- **PR/issue templates** (P2) — Bug report YAML template + PR template with test plan checklist.
 
-**Status**: P0 items complete. P1 items (pyright, pre-commit hooks, codecov, extension tests, devcontainer, trivy, PR templates) deferred.
+**Status**: P0 + most P1 items complete. Remaining: pyright, codecov, extension tests, trivy, git-cliff.
 
 ### Feature Research (2026-03-13)
 
@@ -378,21 +381,21 @@ New Chrome extension extractors and watcher daemon integrations.
 
 **Browser expansion:** Firefox (P2 — privacy-focused audience aligns), Safari (P2 — requires Xcode + App Store), Mobile (defer — consider companion app instead).
 
-#### v3.3 — Smart Organization
+#### v3.3 — Smart Organization (partially implemented)
 
 Intelligence features that help users navigate growing conversation libraries.
 
-- **Related conversations** (P1) — Vector similarity search from ConversationPanel. Show 3-5 related conversations at panel bottom. New `GET /api/v1/related/{conversation_id}` endpoint.
-- **Auto-tagging** (P1) — Extract tags from content: programming languages, frameworks, topics. Keyword-based, no LLM needed. Tags as clickable filter chips.
-- **Daily/weekly digest** (P1) — `GET /api/v1/digest?period=today|this_week`. Tier 1 (no LLM): stats + keyword frequency ("12 conversations: 5 Claude Code debugging auth, 4 ChatGPT React hooks"). Tier 2 (optional LLM): prose summary.
-- **Obsidian-compatible export** (P1) — Markdown files with YAML frontmatter (title, date, platform, tags). Folder structure by platform. Low effort formatting layer on existing export.
-- **Conversation notes** (P2) — Free-text annotations per conversation. Stored in DB, searchable.
+- ~~**Related conversations** (P1)~~ — Done. `GET /api/v1/related/{conversation_id}` + ConversationPanel UI.
+- **Auto-tagging** (P1) — Extract tags from content: programming languages, frameworks, topics.
+- **Daily/weekly digest** (P1) — `GET /api/v1/digest?period=today|this_week`.
+- ~~**Obsidian-compatible export** (P1)~~ — Done. `POST /api/v1/export` with `format="obsidian"`.
+- **Conversation notes** (P2) — Free-text annotations per conversation.
 - **Pinned conversations** (P2) — Extend bookmarks with persistent top-of-browse pinning.
-- **Copy context for new chat** (P2) — Extract key decisions + code snippets from a conversation into LLM-friendly format for pasting into new sessions.
-- **Conversation merge** (P2) — Combine multiple conversations on the same topic into a single thread.
-- **Share as HTML** (P2) — Export conversation as self-contained HTML file with embedded styling.
+- **Copy context for new chat** (P2) — Extract key decisions + code snippets.
+- **Conversation merge** (P2) — Combine multiple conversations on same topic.
+- **Share as HTML** (P2) — Export conversation as self-contained HTML file.
 
-#### v3.4 — Dev Foundation (partially implemented above)
+#### v3.4 — Dev Foundation (mostly implemented above)
 
 Tooling improvements for maintainability and contributor experience.
 
@@ -401,12 +404,12 @@ Tooling improvements for maintainability and contributor experience.
 - ~~**Dependabot config** (P0)~~ — Done.
 - **Pyright** (P1) — `typeCheckingMode = "basic"`. Catches type bugs in FastAPI/Pydantic code.
 - ~~**justfile** (P1)~~ — Done.
-- **Pre-commit hooks** (P1) — ruff format + lint, trailing whitespace, large file check.
+- ~~**Pre-commit hooks** (P1)~~ — Done. `.pre-commit-config.yaml` with ruff, trailing whitespace, large files, merge conflicts.
 - **Codecov** (P1) — Coverage badges for README, PR delta comments, trend tracking.
 - **Extension unit tests** (P1) — Biggest test gap: 2,200 lines, zero tests.
-- **Devcontainer** (P1) — `.devcontainer/devcontainer.json` for VS Code / GitHub Codespaces.
+- ~~**Devcontainer** (P1)~~ — Done. `.devcontainer/devcontainer.json` for VS Code / Codespaces.
 - **Trivy Docker scanning** (P1) — Scan images before publishing to GHCR.
-- **PR/issue templates** (P2) — Bug report YAML template, PR template with test plan checklist.
+- ~~**PR/issue templates** (P2)~~ — Done. Bug report YAML template + PR template.
 - **git-cliff changelog** (P2) — Automated release notes from commit messages.
 
 ## 6. Lessons Learned

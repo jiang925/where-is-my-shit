@@ -1,0 +1,51 @@
+name: Bug Report
+description: Report a bug in WIMS
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear description of the bug.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior.
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What you expected to happen.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - Web UI (Search)
+        - Web UI (Browse)
+        - Web UI (Stats)
+        - Backend API
+        - Chrome Extension
+        - Watcher Daemon
+        - MCP Server
+        - CLI
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: WIMS version or commit hash.
