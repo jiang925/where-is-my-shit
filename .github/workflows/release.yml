@@ -3,8 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - '[0-9][0-9][0-9][0-9].[0-9][0-9].[0-9][0-9]'
-      - '[0-9][0-9][0-9][0-9].[0-9][0-9].[0-9][0-9]-[0-9]*'
+      - '[0-9][0-9][0-9][0-9].[0-9][0-9].[0-9][0-9]*'
 
 jobs:
   validate-tests:
@@ -78,44 +77,35 @@ jobs:
 
       - name: Validate tag format
         run: |
-          if [[ ! "${{ steps.version.outputs.VERSION }}" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}(-[0-9]+)?$ ]]; then
-            echo "Invalid tag format: must be YYYY.MM.DD or YYYY.MM.DD-N"
+          if [[ ! "${{ steps.version.outputs.VERSION }}" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}(\.[0-9]+)?$ ]]; then
+            echo "Invalid tag format: must be YYYY.MM.DD or YYYY.MM.DD.N"
             exit 1
           fi
 
-      - name: Compute package version
-        id: pkg_version
-        run: |
-          # Convert tag YYYY.MM.DD-N to dot-separated YYYY.MM.DD.N for
-          # pyproject.toml (PEP 440) and manifest.json (Chrome requires dots)
-          PKG_VERSION="${{ steps.version.outputs.VERSION }}"
-          PKG_VERSION="${PKG_VERSION//-/.}"
-          echo "PKG_VERSION=$PKG_VERSION" >> $GITHUB_OUTPUT
-
       - name: Update pyproject.toml version
         run: |
-          sed -i 's/version = ".*"/version = "${{ steps.pkg_version.outputs.PKG_VERSION }}"/' pyproject.toml
+          sed -i 's/version = ".*"/version = "${{ steps.version.outputs.VERSION }}"/' pyproject.toml
 
       - name: Update manifest.json version
         run: |
           cd extension
-          jq --arg version "${{ steps.pkg_version.outputs.PKG_VERSION }}" \
+          jq --arg version "${{ steps.version.outputs.VERSION }}" \
              '.version = $version' \
              manifest.json > manifest.json.tmp
           mv manifest.json.tmp manifest.json
 
       - name: Validate version consistency
         run: |
-          PKG_VERSION="${{ steps.pkg_version.outputs.PKG_VERSION }}"
+          TAG_VERSION="${{ steps.version.outputs.VERSION }}"
           PYPROJECT_VERSION=$(grep '^version = ' pyproject.toml | cut -d'"' -f2)
           MANIFEST_VERSION=$(jq -r '.version' extension/manifest.json)
 
           ERRORS=()
-          if [ "$PYPROJECT_VERSION" != "$PKG_VERSION" ]; then
-            ERRORS+=("pyproject.toml version ($PYPROJECT_VERSION) != expected ($PKG_VERSION)")
+          if [ "$PYPROJECT_VERSION" != "$TAG_VERSION" ]; then
+            ERRORS+=("pyproject.toml version ($PYPROJECT_VERSION) != tag ($TAG_VERSION)")
           fi
-          if [ "$MANIFEST_VERSION" != "$PKG_VERSION" ]; then
-            ERRORS+=("manifest.json version ($MANIFEST_VERSION) != expected ($PKG_VERSION)")
+          if [ "$MANIFEST_VERSION" != "$TAG_VERSION" ]; then
+            ERRORS+=("manifest.json version ($MANIFEST_VERSION) != tag ($TAG_VERSION)")
           fi
 
           if [ ${#ERRORS[@]} -gt 0 ]; then
@@ -124,13 +114,12 @@ jobs:
             exit 1
           fi
 
-          echo "Version consistency validated: tag=${{ steps.version.outputs.VERSION }} pkg=$PKG_VERSION"
+          echo "Version consistency validated: $TAG_VERSION"
 
       - name: Show version sync status
         run: |
           echo "✅ Version synchronization complete"
-          echo "Tag: ${{ steps.version.outputs.VERSION }}"
-          echo "Package version: ${{ steps.pkg_version.outputs.PKG_VERSION }}"
+          echo "Version: ${{ steps.version.outputs.VERSION }}"
           echo "pyproject.toml: $(grep '^version = ' pyproject.toml | cut -d'"' -f2)"
           echo "manifest.json: $(jq -r '.version' extension/manifest.json)"
           echo ""
@@ -193,16 +182,14 @@ jobs:
 
       - name: Validate manifest.json version matches tag
         run: |
-          # Convert tag hyphen to dot for comparison (2026.03.13-1 → 2026.03.13.1)
-          EXPECTED_VERSION="${{ github.ref_name }}"
-          EXPECTED_VERSION="${EXPECTED_VERSION//-/.}"
+          TAG_VERSION="${{ github.ref_name }}"
           MANIFEST_VERSION=$(jq -r '.version' extension/manifest.json)
 
-          if [ "$MANIFEST_VERSION" != "$EXPECTED_VERSION" ]; then
-            echo "Error: manifest.json version ($MANIFEST_VERSION) does not match expected ($EXPECTED_VERSION)"
+          if [ "$MANIFEST_VERSION" != "$TAG_VERSION" ]; then
+            echo "Error: manifest.json version ($MANIFEST_VERSION) does not match tag ($TAG_VERSION)"
             exit 1
           fi
-          echo "✓ manifest.json version matches: $EXPECTED_VERSION"
+          echo "✓ manifest.json version matches tag: $TAG_VERSION"
 
       - name: Validate required manifest fields
         run: |
