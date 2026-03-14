@@ -71,6 +71,55 @@ api.interceptors.response.use(
   }
 );
 
+/**
+ * Parse search operators from a query string.
+ * Supported: from:platform, before:YYYY-MM-DD, after:YYYY-MM-DD, has:code
+ * Returns the cleaned query and extracted operator values.
+ */
+export function parseSearchOperators(raw: string): {
+  query: string;
+  fromPlatform?: string;
+  beforeDate?: string;
+  afterDate?: string;
+  hasCode?: boolean;
+} {
+  let query = raw;
+  let fromPlatform: string | undefined;
+  let beforeDate: string | undefined;
+  let afterDate: string | undefined;
+  let hasCode: boolean | undefined;
+
+  // Extract from:platform
+  const fromMatch = query.match(/\bfrom:(\S+)/i);
+  if (fromMatch) {
+    fromPlatform = fromMatch[1].toLowerCase();
+    query = query.replace(fromMatch[0], '').trim();
+  }
+
+  // Extract before:YYYY-MM-DD
+  const beforeMatch = query.match(/\bbefore:(\d{4}-\d{2}-\d{2})/i);
+  if (beforeMatch) {
+    beforeDate = beforeMatch[1];
+    query = query.replace(beforeMatch[0], '').trim();
+  }
+
+  // Extract after:YYYY-MM-DD
+  const afterMatch = query.match(/\bafter:(\d{4}-\d{2}-\d{2})/i);
+  if (afterMatch) {
+    afterDate = afterMatch[1];
+    query = query.replace(afterMatch[0], '').trim();
+  }
+
+  // Extract has:code
+  const hasCodeMatch = query.match(/\bhas:code\b/i);
+  if (hasCodeMatch) {
+    hasCode = true;
+    query = query.replace(hasCodeMatch[0], '').trim();
+  }
+
+  return { query, fromPlatform, beforeDate, afterDate, hasCode };
+}
+
 export const search = async ({
   query,
   limit = 20,
@@ -95,13 +144,26 @@ export const search = async ({
     };
   }
 
+  // Parse search operators from query
+  const parsed = parseSearchOperators(query);
+  const cleanQuery = parsed.query || query; // Fall back to original if operators consumed everything
+
+  // Merge from: operator with platform filter
+  let effectivePlatforms = platforms;
+  if (parsed.fromPlatform) {
+    effectivePlatforms = [parsed.fromPlatform];
+  }
+
   // The backend expects POST /search with JSON body
   const response = await api.post<BackendSearchResponse>('/search', {
-    query,
+    query: cleanQuery,
     limit,
     offset,
-    ...(platforms && platforms.length > 0 && { platform: platforms }),
+    ...(effectivePlatforms && effectivePlatforms.length > 0 && { platform: effectivePlatforms }),
     ...(dateRange && dateRange !== 'all_time' && { date_range: dateRange }),
+    ...(parsed.beforeDate && { before_date: parsed.beforeDate }),
+    ...(parsed.afterDate && { after_date: parsed.afterDate }),
+    ...(parsed.hasCode && { has_code: true }),
   });
 
   // Flatten groups into results for the current UI

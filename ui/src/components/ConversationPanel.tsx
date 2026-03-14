@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useState, useMemo, useRef } from 'react';
-import { X, ExternalLink, Download, Search, Loader2, MessageSquare, Terminal, FileCode, Trash2, Star, Pencil, Check, Copy, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, ExternalLink, Download, Search, Loader2, MessageSquare, Terminal, FileCode, Trash2, Star, Pencil, Check, Copy, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, StickyNote, ClipboardCopy } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { useConversation, useRelated, deleteConversation, openTerminal, updateConversationTitle, type ThreadItem } from '../lib/api';
 import { useQueryClient } from '@tanstack/react-query';
@@ -13,6 +13,10 @@ interface ConversationPanelProps {
   isBookmarked?: boolean;
   onToggleBookmark?: (conversationId: string) => void;
   matchedMessageId?: string | null;
+  onNavigatePrev?: () => void;
+  onNavigateNext?: () => void;
+  note?: string;
+  onNoteChange?: (conversationId: string, note: string) => void;
 }
 
 // Platform configuration (mirrors ResultCard for consistency)
@@ -234,7 +238,7 @@ function downloadMarkdown(content: string, filename: string) {
   URL.revokeObjectURL(url);
 }
 
-export function ConversationPanel({ conversationId, onClose, onDeleted, isBookmarked, onToggleBookmark, matchedMessageId }: ConversationPanelProps) {
+export function ConversationPanel({ conversationId, onClose, onDeleted, isBookmarked, onToggleBookmark, matchedMessageId, onNavigatePrev, onNavigateNext, note, onNoteChange }: ConversationPanelProps) {
   const { data, isLoading, isError, error } = useConversation(conversationId);
   const { data: relatedData } = useRelated(conversationId);
   const [threadSearch, setThreadSearch] = useState('');
@@ -243,6 +247,8 @@ export function ConversationPanel({ conversationId, onClose, onDeleted, isBookma
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editTitle, setEditTitle] = useState('');
   const [isSavingTitle, setIsSavingTitle] = useState(false);
+  const [showNoteEditor, setShowNoteEditor] = useState(false);
+  const [noteText, setNoteText] = useState(note || '');
   const queryClient = useQueryClient();
   const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const hasScrolled = useRef(false);
@@ -251,8 +257,10 @@ export function ConversationPanel({ conversationId, onClose, onDeleted, isBookma
   useEffect(() => {
     setThreadSearch('');
     setIsEditingTitle(false);
+    setShowNoteEditor(false);
+    setNoteText(note || '');
     hasScrolled.current = false;
-  }, [conversationId]);
+  }, [conversationId, note]);
 
   // Scroll to matched message after loading
   useEffect(() => {
@@ -299,6 +307,48 @@ export function ConversationPanel({ conversationId, onClose, onDeleted, isBookma
     const safeName = title.replace(/[^a-zA-Z0-9-_ ]/g, '').replace(/\s+/g, '-').slice(0, 60);
     downloadMarkdown(md, `${safeName}.md`);
   }, [sortedItems, title, platform?.label]);
+
+  const [contextCopied, setContextCopied] = useState(false);
+  const handleCopyContext = useCallback(async () => {
+    if (sortedItems.length === 0) return;
+    // Extract key context: title, key decisions from assistant messages, and code blocks
+    const lines: string[] = [`# Context from: ${title}`, ''];
+    // Get the first user message for topic context
+    const firstUser = sortedItems.find(i => isUserRole(i.role));
+    if (firstUser) {
+      lines.push(`## Topic`);
+      lines.push(firstUser.content.slice(0, 500));
+      lines.push('');
+    }
+    // Extract code blocks from assistant messages
+    const codeBlocks: string[] = [];
+    for (const item of sortedItems) {
+      if (!isUserRole(item.role)) {
+        const matches = item.content.matchAll(/```[\s\S]*?```/g);
+        for (const m of matches) {
+          codeBlocks.push(m[0]);
+        }
+      }
+    }
+    if (codeBlocks.length > 0) {
+      lines.push(`## Code Snippets`);
+      lines.push('');
+      for (const block of codeBlocks.slice(0, 5)) {
+        lines.push(block);
+        lines.push('');
+      }
+    }
+    // Extract last assistant summary
+    const lastAssistant = [...sortedItems].reverse().find(i => !isUserRole(i.role));
+    if (lastAssistant) {
+      lines.push(`## Last Response (summary)`);
+      lines.push(lastAssistant.content.slice(0, 500));
+      if (lastAssistant.content.length > 500) lines.push('...');
+    }
+    await navigator.clipboard.writeText(lines.join('\n'));
+    setContextCopied(true);
+    setTimeout(() => setContextCopied(false), 2000);
+  }, [sortedItems, title]);
 
   const handleDelete = useCallback(async () => {
     setIsDeleting(true);
@@ -434,6 +484,27 @@ export function ConversationPanel({ conversationId, onClose, onDeleted, isBookma
             )}
           </div>
           <div className="flex items-center gap-1">
+            {/* Prev/Next navigation */}
+            {onNavigatePrev && (
+              <button
+                onClick={onNavigatePrev}
+                className="flex-shrink-0 p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors cursor-pointer"
+                aria-label="Previous result"
+                title="Previous result"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+            )}
+            {onNavigateNext && (
+              <button
+                onClick={onNavigateNext}
+                className="flex-shrink-0 p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors cursor-pointer"
+                aria-label="Next result"
+                title="Next result"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            )}
             {onToggleBookmark && (
               <button
                 onClick={() => onToggleBookmark(conversationId)}
@@ -444,8 +515,30 @@ export function ConversationPanel({ conversationId, onClose, onDeleted, isBookma
                 <Star className={cn("h-5 w-5", isBookmarked ? "fill-yellow-400 text-yellow-400" : "text-gray-400 hover:text-yellow-400")} />
               </button>
             )}
+            {/* Notes button */}
+            {onNoteChange && (
+              <button
+                onClick={() => setShowNoteEditor(!showNoteEditor)}
+                className={cn(
+                  "flex-shrink-0 p-1.5 rounded-lg transition-colors cursor-pointer",
+                  note ? "text-amber-500 hover:text-amber-600" : "text-gray-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/30"
+                )}
+                aria-label="Add note"
+                title={note ? "Edit note" : "Add note"}
+              >
+                <StickyNote className="h-5 w-5" />
+              </button>
+            )}
             {sortedItems.length > 0 && (
               <>
+                <button
+                  onClick={handleCopyContext}
+                  className="flex-shrink-0 p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-lg transition-colors cursor-pointer"
+                  aria-label="Copy context for new chat"
+                  title={contextCopied ? "Copied!" : "Copy context for new chat"}
+                >
+                  <ClipboardCopy className="h-5 w-5" />
+                </button>
                 <button
                   onClick={handleExport}
                   className="flex-shrink-0 p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors cursor-pointer"
@@ -474,6 +567,30 @@ export function ConversationPanel({ conversationId, onClose, onDeleted, isBookma
           </div>
         </div>
       </div>
+
+      {/* Note Editor */}
+      {showNoteEditor && onNoteChange && (
+        <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700 bg-amber-50/50 dark:bg-amber-900/10 px-4 py-2">
+          <textarea
+            value={noteText}
+            onChange={(e) => setNoteText(e.target.value)}
+            onBlur={() => { onNoteChange(conversationId, noteText); }}
+            placeholder="Add a note about this conversation..."
+            className="w-full text-xs bg-transparent border border-amber-200 dark:border-amber-700 rounded-md p-2 text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-amber-300 resize-none"
+            rows={2}
+          />
+        </div>
+      )}
+
+      {/* Existing note display (when editor is closed) */}
+      {!showNoteEditor && note && (
+        <div
+          onClick={() => setShowNoteEditor(true)}
+          className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700 bg-amber-50/50 dark:bg-amber-900/10 px-4 py-2 cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
+        >
+          <p className="text-xs text-amber-700 dark:text-amber-400 line-clamp-2">{note}</p>
+        </div>
+      )}
 
       {/* Thread Search */}
       {sortedItems.length > 1 && (

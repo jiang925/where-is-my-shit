@@ -79,6 +79,21 @@ async def search_documents(request: SearchRequest):
                 naive_start = start.replace(tzinfo=None).isoformat()
                 filters.append(f"timestamp >= '{naive_start}'")
 
+        # Specific date filters (from search operators)
+        if request.before_date:
+            try:
+                before_dt = datetime.fromisoformat(request.before_date)
+                filters.append(f"timestamp < '{before_dt.isoformat()}'")
+            except ValueError:
+                pass
+
+        if request.after_date:
+            try:
+                after_dt = datetime.fromisoformat(request.after_date)
+                filters.append(f"timestamp >= '{after_dt.isoformat()}'")
+            except ValueError:
+                pass
+
         where_clause = " AND ".join(filters) if filters else None
 
         # Request more candidates than the limit to give reranker enough options
@@ -129,6 +144,11 @@ async def search_documents(request: SearchRequest):
         r["id"] = r.get("id", "")
         r["content"] = r.get("content", "")
         text_results.append(r)
+
+    # 3b. Apply has_code filter (post-retrieval, before reranking)
+    if request.has_code:
+        vector_results = [r for r in vector_results if "```" in r.get("content", "")]
+        text_results = [r for r in text_results if "```" in r.get("content", "")]
 
     # 4. Run unified reranker
     ranked = reranker.rerank(vector_results, text_results, request.query)

@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { SearchBar } from '../components/SearchBar';
 import { ResultCard } from '../components/ResultCard';
+import { CompactResultCard } from '../components/CompactResultCard';
 import { ConversationPanel } from '../components/ConversationPanel';
 import { SourceFilterUI, AVAILABLE_PLATFORMS, type PlatformId } from '../components/SourceFilterUI';
 import { PresetButtons } from '../components/PresetButtons';
@@ -10,7 +11,8 @@ import { useSearch, type DateRangeOption } from '../lib/api';
 import { useKeyboardNavigation } from '../hooks/useKeyboardNavigation';
 import { useBookmarks } from '../hooks/useBookmarks';
 import { useSearchHistory } from '../hooks/useSearchHistory';
-import { Loader2, LogOut, ChevronDown, ChevronRight, Star, ArrowUpDown } from 'lucide-react';
+import { useNotes } from '../hooks/useNotes';
+import { Loader2, LogOut, ChevronDown, ChevronRight, Star, ArrowUpDown, List, LayoutGrid } from 'lucide-react';
 
 interface SearchPageProps {
   onLogout: () => void;
@@ -57,8 +59,16 @@ export function SearchPage({ onLogout }: SearchPageProps) {
   // Search history
   const searchHistory = useSearchHistory();
 
+  // Notes
+  const notes = useNotes();
+
   // Sort mode
   const [sortBy, setSortBy] = useState<'relevance' | 'recent'>('relevance');
+
+  // View mode (card vs compact)
+  const [viewMode, setViewMode] = useState<'card' | 'compact'>(() => {
+    return (localStorage.getItem('wims_view_mode') as 'card' | 'compact') || 'card';
+  });
 
   // Matched message ID for jump-to-match in ConversationPanel
   const [matchedMessageId, setMatchedMessageId] = useState<string | null>(null);
@@ -179,6 +189,30 @@ export function SearchPage({ onLogout }: SearchPageProps) {
 
     if (node) observer.current.observe(node);
   }, [isFetchingNextPage, hasNextPage, fetchNextPage]);
+
+  // Prev/next navigation for ConversationPanel
+  const currentResultIndex = useMemo(() => {
+    if (!selectedConversation) return -1;
+    return allResults.findIndex(r => r.meta.conversation_id === selectedConversation);
+  }, [allResults, selectedConversation]);
+
+  const handleNavigatePrev = useCallback(() => {
+    if (currentResultIndex > 0) {
+      const prev = allResults[currentResultIndex - 1];
+      if (prev?.meta.conversation_id) {
+        handleSelectConversation(prev.meta.conversation_id, prev.id);
+      }
+    }
+  }, [currentResultIndex, allResults]);
+
+  const handleNavigateNext = useCallback(() => {
+    if (currentResultIndex >= 0 && currentResultIndex < allResults.length - 1) {
+      const next = allResults[currentResultIndex + 1];
+      if (next?.meta.conversation_id) {
+        handleSelectConversation(next.meta.conversation_id, next.id);
+      }
+    }
+  }, [currentResultIndex, allResults]);
 
   // Handle empty state vs initial state
   const showInitialState = !query;
@@ -336,21 +370,44 @@ export function SearchPage({ onLogout }: SearchPageProps) {
                 Found {data?.pages[0]?.total || allResults.length} result{(data?.pages[0]?.total || allResults.length) !== 1 ? 's' : ''}
                 {secondaryCount > 0 && ` (+${secondaryCount} less relevant)`}
               </span>
-              <button
-                onClick={() => setSortBy(sortBy === 'relevance' ? 'recent' : 'relevance')}
-                className="inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
-                aria-label={`Sort by ${sortBy === 'relevance' ? 'most recent' : 'best match'}`}
-              >
-                <ArrowUpDown className="h-3 w-3" />
-                {sortBy === 'relevance' ? 'Best Match' : 'Most Recent'}
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setSortBy(sortBy === 'relevance' ? 'recent' : 'relevance')}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                  aria-label={`Sort by ${sortBy === 'relevance' ? 'most recent' : 'best match'}`}
+                >
+                  <ArrowUpDown className="h-3 w-3" />
+                  {sortBy === 'relevance' ? 'Best Match' : 'Most Recent'}
+                </button>
+                <button
+                  onClick={() => {
+                    const next = viewMode === 'card' ? 'compact' : 'card';
+                    setViewMode(next);
+                    localStorage.setItem('wims_view_mode', next);
+                  }}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                  aria-label={viewMode === 'card' ? 'Switch to compact view' : 'Switch to card view'}
+                  title={viewMode === 'card' ? 'Compact view' : 'Card view'}
+                >
+                  {viewMode === 'card' ? <List className="h-3 w-3" /> : <LayoutGrid className="h-3 w-3" />}
+                </button>
+              </div>
             </div>
           )}
 
           {/* Results Grid */}
-          <div className="space-y-4">
-            {(() => {
-              return allResults.map((result, idx) => (
+          <div className={viewMode === 'compact' ? 'space-y-1' : 'space-y-4'}>
+            {allResults.map((result, idx) =>
+              viewMode === 'compact' ? (
+                <CompactResultCard
+                  key={result.id}
+                  result={result}
+                  onSelect={handleSelectConversation}
+                  isSelected={result.meta.conversation_id === selectedConversation}
+                  isFocused={idx === focusedIndex}
+                  cardRef={(el) => setCardRef(idx, el)}
+                />
+              ) : (
                 <ResultCard
                   key={result.id}
                   result={result}
@@ -362,8 +419,8 @@ export function SearchPage({ onLogout }: SearchPageProps) {
                   isBookmarked={!!result.meta.conversation_id && bookmarks.isBookmarked(result.meta.conversation_id)}
                   onToggleBookmark={bookmarks.toggle}
                 />
-              ));
-            })()}
+              )
+            )}
           </div>
 
           {/* Collapsible Secondary Results Section */}
@@ -430,6 +487,10 @@ export function SearchPage({ onLogout }: SearchPageProps) {
                   isBookmarked={bookmarks.isBookmarked(selectedConversation)}
                   onToggleBookmark={bookmarks.toggle}
                   matchedMessageId={matchedMessageId}
+                  onNavigatePrev={currentResultIndex > 0 ? handleNavigatePrev : undefined}
+                  onNavigateNext={currentResultIndex < allResults.length - 1 ? handleNavigateNext : undefined}
+                  note={notes.getNote(selectedConversation)}
+                  onNoteChange={notes.setNote}
                 />
               </div>
             </div>
@@ -447,6 +508,10 @@ export function SearchPage({ onLogout }: SearchPageProps) {
                   isBookmarked={bookmarks.isBookmarked(selectedConversation)}
                   onToggleBookmark={bookmarks.toggle}
                   matchedMessageId={matchedMessageId}
+                  onNavigatePrev={currentResultIndex > 0 ? handleNavigatePrev : undefined}
+                  onNavigateNext={currentResultIndex < allResults.length - 1 ? handleNavigateNext : undefined}
+                  note={notes.getNote(selectedConversation)}
+                  onNoteChange={notes.setNote}
                 />
               </div>
             </div>

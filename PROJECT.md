@@ -274,7 +274,7 @@ Mix of coverage, readability, and organization.
 - [x] Audit and keep all documentation up to date (PROJECT.md, TESTING.md, README.md, ROADMAP.md, STATE.md)
 - [x] Dark mode toggle button not working — Fixed: Tailwind v4 ignores `tailwind.config.js`; added `@custom-variant dark` and `@plugin` directives to `index.css`
 - [ ] Multi-device sync
-- [ ] Settings/preferences UI page
+- [x] Settings/preferences UI page — Added `/settings` route with theme selector, default view mode, data management (clear local data), and search operators help reference
 - [x] Bulk delete UI — Added checkboxes on BrowsePage result cards, floating action bar with bulk delete/cancel, selection toggle button in header
 - [x] Conversation dedup detection — Import endpoints now check for existing message IDs before inserting, reporting `skipped_duplicates` count
 
@@ -300,13 +300,16 @@ Implements the P0 and P1 features from the Feature Research section below.
 - **Question-first card layout** — Already in place from v1.9 (`first_user_message` in blue highlight box).
 - **Date range filter on search** — Added `date_range` field to `SearchRequest`, timestamp filtering in search endpoint, `DateRangeFilter` component on SearchPage, date range passed through `useSearch` hook.
 
-**P1 (complete):**
+**P1 (all complete):**
 - **Search result sorting** — Toggle "Best Match" (relevance) vs "Most Recent" (timestamp). Client-side sort.
 - **Result count + timing** — "Found N results (+M less relevant)" above results grid.
 - **Copy individual messages** — Clipboard icon on hover in ConversationPanel message bubbles.
 - **Collapsible messages** — Long AI responses (>500 chars) collapsed by default with "Show full message" toggle.
 - **Bulk selection & actions** — Checkboxes on BrowsePage result cards, floating action bar for bulk delete.
 - **Empty state suggestions** — Shows recent queries from search history when no results found.
+- **Search operators** — `from:chatgpt`, `before:2026-03-01`, `after:`, `has:code`. Frontend `parseSearchOperators()` extracts operators, backend `before_date`/`after_date`/`has_code` filters.
+- **Prev/next navigation** — ChevronLeft/Right buttons in ConversationPanel header to navigate between search results.
+- **Compact card mode** — Toggle between card (default) and compact single-line view. `CompactResultCard` component.
 
 **Status**: Complete. 194 backend + 82 vitest tests pass.
 
@@ -321,7 +324,32 @@ Implements the P0 and P1 features from the Feature Research section below.
 - **Devcontainer** (P1) — `.devcontainer/devcontainer.json` with Python 3.12, Node 20, VS Code extensions, auto port forwarding.
 - **PR/issue templates** (P2) — Bug report YAML template + PR template with test plan checklist.
 
-**Status**: P0 + most P1 items complete. Remaining: pyright, codecov, extension tests, trivy, git-cliff.
+**Additional completed:**
+- **Pyright** — `pyrightconfig.json` with `typeCheckingMode = "basic"`, Python 3.11.
+- **Trivy Docker scanning** — Added `aquasecurity/trivy-action` step to release workflow.
+- **git-cliff changelog** — `cliff.toml` with conventional commit parsing and grouped output.
+
+**Status**: P0 + most P1 items complete. Remaining: codecov, extension unit tests.
+
+### v3.5 — Additional Features
+
+**Completed in this batch:**
+- **Search operators** (v3.1) — `from:chatgpt`, `before:2026-03-01`, `after:`, `has:code` parsed from search input.
+- **Prev/next navigation** (v3.1) — ChevronLeft/Right in ConversationPanel header.
+- **Compact card mode** (v3.1) — Toggle card/compact view with List/LayoutGrid icon. `CompactResultCard` component.
+- **Daily/weekly digest** (v3.3) — `GET /api/v1/digest?period=today|this_week` endpoint.
+- **Conversation notes** (v3.3) — `useNotes` hook, StickyNote icon, inline editor in ConversationPanel.
+- **Pinned conversations** (v3.3) — Extended bookmarks with pinning, pinned section at top of BrowsePage.
+- **Copy context for new chat** (v3.3) — Extracts topic, code blocks, last response. ClipboardCopy button.
+- **Share as HTML** (v3.3) — `POST /api/v1/export` with `format="html"`, self-contained HTML.
+- **Settings page** (backlog) — `/settings` route with theme, view mode, data management, search operators help.
+- **Pyright config** (v3.4) — `pyrightconfig.json`.
+- **Trivy scanning** (v3.4) — Added to release workflow.
+- **git-cliff config** (v3.4) — `cliff.toml`.
+- **Gemini CLI watcher** (v3.2) — `GeminiCliWatcher` for `~/.gemini/tmp/*/chats/` sessions.
+- **Continue.dev watcher** (v3.2) — `ContinueDevWatcher` for `~/.continue/sessions/` sessions.
+
+**Status**: Complete. 194 backend + 82 vitest tests pass.
 
 ### Feature Research (2026-03-13)
 
@@ -336,12 +364,12 @@ Fix the 3 known UX problems and add power-user search features.
 - ~~**Question-first card layout** (P0)~~ — Done (v1.9).
 - ~~**Date range filter on search** (P0)~~ — Done.
 - ~~**Search result sorting** (P1)~~ — Done.
-- **Search operators** (P1) — `from:chatgpt`, `before:2026-03-01`, `has:code`. Parse from search input, translate to backend filters.
+- ~~**Search operators** (P1)~~ — Done. `from:chatgpt`, `before:2026-03-01`, `after:`, `has:code`. Frontend parser extracts operators, backend handles `before_date`, `after_date`, `has_code` filters.
 - ~~**Result count + timing** (P1)~~ — Done.
 - ~~**Copy individual messages** (P1)~~ — Done.
 - ~~**Collapsible messages** (P1)~~ — Done.
-- **Prev/next navigation** (P1) — Arrow buttons in ConversationPanel header to jump between results.
-- **Compact card mode** (P1) — Single-line result rows for 3x density.
+- ~~**Prev/next navigation** (P1)~~ — Done. ChevronLeft/Right buttons in ConversationPanel header to jump between results.
+- ~~**Compact card mode** (P1)~~ — Done. Toggle between card/compact view with List/LayoutGrid icon. Compact mode shows single-line result rows.
 - ~~**Bulk selection & actions** (P1)~~ — Done (BrowsePage).
 - ~~**Empty state suggestions** (P1)~~ — Done.
 
@@ -381,36 +409,36 @@ New Chrome extension extractors and watcher daemon integrations.
 
 **Browser expansion:** Firefox (P2 — privacy-focused audience aligns), Safari (P2 — requires Xcode + App Store), Mobile (defer — consider companion app instead).
 
-#### v3.3 — Smart Organization (partially implemented)
+#### v3.3 — Smart Organization (mostly complete)
 
 Intelligence features that help users navigate growing conversation libraries.
 
 - ~~**Related conversations** (P1)~~ — Done. `GET /api/v1/related/{conversation_id}` + ConversationPanel UI.
 - **Auto-tagging** (P1) — Extract tags from content: programming languages, frameworks, topics.
-- **Daily/weekly digest** (P1) — `GET /api/v1/digest?period=today|this_week`.
+- ~~**Daily/weekly digest** (P1)~~ — Done. `GET /api/v1/digest?period=today|this_week`. Groups conversations by platform with counts and summaries.
 - ~~**Obsidian-compatible export** (P1)~~ — Done. `POST /api/v1/export` with `format="obsidian"`.
-- **Conversation notes** (P2) — Free-text annotations per conversation.
-- **Pinned conversations** (P2) — Extend bookmarks with persistent top-of-browse pinning.
-- **Copy context for new chat** (P2) — Extract key decisions + code snippets.
+- ~~**Conversation notes** (P2)~~ — Done. `useNotes` hook with localStorage, note editor in ConversationPanel, StickyNote icon in header.
+- ~~**Pinned conversations** (P2)~~ — Done. Extended bookmarks with `togglePin`/`isPinned`, pinned section at top of BrowsePage.
+- ~~**Copy context for new chat** (P2)~~ — Done. ClipboardCopy button in ConversationPanel extracts topic, code blocks, and last response summary.
 - **Conversation merge** (P2) — Combine multiple conversations on same topic.
-- **Share as HTML** (P2) — Export conversation as self-contained HTML file.
+- ~~**Share as HTML** (P2)~~ — Done. `POST /api/v1/export` with `format="html"`. Self-contained HTML with inline CSS.
 
-#### v3.4 — Dev Foundation (mostly implemented above)
+#### v3.4 — Dev Foundation (mostly complete)
 
 Tooling improvements for maintainability and contributor experience.
 
 - ~~**pytest-cov** (P0)~~ — Done.
 - ~~**vitest coverage** (P0)~~ — Done.
 - ~~**Dependabot config** (P0)~~ — Done.
-- **Pyright** (P1) — `typeCheckingMode = "basic"`. Catches type bugs in FastAPI/Pydantic code.
+- ~~**Pyright** (P1)~~ — Done. `pyrightconfig.json` with `typeCheckingMode = "basic"`, Python 3.11.
 - ~~**justfile** (P1)~~ — Done.
 - ~~**Pre-commit hooks** (P1)~~ — Done. `.pre-commit-config.yaml` with ruff, trailing whitespace, large files, merge conflicts.
 - **Codecov** (P1) — Coverage badges for README, PR delta comments, trend tracking.
 - **Extension unit tests** (P1) — Biggest test gap: 2,200 lines, zero tests.
 - ~~**Devcontainer** (P1)~~ — Done. `.devcontainer/devcontainer.json` for VS Code / Codespaces.
-- **Trivy Docker scanning** (P1) — Scan images before publishing to GHCR.
+- ~~**Trivy Docker scanning** (P1)~~ — Done. Added `aquasecurity/trivy-action` step to release workflow after Docker push.
 - ~~**PR/issue templates** (P2)~~ — Done. Bug report YAML template + PR template.
-- **git-cliff changelog** (P2) — Automated release notes from commit messages.
+- ~~**git-cliff changelog** (P2)~~ — Done. `cliff.toml` with conventional commit parsing and grouped output.
 
 ## 6. Lessons Learned
 

@@ -436,6 +436,14 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Trivy vulnerability scan (full image)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/jiang925/wims:${{ steps.version.outputs.VERSION }}
+          format: 'table'
+          exit-code: '0'
+          severity: 'CRITICAL,HIGH'
+
       - name: Display success message
         run: |
           echo ""

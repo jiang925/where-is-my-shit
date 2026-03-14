@@ -4,7 +4,8 @@ import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { SearchPage } from './pages/SearchPage';
 import { BrowsePage } from './pages/BrowsePage';
 import { StatsPage } from './pages/StatsPage';
-import { Search, Loader2, BookOpen, BarChart3, Sun, Moon, Monitor } from 'lucide-react';
+import { SettingsPage } from './pages/SettingsPage';
+import { Search, Loader2, BookOpen, BarChart3, Sun, Moon, Monitor, Settings } from 'lucide-react';
 import { cn } from './lib/utils';
 import { useTheme } from './hooks/useTheme';
 
@@ -119,6 +120,19 @@ function NavHeader() {
         Stats
       </button>
       <button
+        onClick={() => navigate('/settings')}
+        className={cn(
+          "flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium transition-all cursor-pointer",
+          currentPath === '/settings'
+            ? "bg-blue-600 text-white shadow-md"
+            : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600"
+        )}
+        aria-label="Settings"
+        title="Settings"
+      >
+        <Settings className="h-4 w-4" />
+      </button>
+      <button
         onClick={toggleTheme}
         className="flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium transition-all cursor-pointer bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600"
         aria-label="Toggle theme"
@@ -146,6 +160,7 @@ function AuthenticatedApp() {
         <Route path="/" element={<SearchPage onLogout={handleLogout} />} />
         <Route path="/browse" element={<BrowsePage onLogout={handleLogout} />} />
         <Route path="/stats" element={<StatsPage onLogout={handleLogout} />} />
+        <Route path="/settings" element={<SettingsPage onLogout={handleLogout} />} />
       </Routes>
     </div>
   );

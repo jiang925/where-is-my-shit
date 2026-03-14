@@ -53,6 +53,9 @@ class SearchRequest(BaseModel):
     conversation_id: str | None = None
     platform: list[str] | str | None = None
     date_range: str | None = None  # "today", "this_week", "this_month" or None
+    before_date: str | None = None  # ISO date string e.g. "2026-03-01"
+    after_date: str | None = None  # ISO date string e.g. "2026-01-01"
+    has_code: bool = False  # Filter for messages containing code blocks
 
 
 class SearchResultMeta(BaseModel):

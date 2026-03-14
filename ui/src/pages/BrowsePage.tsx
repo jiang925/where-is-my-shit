@@ -9,7 +9,7 @@ import { useBrowse, exportAll, deleteConversation, type DateRangeOption } from '
 import { flattenAndGroup, TIMELINE_SECTIONS, totalGroupedItems, sectionsForDateRange } from '../lib/dateGroups';
 import { useBookmarks } from '../hooks/useBookmarks';
 import { useQueryClient } from '@tanstack/react-query';
-import { Loader2, LogOut, Download, Trash2, X, CheckSquare } from 'lucide-react';
+import { Loader2, LogOut, Download, Trash2, X, CheckSquare, Pin } from 'lucide-react';
 
 interface BrowsePageProps {
   onLogout: () => void;
@@ -278,6 +278,32 @@ export function BrowsePage({ onLogout }: BrowsePageProps) {
               </p>
             </div>
           )}
+
+          {/* Pinned Conversations Section */}
+          {status === 'success' && !showEmptyState && bookmarks.pinnedIds.length > 0 && (() => {
+            const allItems = data?.pages.flatMap(p => p.items) || [];
+            const pinnedItems = allItems.filter(item => bookmarks.isPinned(item.conversation_id));
+            if (pinnedItems.length === 0) return null;
+            return (
+              <div className="mb-4">
+                <div className="flex items-center gap-2 mb-2 px-1">
+                  <Pin className="h-3.5 w-3.5 text-blue-500" />
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">Pinned</h3>
+                </div>
+                <TimelineSection
+                  title=""
+                  items={pinnedItems}
+                  isEmpty={false}
+                  onSelect={handleSelectConversation}
+                  selectedConversation={selectedConversation}
+                  isBookmarked={bookmarks.isBookmarked}
+                  onToggleBookmark={bookmarks.toggle}
+                  isChecked={isChecked}
+                  onToggleCheck={toggleCheck}
+                />
+              </div>
+            );
+          })()}
 
           {/* Timeline Sections */}
           {status === 'success' && !showEmptyState && (
