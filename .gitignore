@@ -68,3 +68,7 @@ tests/e2e/spec/exploratory.spec.ts
 
 # Vite build output (rebuilt by: cd ui && npx vite build)
 src/static/
+
+# Internal project docs (local-only)
+PROJECT.md
+TESTING.md
