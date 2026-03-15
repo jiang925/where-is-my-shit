@@ -15,16 +15,22 @@ English | [中文](README_CN.md)
 
 ## Features
 
-- **Multi-Platform Capture** — ChatGPT, Claude, Gemini, Perplexity via Chrome extension
-- **Dev Session Indexing** — Claude Code and Cursor conversations via file watcher
+- **Multi-Platform Capture** — 13 web platforms via Chrome extension (ChatGPT, Claude, Gemini, Perplexity, Copilot, DeepSeek, Grok, Doubao, Kimi, Qwen, Poe, HuggingChat, Le Chat)
+- **Dev Session Indexing** — 9 dev tools via file watcher (Claude Code, Cursor, Gemini CLI, Continue.dev, Cline, Aider, Jan.ai, Antigravity, Open WebUI)
+- **Bulk History Import** — One-click "Import All Chats" in extension for ChatGPT/Claude with resumable progress tracking
 - **Semantic Search** — Vector similarity + full-text hybrid search with relevance ranking
+- **Search Operators** — `platform:chatgpt`, `before:2026-03-01`, `after:`, `has:code` for precise filtering
 - **Source Filtering** — Filter by platform, quick presets (Web Chats, Dev Sessions, All)
 - **Timeline Browse** — Chronological browsing with date range filters (Today, This Week, etc.)
 - **Keyboard Navigation** — Arrow keys to navigate results, `/` to focus search, Enter to open
 - **Dark Mode** — System/light/dark theme toggle with persistence
 - **In-Thread Search** — Find specific messages within conversations with highlighting
-- **Export** — Single conversation or bulk export as markdown/zip
-- **Bookmarks & Organization** — Star conversations, edit titles, search history
+- **Markdown Rendering** — AI responses render with proper code blocks, lists, and headers
+- **Export & Import** — Single/bulk export as markdown/zip/HTML, import from ChatGPT/Claude data exports
+- **Bookmarks & Organization** — Star, pin, and annotate conversations; edit titles; search history
+- **Compact View** — Toggle between card and compact single-line result layout
+- **MCP Server** — Use WIMS as context for AI tools via Model Context Protocol
+- **Multi-Device Sync** — Sync conversation data between WIMS instances
 - **Deep Links** — Click to jump back to the original conversation, Open in Terminal for dev sessions
 - **Local-First** — All data stays on your machine, no cloud dependency
 - **Multiple Embedding Backends** — sentence-transformers (default), fastembed, ONNX, OpenAI-compatible API
@@ -37,9 +43,9 @@ WIMS consists of three components working together:
 
 **Server (FastAPI + LanceDB):** The core backend that embeds text into vectors, stores conversations in a LanceDB vector database, and serves a React-based search/browse UI. The server runs locally and handles all indexing and retrieval operations.
 
-**Chrome Extension (content scripts):** Scrapes AI conversations from web-based platforms (ChatGPT, Claude, Gemini, Perplexity) and sends them to the server for indexing. Runs automatically when you visit supported sites.
+**Chrome Extension (content scripts):** Scrapes AI conversations from 13 web platforms (ChatGPT, Claude, Gemini, Perplexity, Copilot, DeepSeek, Grok, and more) and sends them to the server for indexing. Also supports one-click bulk import of entire chat histories from ChatGPT and Claude. Runs automatically when you visit supported sites.
 
-**File Watcher (watchdog):** Monitors local AI tool log directories (Claude Code, Cursor, Antigravity) and captures dev session conversations. Runs as a background service and automatically ingests new conversations.
+**File Watcher (watchdog):** Monitors local AI tool log directories (Claude Code, Cursor, Gemini CLI, Continue.dev, Cline, Aider, Jan.ai, Antigravity, Open WebUI) and captures dev session conversations. Runs as a background service and automatically ingests new conversations.
 
 When you search, the server performs hybrid search combining vector similarity and full-text matching, then reranks results using a unified scoring system that considers semantic relevance, text overlap, content quality, and exact match signals. Results are partitioned into primary (high confidence) and secondary (good matches) tiers.
 
@@ -278,12 +284,31 @@ This creates the extension bundle in `extension/dist/`.
 ### Supported Sites
 
 The extension automatically captures conversations from:
-- ChatGPT (chat.openai.com)
-- Claude (claude.ai)
-- Gemini (gemini.google.com)
-- Perplexity (perplexity.ai)
+- **ChatGPT** (chatgpt.com)
+- **Claude** (claude.ai)
+- **Gemini** (gemini.google.com)
+- **Perplexity** (perplexity.ai)
+- **Microsoft Copilot** (copilot.microsoft.com)
+- **DeepSeek** (chat.deepseek.com)
+- **Grok** (grok.com)
+- **Doubao** (doubao.com)
+- **Kimi** (kimi.moonshot.cn)
+- **Qwen Chat** (chat.qwen.ai)
+- **Poe** (poe.com)
+- **HuggingChat** (huggingface.co/chat)
+- **Le Chat / Mistral** (chat.mistral.ai)
 
 Just browse these sites normally — conversations are captured automatically.
+
+### Bulk History Import
+
+For ChatGPT and Claude, the extension can import your **entire chat history** with one click:
+
+1. Navigate to chatgpt.com or claude.ai
+2. Click the WIMS extension icon
+3. Click "Import All ChatGPT Chats" (or Claude equivalent)
+4. Progress is shown in real time — the import is **resumable** if interrupted
+5. On subsequent runs, only new conversations are imported (previously imported chats are skipped)
 
 ---
 
@@ -346,7 +371,13 @@ cd wims-watcher
 The watcher monitors conversations from:
 - **Claude Code** — `~/.claude/history.jsonl`
 - **Cursor** — `~/.config/Cursor/User/workspaceStorage/*/state.vscdb`
+- **Gemini CLI** — `~/.gemini/tmp/*/chats/` sessions
+- **Continue.dev** — `~/.continue/sessions/` sessions
+- **Cline** — VS Code globalStorage tasks
+- **Aider** — `.aider.chat.history.md` files
+- **Jan.ai** — `~/jan/threads/` JSONL sessions
 - **Antigravity** — `~/.antigravity/logs/*.log`
+- **Open WebUI** — API-based polling of `/api/v1/chats` (for Ollama/self-hosted setups)
 
 Log directories are auto-detected. The watcher starts monitoring when files are created.
 
@@ -511,9 +542,14 @@ For detailed examples, advanced usage, and troubleshooting, see [docs/cli-refere
 ### Filtering by Source
 
 **Quick Presets:**
-- "Web Chats" — ChatGPT, Claude, Gemini, Perplexity only
-- "Dev Sessions" — Claude Code, Cursor only
+- "Web Chats" — ChatGPT, Claude, Gemini, Perplexity, Copilot, DeepSeek, and more
+- "Dev Sessions" — Claude Code, Cursor, Gemini CLI, Continue.dev, Cline, Aider, Jan.ai
 - "All Sources" — Everything
+
+**Search Operators:**
+- `platform:chatgpt` — Filter by platform name
+- `before:2026-03-01` / `after:2026-01-01` — Date range filters
+- `has:code` — Only results containing code blocks
 
 **Custom Filtering:**
 - Click the platform badges to toggle individual sources
@@ -742,13 +778,16 @@ WIMS uses a hybrid search architecture combining vector similarity and full-text
 ### Running Tests
 
 ```bash
-# Backend (176 tests)
+# Backend (194 tests)
 uv run pytest
 
 # Frontend (82 tests)
 cd ui && npx vitest run
 
-# E2E (70 tests, auto-launches server)
+# Extension (56 tests)
+cd extension && npx vitest run
+
+# E2E (96 tests, auto-launches server)
 npx playwright test
 
 # Lint

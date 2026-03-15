@@ -109,8 +109,6 @@ export CURSOR_STATE_DB=~/.config/Cursor/User/workspaceStorage/{uuid}/state.vscdb
 - **Auto-discovery:** Yes
 - **Monitoring:** Real-time via file watcher
 
-The watcher monitors Claude Code's history file for new entries and ingests them as they're appended.
-
 ### Cursor
 
 - **Log location:** `~/.config/Cursor/User/workspaceStorage/{uuid}/state.vscdb`
@@ -118,7 +116,40 @@ The watcher monitors Claude Code's history file for new entries and ingests them
 - **Auto-discovery:** Yes (finds most recently modified workspace)
 - **Monitoring:** Periodic polling
 
-The watcher automatically finds the active Cursor workspace and monitors the state database for new AI conversations.
+### Gemini CLI
+
+- **Log location:** `~/.gemini/tmp/*/chats/`
+- **Format:** Session files
+- **Auto-discovery:** Yes
+- **Monitoring:** Real-time via file watcher
+
+### Continue.dev
+
+- **Log location:** `~/.continue/sessions/`
+- **Format:** Session files
+- **Auto-discovery:** Yes
+- **Monitoring:** Real-time via file watcher
+
+### Cline
+
+- **Log location:** VS Code globalStorage (Cline tasks)
+- **Format:** Task files
+- **Auto-discovery:** Yes
+- **Monitoring:** Real-time via file watcher
+
+### Aider
+
+- **Log location:** `.aider.chat.history.md` files
+- **Format:** Markdown chat history
+- **Auto-discovery:** Yes
+- **Monitoring:** Real-time via file watcher
+
+### Jan.ai
+
+- **Log location:** `~/jan/threads/`
+- **Format:** JSONL session files
+- **Auto-discovery:** Yes
+- **Monitoring:** Real-time via file watcher
 
 ### Antigravity
 
@@ -127,7 +158,14 @@ The watcher automatically finds the active Cursor workspace and monitors the sta
 - **Auto-discovery:** Yes (finds latest log file)
 - **Monitoring:** Real-time via file watcher
 
-The watcher monitors Antigravity's log directory and tracks the most recent log file.
+### Open WebUI
+
+- **API endpoint:** Polls `/api/v1/chats`
+- **Format:** JSON via HTTP API
+- **Auto-discovery:** Requires Open WebUI to be running
+- **Monitoring:** Periodic API polling
+
+For Ollama and other self-hosted setups using Open WebUI as a frontend.
 
 ### Adding New Tools
 
@@ -137,7 +175,7 @@ To add support for additional tools, extend the watcher source:
 2. Implement the `BaseWatcher` interface
 3. Add detection logic to `main.py`
 
-See existing parsers (Claude, Cursor, Antigravity) for examples.
+See existing parsers for examples.
 
 ## Update and Maintenance
 
@@ -390,9 +428,15 @@ launchctl load ~/Library/LaunchAgents/com.wims.watcher.plist
 │   ├── version.py        # Version checking
 │   ├── updater.py        # Auto-update logic
 │   └── sources/
-│       ├── claude.py     # Claude Code parser
-│       ├── cursor.py     # Cursor parser
-│       └── antigravity.py # Antigravity parser
+│       ├── claude.py       # Claude Code parser
+│       ├── cursor.py       # Cursor parser
+│       ├── gemini.py       # Gemini CLI parser
+│       ├── continue_dev.py # Continue.dev parser
+│       ├── cline.py        # Cline parser
+│       ├── aider.py        # Aider parser
+│       ├── jan.py          # Jan.ai parser
+│       ├── antigravity.py  # Antigravity parser
+│       └── open_webui.py   # Open WebUI API poller
 ├── templates/
 │   ├── wims-watcher.service.template  # systemd unit
 │   ├── com.wims.watcher.plist.template # launchd plist

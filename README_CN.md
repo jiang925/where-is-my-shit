@@ -15,12 +15,23 @@
 
 ## 功能特性
 
-- **多平台捕获** — 通过 Chrome 扩展捕获 ChatGPT、Claude、Gemini、Perplexity 对话
-- **开发会话索引** — 通过文件监控捕获 Claude Code 和 Cursor 对话
+- **多平台捕获** — 通过 Chrome 扩展捕获 13 个 Web 平台对话（ChatGPT、Claude、Gemini、Perplexity、Copilot、DeepSeek、Grok、Doubao、Kimi、Qwen、Poe、HuggingChat、Le Chat）
+- **开发会话索引** — 通过文件监控捕获 9 种开发工具对话（Claude Code、Cursor、Gemini CLI、Continue.dev、Cline、Aider、Jan.ai、Antigravity、Open WebUI）
+- **批量历史导入** — 扩展中一键"导入全部聊天记录"，支持 ChatGPT/Claude，可断点续传
 - **语义搜索** — 向量相似度 + 全文混合搜索，结合相关性排序
+- **搜索运算符** — `platform:chatgpt`、`before:2026-03-01`、`after:`、`has:code` 精确过滤
 - **来源过滤** — 按平台过滤，支持快捷预设（Web 聊天、开发会话、全部）
 - **时间线浏览** — 按时间顺序浏览，支持日期范围过滤（今天、本周等）
-- **深度链接** — 点击即可跳转回原始对话
+- **键盘导航** — 方向键导航结果，`/` 聚焦搜索栏，Enter 打开对话
+- **深色模式** — 系统/浅色/深色主题切换并持久化
+- **线程内搜索** — 在对话线程中查找特定消息并高亮显示
+- **Markdown 渲染** — AI 回复支持代码块、列表和标题的正确渲染
+- **导出与导入** — 单个/批量导出为 markdown/zip/HTML，导入 ChatGPT/Claude 数据导出
+- **收藏与整理** — 收藏、置顶和标注对话；编辑标题；搜索历史
+- **紧凑视图** — 卡片与紧凑单行结果布局切换
+- **MCP 服务器** — 通过 Model Context Protocol 将 WIMS 用作 AI 工具上下文
+- **多设备同步** — 在 WIMS 实例之间同步对话数据
+- **深度链接** — 点击即可跳转回原始对话，开发会话支持"在终端中打开"
 - **本地优先** — 所有数据存储在本地，无云端依赖
 - **多种嵌入后端** — sentence-transformers（默认）、fastembed、ONNX、OpenAI 兼容 API
 
@@ -32,9 +43,9 @@ WIMS 由三个组件协同工作：
 
 **服务器（FastAPI + LanceDB）：** 核心后端，将文本嵌入为向量，将对话存储在 LanceDB 向量数据库中，并提供基于 React 的搜索/浏览 UI。服务器在本地运行，处理所有索引和检索操作。
 
-**Chrome 扩展（content scripts）：** 从基于 Web 的平台（ChatGPT、Claude、Gemini、Perplexity）抓取 AI 对话，并将其发送到服务器进行索引。访问支持的网站时自动运行。
+**Chrome 扩展（content scripts）：** 从 13 个 Web 平台（ChatGPT、Claude、Gemini、Perplexity、Copilot、DeepSeek、Grok 等）抓取 AI 对话，并将其发送到服务器进行索引。还支持一键批量导入 ChatGPT 和 Claude 的全部聊天历史。访问支持的网站时自动运行。
 
-**文件监控（watchdog）：** 监控本地 AI 工具日志目录（Claude Code、Cursor、Antigravity），捕获开发会话对话。作为后台服务运行，自动获取新对话。
+**文件监控（watchdog）：** 监控本地 AI 工具日志目录（Claude Code、Cursor、Gemini CLI、Continue.dev、Cline、Aider、Jan.ai、Antigravity、Open WebUI），捕获开发会话对话。作为后台服务运行，自动获取新对话。
 
 当你搜索时，服务器执行混合搜索，结合向量相似度和全文匹配，然后使用统一评分系统重新排序结果，该系统综合考虑语义相关性、文本重叠、内容质量和精确匹配信号。结果被分为主要（高置信度）和次要（良好匹配）两个层级。
 
@@ -273,12 +284,31 @@ npm run build
 ### 支持的网站
 
 扩展自动从以下网站捕获对话：
-- ChatGPT (chat.openai.com)
-- Claude (claude.ai)
-- Gemini (gemini.google.com)
-- Perplexity (perplexity.ai)
+- **ChatGPT** (chatgpt.com)
+- **Claude** (claude.ai)
+- **Gemini** (gemini.google.com)
+- **Perplexity** (perplexity.ai)
+- **Microsoft Copilot** (copilot.microsoft.com)
+- **DeepSeek** (chat.deepseek.com)
+- **Grok** (grok.com)
+- **Doubao** (doubao.com)
+- **Kimi** (kimi.moonshot.cn)
+- **Qwen Chat** (chat.qwen.ai)
+- **Poe** (poe.com)
+- **HuggingChat** (huggingface.co/chat)
+- **Le Chat / Mistral** (chat.mistral.ai)
 
 正常浏览这些网站即可 — 对话会自动捕获。
+
+### 批量历史导入
+
+对于 ChatGPT 和 Claude，扩展支持一键导入**全部聊天历史**：
+
+1. 在浏览器中打开 chatgpt.com 或 claude.ai
+2. 点击 WIMS 扩展图标
+3. 点击"导入全部 ChatGPT 聊天记录"（或 Claude 对应按钮）
+4. 实时显示进度 — 即使中断也可**断点续传**
+5. 再次运行时，仅导入新对话（已导入的聊天会自动跳过）
 
 ---
 
@@ -316,9 +346,15 @@ cd wims-watcher
 ### 支持的工具
 
 监控器从以下工具监控对话：
-- Claude Code
-- Cursor
-- Antigravity
+- **Claude Code** — `~/.claude/history.jsonl`
+- **Cursor** — `~/.config/Cursor/User/workspaceStorage/*/state.vscdb`
+- **Gemini CLI** — `~/.gemini/tmp/*/chats/` 会话
+- **Continue.dev** — `~/.continue/sessions/` 会话
+- **Cline** — VS Code globalStorage 任务
+- **Aider** — `.aider.chat.history.md` 文件
+- **Jan.ai** — `~/jan/threads/` JSONL 会话
+- **Antigravity** — `~/.antigravity/logs/*.log`
+- **Open WebUI** — 基于 API 轮询 `/api/v1/chats`（用于 Ollama/自托管部署）
 
 日志目录根据标准工具位置自动检测。
 
@@ -696,15 +732,20 @@ WIMS 使用混合搜索架构，结合向量相似度和全文搜索：
 ### 运行测试
 
 ```bash
-uv pip install -e ".[dev]"
+# 后端（194 个测试）
 uv run pytest
-```
 
-### 代码质量
+# 前端（82 个测试）
+cd ui && npx vitest run
 
-```bash
-uv run ruff check src/ tests/    # 检查
-uv run ruff check --fix src/     # 自动修复
+# 扩展（56 个测试）
+cd extension && npx vitest run
+
+# E2E（96 个测试，自动启动服务器）
+npx playwright test
+
+# 代码质量
+uv run ruff check src/ tests/
 ```
 
 ---

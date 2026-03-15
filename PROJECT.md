@@ -56,7 +56,7 @@ Between milestones, brainstorm the next set of features before writing any code.
 |-------|------|---------|-------|----------------|
 | Backend unit/integration | pytest | `uv run pytest` | 194 tests | API endpoints, DB operations, auth, search, browse, thread, delete, terminal, stats, export, import, embeddings, reranker, migration, compaction, config, schemas, SPA, health, ingest, MCP server |
 | Frontend unit | vitest | `cd ui && npm test` | 82 tests (12 files) | ResultCard (13), SearchBar (5), useKeyboardNavigation (12), SourceFilterUI (7), PresetButtons (6), DateRangeFilter (5), CopyablePath (5), TimelineSection (4), useTheme (6), dateGroups (9), pathUtils (9), App smoke (1) |
-| E2E (browser) | Playwright (Chromium) | `npx playwright test` | 70 CI tests | Full-stack flows: auth, search, browse, filters, path display, relevance, timeline, keyboard nav, export, thread search, delete, open terminal, UI regressions, stats page, dark mode |
+| E2E (browser) | Playwright (Chromium) | `npx playwright test` | 96 CI tests (24 specs) | Full-stack flows: auth, search, browse, filters, path display, relevance, timeline, keyboard nav, export, thread search, delete, open terminal, UI regressions, stats page, dark mode, compact view, notes, pinned, settings, search operators, sync/merge, prev/next nav |
 | E2E (manual) | Playwright | `npx playwright test tests/e2e/spec/exploratory.spec.ts` | 11 tests | Exploratory tests against a live server (excluded from CI) |
 | Extension | webpack build | `cd extension && npm run build` | Build check | TypeScript compilation, bundling |
 | Lint | ruff | `uv run ruff check src/ tests/` | - | Python code quality |
@@ -74,16 +74,19 @@ Between milestones, brainstorm the next set of features before writing any code.
 
 ```bash
 # Backend
-uv run pytest                           # All 120 tests
+uv run pytest                           # All 194 tests
 uv run pytest tests/test_stats.py -v    # Single file
 
 # E2E (starts server automatically)
-npx playwright test                     # All 41 tests
+npx playwright test                     # All 96 CI tests
 npx playwright test --headed            # Watch in browser
 npx playwright test spec/search-flow    # Single spec
 
 # Frontend
-cd ui && npm test
+cd ui && npm test                       # 82 vitest tests
+
+# Extension
+cd extension && npx vitest run          # 56 vitest tests
 
 # Lint
 uv run ruff check src/ tests/
@@ -345,7 +348,7 @@ Mix of coverage, readability, and organization.
 
 ### Backlog
 
-- [x] Audit and keep all documentation up to date (PROJECT.md, TESTING.md, README.md, ROADMAP.md, STATE.md)
+- [x] Audit and keep all documentation up to date (PROJECT.md, TESTING.md, README.md, README_CN.md, ROADMAP.md, STATE.md, docs/)
 - [x] Dark mode toggle button not working — Fixed: Tailwind v4 ignores `tailwind.config.js`; added `@custom-variant dark` and `@plugin` directives to `index.css`
 - [x] Multi-device sync — Done. Sync API endpoints for pull/push between instances.
 - [x] Settings/preferences UI page — Added `/settings` route with theme selector, default view mode, data management (clear local data), and search operators help reference

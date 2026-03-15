@@ -119,6 +119,65 @@ uv run python -m src.cli reembed --promote
 
 ---
 
+### `import` — Import conversations from a file
+
+Import chat history from platform data exports or WIMS archive files.
+
+**Usage:**
+```bash
+uv run python -m src.cli import <file> [options]
+```
+
+**Arguments:**
+- `file` — Path to the file to import (JSON or ZIP)
+
+**Options:**
+- `--format FORMAT` — Import format: `auto` (default), `wims`, `chatgpt`, or `claude`
+
+**Examples:**
+
+```bash
+# Auto-detect format (inspects JSON structure)
+uv run python -m src.cli import conversations.json
+
+# Explicitly specify ChatGPT export format
+uv run python -m src.cli import conversations.json --format chatgpt
+
+# Import a Claude data export
+uv run python -m src.cli import claude-export.json --format claude
+
+# Import a WIMS archive (from bulk export)
+uv run python -m src.cli import wims-archive.json --format wims
+```
+
+**Supported formats:**
+- **WIMS archive** — JSON exported via `POST /api/v1/export` with `format="json"`
+- **ChatGPT export** — `conversations.json` from ChatGPT's "Export Data" feature (Settings → Data Controls)
+- **Claude export** — JSON from Claude's "Export Data" feature (Settings → Export Data)
+
+**Notes:**
+- Duplicates are automatically detected and skipped (server-side dedup by message ID)
+- Embeddings are generated on the target machine during import
+- Auto-detection inspects the JSON structure to determine the format
+
+---
+
+### `mcp` — Start the MCP server
+
+Start the WIMS Model Context Protocol server for use as an AI tool context provider.
+
+**Usage:**
+```bash
+uv run python -m src.cli mcp
+```
+
+**Notes:**
+- Uses stdio transport (designed for integration with AI tools like Claude Desktop)
+- Provides three tools: `search_conversations`, `get_conversation`, `get_recent_conversations`
+- Reads configuration from `~/.wims/server.json`
+
+---
+
 ## Convenience Scripts
 
 The repository includes helper scripts for common tasks:
