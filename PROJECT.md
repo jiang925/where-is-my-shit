@@ -146,6 +146,80 @@ These are areas identified from README goals and real usage. Each needs a brains
 - [x] ~~**Multi-device sync**~~ — Done. Sync endpoints: `GET /api/v1/sync/changes?since=<ts>`, `POST /api/v1/sync/push`, `GET /api/v1/sync/status`.
 - [x] ~~**Better deep links**~~ — Done in v2.3 (Open in Terminal for CLI sessions).
 - [x] ~~**Search within threads**~~ — Done in v2.2 (in-thread search with highlighting and dimming).
+- [x] ~~**Bulk history import via extension**~~ — Done. "Import All Chats" button in extension popup for ChatGPT/Claude. Uses platform internal APIs with session auth.
+- [x] ~~**Import UI in Settings page**~~ — Done. File upload with auto-detect format (ChatGPT/Claude/WIMS), progress bar, collapsible export instructions.
+
+### Bulk History Import via Extension (complete)
+
+**Goal:** One-click "Import All History" in the extension popup that pulls the user's entire chat history from supported platforms and sends it to the WIMS server. No manual file downloads, no copy-pasting — the extension handles everything.
+
+**Supported platforms (Phase 1):** ChatGPT, Claude. These have well-understood internal APIs that browser extensions can call using the user's existing session.
+
+**Extension popup UX:**
+- New "Import History" section in the popup, visible when the user is on a supported platform (chatgpt.com, claude.ai).
+- Shows an "Import All Chats" button with the platform icon and name (e.g., "Import All ChatGPT Chats").
+- On click: shows a progress indicator — "Fetching conversations... (142/350)", then "Sending to WIMS... (89/350)".
+- On completion: shows summary — "Imported 287 conversations (63 already existed, skipped)".
+- On error: shows what went wrong and a retry button. Partial progress should be preserved (conversations already sent are deduped on retry).
+- Button should be disabled with an explanatory tooltip when not on a supported platform page.
+
+**ChatGPT pull strategy:**
+1. Read access token from page context (`window.__remixContext.state.loaderData.root.clientBootstrap.session.accessToken`) or fall back to `GET /api/auth/session`.
+2. Enumerate all conversations via `GET /backend-api/conversations?offset=N&limit=100` (paginated, returns `{items, total, offset, limit}`).
+3. For each conversation, fetch full message tree via `GET /backend-api/conversation/{id}` (returns `{mapping: {node_id: {message, parent, children}}}`).
+4. Parse the message tree into flat messages (same logic as `_parse_chatgpt_export` in `import_data.py` — skip system messages, extract content parts, resolve timestamps).
+5. Forward each conversation's messages to WIMS server via `POST /api/v1/ingest` or a new batch ingest endpoint.
+6. Throttle: 600ms + random 0-400ms jitter between requests to avoid rate limits. This matches the pattern used by chatgpt-exporter (2,259 stars, actively maintained, no reported bans).
+7. Required headers: `Authorization: Bearer {token}`, `oai-device-id` (from `oai-did` cookie), optionally `ChatGPT-Account-Id` (from `_account` cookie for team workspaces).
+
+**Claude pull strategy:**
+1. Read org ID from `lastActiveOrg` cookie.
+2. No known conversation list API exists — enumerate conversations by: (a) scraping the sidebar DOM for conversation links, or (b) intercepting the app's own sidebar fetch response. Research needed on whether Claude has a `/api/organizations/{org}/chat_conversations` list endpoint.
+3. For each conversation, fetch via `GET /api/organizations/{org_id}/chat_conversations/{id}?tree=true&rendering_mode=messages&render_all_tools=true` (cookie auth, no bearer token needed).
+4. Parse `chat_messages` array into flat messages (same logic as `_parse_claude_export`).
+5. Forward to WIMS server. Same throttling approach as ChatGPT.
+
+**Deduplication:**
+- Server-side dedup by message ID (existing `_get_existing_ids` logic in `import_data.py`). The server already handles this — if the same message is sent twice, the second is skipped.
+- ChatGPT messages have stable IDs from the `mapping` node's `message.id` field. Claude messages have `uuid` fields. These are deterministic across exports.
+- The extension should NOT rely on client-side fingerprint dedup for bulk import — the 10,000 fingerprint LRU limit would overflow. Server-side ID dedup is the right approach.
+
+**Bot detection risk assessment:**
+- Low risk for ChatGPT: requests originate from the user's own browser with their own cookies and session, indistinguishable from normal browsing. chatgpt-exporter has been doing this for years. The 600-1000ms throttle matches human browsing speed.
+- Low risk for Claude: same-origin cookie auth, no known bot detection on conversation fetch endpoints.
+- Mitigation: throttle all requests, abort on 429 (rate limit) and show "Rate limited, try again in a few minutes" message, never retry automatically after a 429.
+
+**Backend considerations:**
+- Consider adding a `POST /api/v1/ingest/batch` endpoint that accepts an array of messages in one request (reduces HTTP overhead for bulk import vs. calling `/ingest` per message). Should reuse `_embed_and_insert` logic with server-side dedup.
+- Embedding generation is the bottleneck — each message needs a vector. For a 500-conversation import, this could take minutes. The batch endpoint should process asynchronously or stream progress.
+
+**Out of scope (Phase 1):**
+- Gemini (protobuf/RPC APIs, aggressive Google bot detection — not practical).
+- Perplexity, DeepSeek, other platforms (undocumented APIs).
+- Automatic scheduling / periodic re-import (could be Phase 2).
+- These platforms should use the Settings page import UI with official data exports as the fallback.
+
+### Import UI in Settings Page (complete)
+
+**Goal:** File upload UI in the WIMS web app Settings page for importing official data exports. This is the fallback path for users who have export files from platform email exports, or for platforms where extension-based API pull isn't available.
+
+**UX:**
+- New "Import Data" section in the Settings page (between "Data" and "Search Operators" sections).
+- Drag-and-drop zone or file picker button. Accepts `.json` and `.zip` files.
+- Auto-detect format: inspect the JSON structure to determine if it's a WIMS archive, ChatGPT export (`conversations.json` with `mapping` objects), or Claude export (list with `chat_messages`). Show the detected format to the user before importing (e.g., "Detected: ChatGPT export with 350 conversations").
+- "Import" button to confirm. Shows progress bar during embedding generation.
+- On completion: summary — "Imported 287 conversations, 1,247 messages (63 duplicates skipped)".
+- On error: clear message about what went wrong (invalid format, file too large, etc.).
+
+**Backend:**
+- Reuses existing endpoints: `POST /api/v1/import` (WIMS archive), `POST /api/v1/import/chatgpt`, `POST /api/v1/import/claude`.
+- The frontend should call the format-specific endpoint based on auto-detection, not the generic one.
+- Max file size: 500MB (already enforced server-side).
+
+**How to get official exports (help text in the UI):**
+- ChatGPT: Settings → Data Controls → Export Data → check email for download link.
+- Claude: Settings → Export Data → check email for download link.
+- Show these as collapsible instructions next to the upload zone.
 
 ### v1.9 — Result Context & Readability (complete)
 

@@ -1,5 +1,6 @@
 import { getSettings } from '../lib/storage';
 import type { BrowseItem } from '../lib/api';
+import type { BulkImportProgress } from '../lib/bulk-import';
 
 interface StatusResponse {
   queueSize: number;
@@ -44,8 +45,23 @@ const recentList = document.getElementById('recentList') as HTMLElement;
 const seeAllLink = document.getElementById('seeAllLink') as HTMLAnchorElement;
 const openWimsBtn = document.getElementById('openWimsBtn') as HTMLButtonElement;
 
+// Import section elements
+const importSection = document.getElementById('importSection') as HTMLElement;
+const importBtn = document.getElementById('importBtn') as HTMLButtonElement;
+const importPlatformIcon = document.getElementById('importPlatformIcon') as HTMLElement;
+const importBtnText = document.getElementById('importBtnText') as HTMLElement;
+const importContent = document.getElementById('importContent') as HTMLElement;
+const importProgress = document.getElementById('importProgress') as HTMLElement;
+const importProgressText = document.getElementById('importProgressText') as HTMLElement;
+const importProgressBar = document.getElementById('importProgressBar') as HTMLElement;
+const importCancelBtn = document.getElementById('importCancelBtn') as HTMLButtonElement;
+const importResult = document.getElementById('importResult') as HTMLElement;
+
 // Auto-refresh interval
 let refreshInterval: number | null = null;
+let importPollInterval: number | null = null;
+let detectedPlatform: 'chatgpt' | 'claude' | null = null;
+let currentTabId: number | null = null;
 
 /**
  * Initialize popup
@@ -78,6 +94,12 @@ async function init() {
   searchInput.addEventListener('keydown', handleSearchKeydown);
   seeAllLink.addEventListener('click', handleSeeAll);
   openWimsBtn.addEventListener('click', handleOpenWIMS);
+
+  // Detect platform on the active tab and show import section if applicable
+  await detectPlatformAndShowImport();
+
+  // Check for any running import and start polling if needed
+  await checkExistingImport();
 }
 
 /**
@@ -336,11 +358,206 @@ function handleOpenOptions(e: Event) {
   chrome.runtime.openOptionsPage();
 }
 
+// ---------------------------------------------------------------------------
+// Bulk Import UI
+// ---------------------------------------------------------------------------
+
+/**
+ * Detect if the active tab is on a supported platform (ChatGPT or Claude)
+ * and show the import section with the appropriate label.
+ */
+async function detectPlatformAndShowImport() {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.url || !tab.id) return;
+
+    currentTabId = tab.id;
+
+    if (tab.url.includes('chatgpt.com')) {
+      detectedPlatform = 'chatgpt';
+      importPlatformIcon.className = 'platform-badge platform-chatgpt';
+      importPlatformIcon.textContent = 'GPT';
+      importBtnText.textContent = 'Import All ChatGPT Chats';
+      importSection.style.display = 'block';
+    } else if (tab.url.includes('claude.ai')) {
+      detectedPlatform = 'claude';
+      importPlatformIcon.className = 'platform-badge platform-claude';
+      importPlatformIcon.textContent = 'CL';
+      importBtnText.textContent = 'Import All Claude Chats';
+      importSection.style.display = 'block';
+    } else {
+      importSection.style.display = 'none';
+      return;
+    }
+
+    // Set up button click handler
+    importBtn.addEventListener('click', handleStartImport);
+    importCancelBtn.addEventListener('click', handleCancelImport);
+  } catch (error) {
+    console.error('[WIMS Popup] Failed to detect platform:', error);
+  }
+}
+
+/**
+ * Check if there's an existing import running (e.g. popup was closed and reopened).
+ */
+async function checkExistingImport() {
+  try {
+    const response = await chrome.runtime.sendMessage({ type: 'GET_IMPORT_STATUS' }) as {
+      progress: BulkImportProgress | null;
+      running: boolean;
+    };
+
+    if (response.running && response.progress) {
+      // Import is running — show progress UI and start polling
+      showImportProgress(response.progress);
+      startProgressPolling();
+    } else if (response.progress && !response.running) {
+      // Import finished while popup was closed — show the result
+      showImportResult(response.progress);
+    }
+  } catch (error) {
+    console.error('[WIMS Popup] Failed to check import status:', error);
+  }
+}
+
+/**
+ * Handle the "Import All Chats" button click.
+ */
+async function handleStartImport() {
+  if (!detectedPlatform || currentTabId === null) return;
+
+  importBtn.disabled = true;
+
+  try {
+    await chrome.runtime.sendMessage({
+      type: 'START_BULK_IMPORT',
+      payload: { platform: detectedPlatform, tabId: currentTabId },
+    });
+
+    // Switch to progress UI
+    importContent.style.display = 'none';
+    importResult.style.display = 'none';
+    importProgress.style.display = 'block';
+    importProgressText.textContent = 'Starting import...';
+    importProgressBar.style.width = '0%';
+
+    // Start polling for progress
+    startProgressPolling();
+  } catch (error) {
+    console.error('[WIMS Popup] Failed to start import:', error);
+    importBtn.disabled = false;
+  }
+}
+
+/**
+ * Handle the cancel button click.
+ */
+async function handleCancelImport() {
+  try {
+    await chrome.runtime.sendMessage({ type: 'CANCEL_IMPORT' });
+    importCancelBtn.disabled = true;
+    importProgressText.textContent = 'Cancelling...';
+  } catch (error) {
+    console.error('[WIMS Popup] Failed to cancel import:', error);
+  }
+}
+
+/**
+ * Start polling for import progress updates.
+ */
+function startProgressPolling() {
+  if (importPollInterval) {
+    clearInterval(importPollInterval);
+  }
+
+  importPollInterval = window.setInterval(async () => {
+    try {
+      const response = await chrome.runtime.sendMessage({ type: 'GET_IMPORT_STATUS' }) as {
+        progress: BulkImportProgress | null;
+        running: boolean;
+      };
+
+      if (!response.progress) return;
+
+      if (response.running) {
+        showImportProgress(response.progress);
+      } else {
+        // Import finished
+        stopProgressPolling();
+        showImportResult(response.progress);
+      }
+    } catch (error) {
+      console.error('[WIMS Popup] Failed to poll import status:', error);
+    }
+  }, 500);
+}
+
+/**
+ * Stop polling for progress.
+ */
+function stopProgressPolling() {
+  if (importPollInterval) {
+    clearInterval(importPollInterval);
+    importPollInterval = null;
+  }
+}
+
+/**
+ * Show progress UI.
+ */
+function showImportProgress(progress: BulkImportProgress) {
+  importContent.style.display = 'none';
+  importResult.style.display = 'none';
+  importProgress.style.display = 'block';
+
+  importProgressText.textContent = progress.message;
+
+  // Calculate progress percentage
+  let pct = 0;
+  if (progress.total > 0) {
+    pct = Math.round((progress.current / progress.total) * 100);
+  } else if (progress.phase === 'fetching_token') {
+    pct = 5;
+  } else if (progress.phase === 'listing') {
+    pct = 10;
+  }
+  importProgressBar.style.width = `${Math.min(pct, 100)}%`;
+
+  // Show cancel button while running
+  importCancelBtn.style.display = 'inline-block';
+  importCancelBtn.disabled = false;
+}
+
+/**
+ * Show the final import result.
+ */
+function showImportResult(progress: BulkImportProgress) {
+  importContent.style.display = 'none';
+  importProgress.style.display = 'none';
+  importResult.style.display = 'block';
+
+  importResult.textContent = progress.message;
+
+  if (progress.phase === 'done') {
+    importResult.className = 'import-result success';
+  } else {
+    importResult.className = 'import-result error';
+  }
+
+  // Re-enable button after a short delay so user can retry
+  setTimeout(() => {
+    importContent.style.display = 'block';
+    importBtn.disabled = false;
+  }, 3000);
+}
+
 // Cleanup on unload
 window.addEventListener('beforeunload', () => {
   if (refreshInterval) {
     clearInterval(refreshInterval);
   }
+  stopProgressPolling();
 });
 
 // Initialize

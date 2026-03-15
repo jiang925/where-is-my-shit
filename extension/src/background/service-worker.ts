@@ -2,8 +2,23 @@ import { ExtractedMessage, IngestPayload } from '../types/message';
 import { OfflineQueue } from '../lib/queue';
 import { getSettings, setSettings } from '../lib/storage';
 import { ApiClient, AuthError, BrowseItem } from '../lib/api';
+import {
+  importChatGPT,
+  importClaude,
+  cancelImport,
+  resetCancelFlag,
+  CancelledError,
+  BulkImportProgress,
+} from '../lib/bulk-import';
 
-type MessageType = 'MESSAGES_CAPTURED' | 'GET_STATUS' | 'TOGGLE_CAPTURE' | 'GET_RECENT';
+type MessageType =
+  | 'MESSAGES_CAPTURED'
+  | 'GET_STATUS'
+  | 'TOGGLE_CAPTURE'
+  | 'GET_RECENT'
+  | 'START_BULK_IMPORT'
+  | 'GET_IMPORT_STATUS'
+  | 'CANCEL_IMPORT';
 
 interface MessagePayload {
   type: MessageType;
@@ -28,6 +43,10 @@ const queue = new OfflineQueue();
 // Cache for recent items (avoids hitting API on every popup open)
 let cachedRecent: { items: BrowseItem[]; fetchedAt: number } | null = null;
 const RECENT_CACHE_TTL = 30_000; // 30 seconds
+
+// Bulk import state (module-level so it persists while service worker is alive)
+let bulkImportProgress: BulkImportProgress | null = null;
+let bulkImportRunning = false;
 
 console.log('[WIMS] Service worker initialized');
 
@@ -85,6 +104,15 @@ chrome.runtime.onMessage.addListener((message: MessagePayload, sender, sendRespo
       } else if (message.type === 'GET_RECENT') {
         const recent = await getRecentItems();
         sendResponse(recent);
+      } else if (message.type === 'START_BULK_IMPORT') {
+        const { platform, tabId } = message.payload as { platform: 'chatgpt' | 'claude'; tabId: number };
+        startBulkImport(platform, tabId);
+        sendResponse({ success: true });
+      } else if (message.type === 'GET_IMPORT_STATUS') {
+        sendResponse({ progress: bulkImportProgress, running: bulkImportRunning });
+      } else if (message.type === 'CANCEL_IMPORT') {
+        cancelImport();
+        sendResponse({ success: true });
       }
     } catch (error) {
       console.error('[WIMS Service Worker] Error handling message:', error);
@@ -208,6 +236,79 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     });
   }
 });
+
+/**
+ * Start a bulk import in the background.
+ * This runs as a fire-and-forget async task in the service worker.
+ */
+function startBulkImport(platform: 'chatgpt' | 'claude', tabId: number): void {
+  if (bulkImportRunning) {
+    console.warn('[WIMS] Bulk import already running, ignoring request');
+    return;
+  }
+
+  bulkImportRunning = true;
+  resetCancelFlag();
+  bulkImportProgress = {
+    phase: 'fetching_token',
+    current: 0,
+    total: 0,
+    message: 'Starting import...',
+  };
+
+  const onProgress = (progress: BulkImportProgress) => {
+    bulkImportProgress = progress;
+  };
+
+  (async () => {
+    const settings = await getSettings();
+    if (!settings.apiKey) {
+      bulkImportProgress = {
+        phase: 'error',
+        current: 0,
+        total: 0,
+        message: 'API Key is missing. Please configure it in extension settings.',
+      };
+      bulkImportRunning = false;
+      return;
+    }
+
+    try {
+      let result: { imported: number; skipped: number };
+      if (platform === 'chatgpt') {
+        result = await importChatGPT(tabId, settings.serverUrl, settings.apiKey, onProgress);
+      } else {
+        result = await importClaude(tabId, settings.serverUrl, settings.apiKey, onProgress);
+      }
+
+      bulkImportProgress = {
+        phase: 'done',
+        current: result.imported + result.skipped,
+        total: result.imported + result.skipped,
+        message: `Done! Imported ${result.imported} messages, skipped ${result.skipped} duplicates.`,
+      };
+    } catch (error) {
+      if (error instanceof CancelledError) {
+        bulkImportProgress = {
+          phase: 'error',
+          current: bulkImportProgress?.current ?? 0,
+          total: bulkImportProgress?.total ?? 0,
+          message: 'Import cancelled.',
+        };
+      } else {
+        const msg = error instanceof Error ? error.message : String(error);
+        bulkImportProgress = {
+          phase: 'error',
+          current: bulkImportProgress?.current ?? 0,
+          total: bulkImportProgress?.total ?? 0,
+          message: msg,
+        };
+      }
+    } finally {
+      bulkImportRunning = false;
+    }
+  })();
+}
 
 /**
  * Process queue immediately on service worker startup

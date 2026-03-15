@@ -3,8 +3,8 @@
   "name": "WIMS Capture",
   "version": "2026.3.8",
   "description": "Capture AI chat conversations for local search indexing",
-  "permissions": ["storage", "alarms"],
-  "host_permissions": ["http://localhost/*", "http://127.0.0.1/*"],
+  "permissions": ["storage", "alarms", "scripting", "activeTab"],
+  "host_permissions": ["http://localhost/*", "http://127.0.0.1/*", "https://chatgpt.com/*", "https://claude.ai/*"],
   "background": {
     "service_worker": "background/service-worker.js"
   },

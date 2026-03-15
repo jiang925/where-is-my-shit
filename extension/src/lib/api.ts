@@ -124,6 +124,44 @@ export class ApiClient {
   }
 
   /**
+   * Send a batch of messages to WIMS server
+   * @param messages Array of IngestPayload messages (max 100)
+   * @returns Batch ingest result with counts
+   */
+  async sendBatch(messages: IngestPayload[]): Promise<{ received: number; imported: number; skipped_duplicates: number }> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30_000); // 30s timeout for batch
+
+    try {
+      const headers = await this.getHeaders();
+      const response = await fetch(`${this.serverUrl}/api/v1/ingest/batch`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ messages }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (response.status === 401 || response.status === 403) {
+        throw new AuthError(`Authentication failed: ${response.status}`);
+      }
+
+      if (!response.ok) {
+        throw new Error(`Server responded with ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Request timeout', { cause: error });
+      }
+      throw error;
+    }
+  }
+
+  /**
    * Check server health
    * @returns true if server is reachable
    */

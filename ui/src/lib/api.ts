@@ -401,6 +401,67 @@ export const updateConversationTitle = async (conversationId: string, title: str
 
 // === Export API ===
 
+// === Import API ===
+
+export interface ImportResponse {
+  imported: number;
+  skipped_duplicates: number;
+  conversations: number;
+  archive_version?: string;
+  platform?: string;
+}
+
+export const importWimsArchive = async (
+  file: File,
+  onProgress?: (pct: number) => void
+): Promise<ImportResponse> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await api.post<ImportResponse>('/import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress: (e) => {
+      if (onProgress && e.total) {
+        onProgress(Math.round((e.loaded * 100) / e.total));
+      }
+    },
+  });
+  return response.data;
+};
+
+export const importChatGPT = async (
+  file: File,
+  onProgress?: (pct: number) => void
+): Promise<ImportResponse> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await api.post<ImportResponse>('/import/chatgpt', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress: (e) => {
+      if (onProgress && e.total) {
+        onProgress(Math.round((e.loaded * 100) / e.total));
+      }
+    },
+  });
+  return response.data;
+};
+
+export const importClaude = async (
+  file: File,
+  onProgress?: (pct: number) => void
+): Promise<ImportResponse> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await api.post<ImportResponse>('/import/claude', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress: (e) => {
+      if (onProgress && e.total) {
+        onProgress(Math.round((e.loaded * 100) / e.total));
+      }
+    },
+  });
+  return response.data;
+};
+
 export const exportAll = async (platforms?: string[]): Promise<void> => {
   const response = await api.post('/export', {
     platforms: platforms && platforms.length > 0 ? platforms : undefined,

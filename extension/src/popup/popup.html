@@ -46,6 +46,25 @@
         </div>
       </div>
 
+      <!-- Import History -->
+      <div id="importSection" class="import-section" style="display: none;">
+        <div class="recent-header">Import History</div>
+        <div id="importContent">
+          <button id="importBtn" class="import-btn">
+            <span id="importPlatformIcon" class="platform-badge"></span>
+            <span id="importBtnText">Import All Chats</span>
+          </button>
+        </div>
+        <div id="importProgress" style="display: none;">
+          <div class="import-progress-text" id="importProgressText">Starting...</div>
+          <div class="import-progress-bar-container">
+            <div class="import-progress-bar" id="importProgressBar"></div>
+          </div>
+          <button id="importCancelBtn" class="import-cancel-btn">Cancel</button>
+        </div>
+        <div id="importResult" style="display: none;"></div>
+      </div>
+
       <!-- Quick Search -->
       <div class="search-section">
         <input type="text" id="searchInput" placeholder="Search WIMS... (Enter)" autocomplete="off">
