@@ -1,6 +1,7 @@
 import { getSettings } from '../lib/storage';
 import type { BrowseItem } from '../lib/api';
 import type { BulkImportProgress } from '../lib/bulk-import';
+import { getImportedCount } from '../lib/bulk-import';
 
 interface StatusResponse {
   queueSize: number;
@@ -95,11 +96,13 @@ async function init() {
   seeAllLink.addEventListener('click', handleSeeAll);
   openWimsBtn.addEventListener('click', handleOpenWIMS);
 
-  // Detect platform on the active tab and show import section if applicable
-  await detectPlatformAndShowImport();
+  // Check for any running/completed import first (shows section regardless of tab)
+  const hasActiveImport = await checkExistingImport();
 
-  // Check for any running import and start polling if needed
-  await checkExistingImport();
+  // Detect platform on the active tab and show import section if applicable
+  if (!hasActiveImport) {
+    await detectPlatformAndShowImport();
+  }
 }
 
 /**
@@ -377,17 +380,24 @@ async function detectPlatformAndShowImport() {
       detectedPlatform = 'chatgpt';
       importPlatformIcon.className = 'platform-badge platform-chatgpt';
       importPlatformIcon.textContent = 'GPT';
-      importBtnText.textContent = 'Import All ChatGPT Chats';
       importSection.style.display = 'block';
     } else if (tab.url.includes('claude.ai')) {
       detectedPlatform = 'claude';
       importPlatformIcon.className = 'platform-badge platform-claude';
       importPlatformIcon.textContent = 'CL';
-      importBtnText.textContent = 'Import All Claude Chats';
       importSection.style.display = 'block';
     } else {
       importSection.style.display = 'none';
       return;
+    }
+
+    // Show "Resume" or "Import" based on prior progress
+    const doneCount = await getImportedCount(detectedPlatform);
+    const platformName = detectedPlatform === 'chatgpt' ? 'ChatGPT' : 'Claude';
+    if (doneCount > 0) {
+      importBtnText.textContent = `Resume Import (${doneCount} done)`;
+    } else {
+      importBtnText.textContent = `Import All ${platformName} Chats`;
     }
 
     // Set up button click handler
@@ -400,8 +410,9 @@ async function detectPlatformAndShowImport() {
 
 /**
  * Check if there's an existing import running (e.g. popup was closed and reopened).
+ * Returns true if an active or completed import was found (so we show the section).
  */
-async function checkExistingImport() {
+async function checkExistingImport(): Promise<boolean> {
   try {
     const response = await chrome.runtime.sendMessage({ type: 'GET_IMPORT_STATUS' }) as {
       progress: BulkImportProgress | null;
@@ -409,16 +420,21 @@ async function checkExistingImport() {
     };
 
     if (response.running && response.progress) {
-      // Import is running — show progress UI and start polling
+      // Import is running — force-show import section with progress UI
+      importSection.style.display = 'block';
       showImportProgress(response.progress);
       startProgressPolling();
+      return true;
     } else if (response.progress && !response.running) {
       // Import finished while popup was closed — show the result
+      importSection.style.display = 'block';
       showImportResult(response.progress);
+      return true;
     }
   } catch (error) {
     console.error('[WIMS Popup] Failed to check import status:', error);
   }
+  return false;
 }
 
 /**
@@ -530,14 +546,13 @@ function showImportProgress(progress: BulkImportProgress) {
 }
 
 /**
- * Show the final import result.
+ * Show the final import result with a dismiss button.
  */
 function showImportResult(progress: BulkImportProgress) {
   importContent.style.display = 'none';
   importProgress.style.display = 'none';
   importResult.style.display = 'block';
-
-  importResult.textContent = progress.message;
+  importResult.innerHTML = '';
 
   if (progress.phase === 'done') {
     importResult.className = 'import-result success';
@@ -545,11 +560,26 @@ function showImportResult(progress: BulkImportProgress) {
     importResult.className = 'import-result error';
   }
 
-  // Re-enable button after a short delay so user can retry
-  setTimeout(() => {
+  const msgSpan = document.createElement('span');
+  msgSpan.textContent = progress.message;
+  importResult.appendChild(msgSpan);
+
+  // Add dismiss button
+  const dismissBtn = document.createElement('button');
+  dismissBtn.textContent = 'Dismiss';
+  dismissBtn.className = 'import-dismiss-btn';
+  dismissBtn.addEventListener('click', async () => {
+    // Clear stale state in the service worker
+    await chrome.runtime.sendMessage({ type: 'CLEAR_IMPORT_STATUS' }).catch(() => {});
+    importResult.style.display = 'none';
     importContent.style.display = 'block';
     importBtn.disabled = false;
-  }, 3000);
+    // If not on a supported platform, hide the whole section
+    if (!detectedPlatform) {
+      importSection.style.display = 'none';
+    }
+  });
+  importResult.appendChild(dismissBtn);
 }
 
 // Cleanup on unload

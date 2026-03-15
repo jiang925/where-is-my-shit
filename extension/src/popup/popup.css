@@ -259,6 +259,14 @@ input[type="password"]:focus {
   padding: 8px;
   border-radius: 4px;
   margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.import-result span {
+  flex: 1;
 }
 
 .import-result.success {
@@ -269,6 +277,23 @@ input[type="password"]:focus {
 .import-result.error {
   background-color: #ffebee;
   color: #c62828;
+}
+
+.import-dismiss-btn {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  color: inherit;
+  font-size: 11px;
+  padding: 2px 8px;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+
+.import-dismiss-btn:hover {
+  opacity: 1;
 }
 
 /* Search Section */

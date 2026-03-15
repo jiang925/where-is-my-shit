@@ -7,6 +7,7 @@ import {
   importClaude,
   cancelImport,
   resetCancelFlag,
+  resetImportState,
   CancelledError,
   BulkImportProgress,
 } from '../lib/bulk-import';
@@ -18,6 +19,8 @@ type MessageType =
   | 'GET_RECENT'
   | 'START_BULK_IMPORT'
   | 'GET_IMPORT_STATUS'
+  | 'CLEAR_IMPORT_STATUS'
+  | 'RESET_IMPORT_STATE'
   | 'CANCEL_IMPORT';
 
 interface MessagePayload {
@@ -110,6 +113,15 @@ chrome.runtime.onMessage.addListener((message: MessagePayload, sender, sendRespo
         sendResponse({ success: true });
       } else if (message.type === 'GET_IMPORT_STATUS') {
         sendResponse({ progress: bulkImportProgress, running: bulkImportRunning });
+      } else if (message.type === 'CLEAR_IMPORT_STATUS') {
+        if (!bulkImportRunning) {
+          bulkImportProgress = null;
+        }
+        sendResponse({ success: true });
+      } else if (message.type === 'RESET_IMPORT_STATE') {
+        const { platform } = message.payload as { platform: 'chatgpt' | 'claude' };
+        await resetImportState(platform);
+        sendResponse({ success: true });
       } else if (message.type === 'CANCEL_IMPORT') {
         cancelImport();
         sendResponse({ success: true });

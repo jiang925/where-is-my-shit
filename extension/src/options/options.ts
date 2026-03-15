@@ -101,13 +101,19 @@ async function handleTest() {
   showStatus('Testing connection...', 'info');
 
   try {
-    const client = new ApiClient(url);
-    const isHealthy = await client.checkHealth();
+    // Save settings first so testConnection reads the current key
+    const apiKey = apiKeyInput.value.trim();
+    await setSettings({ serverUrl: url, apiKey });
 
-    if (isHealthy) {
-      showStatus('Connection successful! Server is reachable.', 'success');
+    const client = new ApiClient(url);
+    const result = await client.testConnection();
+
+    if (result === 'ok') {
+      showStatus('Connection successful! Server and API key are valid.', 'success');
+    } else if (result === 'auth_failed') {
+      showStatus('Connection failed: Invalid API key. Check your key in ~/.wims/server.json', 'error');
     } else {
-      showStatus('Connection failed: Server returned an error', 'error');
+      showStatus('Connection failed: Server is unreachable at ' + url, 'error');
     }
   } catch (error) {
     console.error('[WIMS Options] Connection test failed:', error);

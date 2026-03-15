@@ -165,6 +165,9 @@ export class ApiClient {
    * Check server health
    * @returns true if server is reachable
    */
+  /**
+   * Check server reachability (no auth needed)
+   */
   async checkHealth(): Promise<boolean> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.REQUEST_TIMEOUT_MS);
@@ -180,6 +183,38 @@ export class ApiClient {
     } catch {
       clearTimeout(timeoutId);
       return false;
+    }
+  }
+
+  /**
+   * Verify both server reachability and API key validity.
+   * Returns 'ok', 'unreachable', or 'auth_failed'.
+   */
+  async testConnection(): Promise<'ok' | 'unreachable' | 'auth_failed'> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.REQUEST_TIMEOUT_MS);
+
+    try {
+      const headers = await this.getHeaders();
+      const response = await fetch(`${this.serverUrl}/api/v1/browse`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ limit: 1 }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (response.status === 401 || response.status === 403) {
+        return 'auth_failed';
+      }
+      return response.ok ? 'ok' : 'unreachable';
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof AuthError) {
+        return 'auth_failed';
+      }
+      return 'unreachable';
     }
   }
 }
