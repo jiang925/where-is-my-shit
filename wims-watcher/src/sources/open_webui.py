@@ -110,9 +110,7 @@ class OpenWebUIWatcher(BaseWatcher):
             if payload:
                 self.client.ingest(payload)
 
-    def _transform_message(
-        self, msg: dict, chat_id: str, title: str
-    ) -> dict[str, Any] | None:
+    def _transform_message(self, msg: dict, chat_id: str, title: str) -> dict[str, Any] | None:
         """Transform an Open WebUI message into WIMS ingestion payload."""
         content = msg.get("content", "")
         if not content.strip():
@@ -124,9 +122,7 @@ class OpenWebUIWatcher(BaseWatcher):
         timestamp = msg.get("timestamp")
         if timestamp:
             if isinstance(timestamp, (int, float)):
-                ts_iso = datetime.fromtimestamp(
-                    timestamp / 1000 if timestamp > 1e12 else timestamp
-                ).isoformat()
+                ts_iso = datetime.fromtimestamp(timestamp / 1000 if timestamp > 1e12 else timestamp).isoformat()
             else:
                 ts_iso = str(timestamp)
         else:

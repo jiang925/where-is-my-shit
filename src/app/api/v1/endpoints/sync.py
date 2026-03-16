@@ -89,9 +89,7 @@ async def sync_status():
 
         stats = await run_in_threadpool(get_stats)
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Sync status failed: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Sync status failed: {str(e)}")
 
     return {
         **stats,
@@ -107,9 +105,7 @@ async def sync_changes(
     """Pull all messages modified/created after a timestamp."""
     try:
         table = db_client.get_table("messages")
-        since_dt = datetime.fromtimestamp(since, tz=UTC).replace(
-            tzinfo=None
-        )
+        since_dt = datetime.fromtimestamp(since, tz=UTC).replace(tzinfo=None)
 
         def fetch_changes():
             dim = db_client.get_vector_dim()
@@ -117,10 +113,18 @@ async def sync_changes(
             rows = (
                 table.search([0.0] * dim, query_type="vector")
                 .where(ts_filter)
-                .select([
-                    "id", "conversation_id", "platform", "title",
-                    "content", "role", "timestamp", "url",
-                ])
+                .select(
+                    [
+                        "id",
+                        "conversation_id",
+                        "platform",
+                        "title",
+                        "content",
+                        "role",
+                        "timestamp",
+                        "url",
+                    ]
+                )
                 .limit(limit)
                 .to_list()
             )
@@ -129,23 +133,23 @@ async def sync_changes(
                 ts = r.get("timestamp")
                 if isinstance(ts, datetime):
                     ts = ts.isoformat()
-                results.append({
-                    "id": r.get("id", ""),
-                    "conversation_id": r.get("conversation_id", ""),
-                    "platform": r.get("platform", ""),
-                    "title": r.get("title", ""),
-                    "content": r.get("content", ""),
-                    "role": r.get("role", "user"),
-                    "timestamp": str(ts),
-                    "url": r.get("url", ""),
-                })
+                results.append(
+                    {
+                        "id": r.get("id", ""),
+                        "conversation_id": r.get("conversation_id", ""),
+                        "platform": r.get("platform", ""),
+                        "title": r.get("title", ""),
+                        "content": r.get("content", ""),
+                        "role": r.get("role", "user"),
+                        "timestamp": str(ts),
+                        "url": r.get("url", ""),
+                    }
+                )
             return results
 
         messages = await run_in_threadpool(fetch_changes)
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Sync changes failed: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Sync changes failed: {str(e)}")
 
     return SyncChangesResponse(
         messages=messages,
@@ -167,12 +171,7 @@ async def sync_push(request: SyncPushRequest):
 
         # Get existing IDs for dedup
         def get_existing():
-            rows = (
-                table.search([0.0] * dim, query_type="vector")
-                .select(["id"])
-                .limit(100000)
-                .to_list()
-            )
+            rows = table.search([0.0] * dim, query_type="vector").select(["id"]).limit(100000).to_list()
             return {r["id"] for r in rows}
 
         existing_ids = await run_in_threadpool(get_existing)
@@ -189,35 +188,31 @@ async def sync_push(request: SyncPushRequest):
             # Parse timestamp
             try:
                 if "T" in msg.timestamp:
-                    ts = datetime.fromisoformat(
-                        msg.timestamp.replace("Z", "+00:00")
-                    ).replace(tzinfo=None)
+                    ts = datetime.fromisoformat(msg.timestamp.replace("Z", "+00:00")).replace(tzinfo=None)
                 else:
-                    ts = datetime.fromtimestamp(
-                        float(msg.timestamp), tz=UTC
-                    ).replace(tzinfo=None)
+                    ts = datetime.fromtimestamp(float(msg.timestamp), tz=UTC).replace(tzinfo=None)
             except (ValueError, TypeError):
                 ts = datetime.now(UTC).replace(tzinfo=None)
 
             # Generate embedding
-            vector = await run_in_threadpool(
-                embedding_service.embed_text, msg.content
-            )
+            vector = await run_in_threadpool(embedding_service.embed_text, msg.content)
             if not vector:
                 vector = [0.0] * dim
 
-            to_insert.append({
-                "id": msg_id,
-                "conversation_id": msg.conversation_id,
-                "platform": msg.platform,
-                "title": msg.title,
-                "content": msg.content,
-                "role": msg.role,
-                "timestamp": ts,
-                "url": msg.url,
-                "vector": vector,
-                "embedding_model": embedding_service.get_model_name(),
-            })
+            to_insert.append(
+                {
+                    "id": msg_id,
+                    "conversation_id": msg.conversation_id,
+                    "platform": msg.platform,
+                    "title": msg.title,
+                    "content": msg.content,
+                    "role": msg.role,
+                    "timestamp": ts,
+                    "url": msg.url,
+                    "vector": vector,
+                    "embedding_model": embedding_service.get_model_name(),
+                }
+            )
 
         if to_insert:
             await run_in_threadpool(table.add, to_insert)
@@ -225,9 +220,7 @@ async def sync_push(request: SyncPushRequest):
         inserted = len(to_insert)
 
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Sync push failed: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Sync push failed: {str(e)}")
 
     return SyncPushResponse(
         received=len(request.messages),

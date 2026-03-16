@@ -15,10 +15,27 @@ from src.app.services.embedding import EmbeddingService
 router = APIRouter(dependencies=[Depends(verify_api_key)])
 
 ALLOWED_PLATFORMS = [
-    "aider", "antigravity", "chatgpt", "claude", "claude-code", "cline",
-    "continue", "copilot", "cursor", "deepseek", "doubao", "gemini",
-    "grok", "huggingchat", "jan", "kimi", "lechat", "open-webui",
-    "perplexity", "poe", "qwen",
+    "aider",
+    "antigravity",
+    "chatgpt",
+    "claude",
+    "claude-code",
+    "cline",
+    "continue",
+    "copilot",
+    "cursor",
+    "deepseek",
+    "doubao",
+    "gemini",
+    "grok",
+    "huggingchat",
+    "jan",
+    "kimi",
+    "lechat",
+    "open-webui",
+    "perplexity",
+    "poe",
+    "qwen",
 ]
 MAX_UPLOAD_SIZE = 500 * 1024 * 1024  # 500MB
 
@@ -56,13 +73,7 @@ def _get_existing_ids(table, conversation_ids: set[str]) -> set[str]:
         where = f"conversation_id IN ('{cid_list}')"
         dim = db_client.get_vector_dim()
         dummy_vector = [0.0] * dim
-        rows = (
-            table.search(dummy_vector, query_type="vector")
-            .where(where)
-            .select(["id"])
-            .limit(100000)
-            .to_list()
-        )
+        rows = table.search(dummy_vector, query_type="vector").where(where).select(["id"]).limit(100000).to_list()
         return {r["id"] for r in rows}
     except Exception:
         return set()

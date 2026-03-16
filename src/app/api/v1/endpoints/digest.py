@@ -8,10 +8,27 @@ from src.app.core.auth import verify_api_key
 from src.app.db.client import db_client
 
 ALLOWED_PLATFORMS = [
-    "aider", "antigravity", "chatgpt", "claude", "claude-code", "cline",
-    "continue", "copilot", "cursor", "deepseek", "doubao", "gemini",
-    "grok", "huggingchat", "jan", "kimi", "lechat", "open-webui",
-    "perplexity", "poe", "qwen",
+    "aider",
+    "antigravity",
+    "chatgpt",
+    "claude",
+    "claude-code",
+    "cline",
+    "continue",
+    "copilot",
+    "cursor",
+    "deepseek",
+    "doubao",
+    "gemini",
+    "grok",
+    "huggingchat",
+    "jan",
+    "kimi",
+    "lechat",
+    "open-webui",
+    "perplexity",
+    "poe",
+    "qwen",
 ]
 
 router = APIRouter(dependencies=[Depends(verify_api_key)])
@@ -27,9 +44,7 @@ async def get_digest(period: str = Query("today", pattern="^(today|this_week)$")
     if period == "today":
         start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     else:  # this_week
-        start = (now - timedelta(days=now.weekday())).replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
+        start = (now - timedelta(days=now.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
 
     naive_start = start.replace(tzinfo=None).isoformat()
 

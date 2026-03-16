@@ -15,10 +15,27 @@ from src.app.db.client import db_client, init_db
 from src.app.services.embedding import EmbeddingService
 
 ALLOWED_PLATFORMS = [
-    "aider", "antigravity", "chatgpt", "claude", "claude-code", "cline",
-    "continue", "copilot", "cursor", "deepseek", "doubao", "gemini",
-    "grok", "huggingchat", "jan", "kimi", "lechat", "open-webui",
-    "perplexity", "poe", "qwen",
+    "aider",
+    "antigravity",
+    "chatgpt",
+    "claude",
+    "claude-code",
+    "cline",
+    "continue",
+    "copilot",
+    "cursor",
+    "deepseek",
+    "doubao",
+    "gemini",
+    "grok",
+    "huggingchat",
+    "jan",
+    "kimi",
+    "lechat",
+    "open-webui",
+    "perplexity",
+    "poe",
+    "qwen",
 ]
 
 mcp = FastMCP("WIMS")
@@ -71,9 +88,7 @@ def search_conversations(
     search = table.search(query_vector, query_type="vector")
     if where_clause:
         search = search.where(where_clause)
-    search = search.select(
-        ["id", "conversation_id", "timestamp", "platform", "title", "content", "url", "role"]
-    )
+    search = search.select(["id", "conversation_id", "timestamp", "platform", "title", "content", "url", "role"])
     results = search.limit(limit * 5).to_list()
 
     # Remove duplicates by conversation and keep best match per conversation
@@ -90,7 +105,7 @@ def search_conversations(
     if not conversations:
         return f"No conversations found matching: {query}"
 
-    lines = [f"Found {len(conversations)} conversation(s) matching \"{query}\":\n"]
+    lines = [f'Found {len(conversations)} conversation(s) matching "{query}":\n']
     for i, r in enumerate(conversations, 1):
         title = r.get("title", "") or "Untitled"
         platform_name = r.get("platform", "unknown")
@@ -134,9 +149,7 @@ def get_conversation(conversation_id: str) -> str:
     if not re.match(r"^[a-zA-Z0-9\-_]+$", conversation_id):
         return {"error": "Invalid conversation_id format"}
     search = search.where(f"conversation_id = '{conversation_id}'")
-    search = search.select(
-        ["id", "conversation_id", "timestamp", "platform", "title", "content", "url", "role"]
-    )
+    search = search.select(["id", "conversation_id", "timestamp", "platform", "title", "content", "url", "role"])
     results = search.limit(10000).to_list()
 
     if not results:
@@ -194,9 +207,7 @@ def get_recent_conversations(
     search = table.search(dummy_vector, query_type="vector")
     if where_clause:
         search = search.where(where_clause)
-    search = search.select(
-        ["id", "conversation_id", "timestamp", "platform", "title", "content", "url", "role"]
-    )
+    search = search.select(["id", "conversation_id", "timestamp", "platform", "title", "content", "url", "role"])
     results = search.limit(10000).to_list()
 
     if not results:

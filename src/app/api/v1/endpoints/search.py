@@ -17,10 +17,27 @@ from src.app.services.reranker import UnifiedReranker
 
 # Whitelist of allowed platforms for security validation
 ALLOWED_PLATFORMS = [
-    "aider", "antigravity", "chatgpt", "claude", "claude-code", "cline",
-    "continue", "copilot", "cursor", "deepseek", "doubao", "gemini",
-    "grok", "huggingchat", "jan", "kimi", "lechat", "open-webui",
-    "perplexity", "poe", "qwen",
+    "aider",
+    "antigravity",
+    "chatgpt",
+    "claude",
+    "claude-code",
+    "cline",
+    "continue",
+    "copilot",
+    "cursor",
+    "deepseek",
+    "doubao",
+    "gemini",
+    "grok",
+    "huggingchat",
+    "jan",
+    "kimi",
+    "lechat",
+    "open-webui",
+    "perplexity",
+    "poe",
+    "qwen",
 ]
 
 router = APIRouter(dependencies=[Depends(verify_api_key)])
@@ -74,9 +91,7 @@ async def search_documents(request: SearchRequest):
             if request.date_range == "today":
                 start = now.replace(hour=0, minute=0, second=0, microsecond=0)
             elif request.date_range == "this_week":
-                start = (now - timedelta(days=now.weekday())).replace(
-                    hour=0, minute=0, second=0, microsecond=0
-                )
+                start = (now - timedelta(days=now.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
             elif request.date_range == "this_month":
                 start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
             else:

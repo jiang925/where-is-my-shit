@@ -13,10 +13,27 @@ from src.app.db.client import db_client
 router = APIRouter(dependencies=[Depends(verify_api_key)])
 
 ALLOWED_PLATFORMS = [
-    "aider", "antigravity", "chatgpt", "claude", "claude-code", "cline",
-    "continue", "copilot", "cursor", "deepseek", "doubao", "gemini",
-    "grok", "huggingchat", "jan", "kimi", "lechat", "open-webui",
-    "perplexity", "poe", "qwen",
+    "aider",
+    "antigravity",
+    "chatgpt",
+    "claude",
+    "claude-code",
+    "cline",
+    "continue",
+    "copilot",
+    "cursor",
+    "deepseek",
+    "doubao",
+    "gemini",
+    "grok",
+    "huggingchat",
+    "jan",
+    "kimi",
+    "lechat",
+    "open-webui",
+    "perplexity",
+    "poe",
+    "qwen",
 ]
 
 
@@ -289,9 +306,7 @@ async def export_conversations(request: ExportRequest):
             return StreamingResponse(
                 io.BytesIO(html.encode("utf-8")),
                 media_type="text/html",
-                headers={
-                    "Content-Disposition": f'attachment; filename="{safe}.html"'
-                },
+                headers={"Content-Disposition": f'attachment; filename="{safe}.html"'},
             )
         # Multiple conversations: zip of HTML files
         buffer = io.BytesIO()

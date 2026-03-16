@@ -1,6 +1,5 @@
 """Tests for the WIMS MCP server tools."""
 
-
 import pytest
 
 from src.app.core.config import EmbeddingConfig, ServerConfig

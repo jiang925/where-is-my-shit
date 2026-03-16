@@ -120,17 +120,20 @@ class TestWimsImport:
                     "platform": "chatgpt",
                     "messages": [
                         {
-                            "id": "msg-1", "role": "user",
+                            "id": "msg-1",
+                            "role": "user",
                             "content": "Valid message",
                             "timestamp": datetime.now(UTC).isoformat(),
                         },
                         {
-                            "id": "msg-2", "role": "assistant",
+                            "id": "msg-2",
+                            "role": "assistant",
                             "content": "",
                             "timestamp": datetime.now(UTC).isoformat(),
                         },
                         {
-                            "id": "msg-3", "role": "assistant",
+                            "id": "msg-3",
+                            "role": "assistant",
                             "content": "  ",
                             "timestamp": datetime.now(UTC).isoformat(),
                         },

@@ -16,10 +16,27 @@ from src.app.services.embedding import EmbeddingService
 router = APIRouter(dependencies=[Depends(verify_api_key)])
 
 ALLOWED_PLATFORMS = [
-    "aider", "antigravity", "chatgpt", "claude", "claude-code", "cline",
-    "continue", "copilot", "cursor", "deepseek", "doubao", "gemini",
-    "grok", "huggingchat", "jan", "kimi", "lechat", "open-webui",
-    "perplexity", "poe", "qwen",
+    "aider",
+    "antigravity",
+    "chatgpt",
+    "claude",
+    "claude-code",
+    "cline",
+    "continue",
+    "copilot",
+    "cursor",
+    "deepseek",
+    "doubao",
+    "gemini",
+    "grok",
+    "huggingchat",
+    "jan",
+    "kimi",
+    "lechat",
+    "open-webui",
+    "perplexity",
+    "poe",
+    "qwen",
 ]
 CONV_ID_RE = re.compile(r"^[a-zA-Z0-9\-_]+$")
 MAX_BATCH_SIZE = 100
@@ -116,14 +133,12 @@ async def ingest_batch(request: BatchIngestRequest):
         if not CONV_ID_RE.match(msg.conversation_id):
             raise HTTPException(
                 status_code=400,
-                detail=f"Message {i}: invalid conversation_id '{msg.conversation_id}' "
-                       f"(must match ^[a-zA-Z0-9\\-_]+$)",
+                detail=f"Message {i}: invalid conversation_id '{msg.conversation_id}' (must match ^[a-zA-Z0-9\\-_]+$)",
             )
         if msg.platform not in ALLOWED_PLATFORMS:
             raise HTTPException(
                 status_code=400,
-                detail=f"Message {i}: invalid platform '{msg.platform}' "
-                       f"(allowed: {', '.join(ALLOWED_PLATFORMS)})",
+                detail=f"Message {i}: invalid platform '{msg.platform}' (allowed: {', '.join(ALLOWED_PLATFORMS)})",
             )
         if not msg.content or not msg.content.strip():
             raise HTTPException(
@@ -134,16 +149,18 @@ async def ingest_batch(request: BatchIngestRequest):
     # 3. Assign IDs where missing
     messages_with_ids = []
     for msg in request.messages:
-        messages_with_ids.append({
-            "id": msg.id or str(uuid.uuid4()),
-            "conversation_id": msg.conversation_id,
-            "platform": msg.platform,
-            "title": msg.title,
-            "content": msg.content,
-            "role": msg.role,
-            "timestamp": msg.timestamp,
-            "url": msg.url,
-        })
+        messages_with_ids.append(
+            {
+                "id": msg.id or str(uuid.uuid4()),
+                "conversation_id": msg.conversation_id,
+                "platform": msg.platform,
+                "title": msg.title,
+                "content": msg.content,
+                "role": msg.role,
+                "timestamp": msg.timestamp,
+                "url": msg.url,
+            }
+        )
 
     # 4. Deduplicate, embed, and insert (CPU/IO bound)
     def _process_batch(msgs: list[dict]) -> tuple[int, int]:
@@ -168,18 +185,20 @@ async def ingest_batch(request: BatchIngestRequest):
                 skipped += 1
                 continue
 
-            records.append({
-                "id": msg["id"],
-                "conversation_id": msg["conversation_id"],
-                "platform": msg["platform"],
-                "title": msg["title"],
-                "content": msg["content"],
-                "role": msg["role"],
-                "timestamp": _parse_timestamp(msg["timestamp"]),
-                "url": msg["url"],
-                "vector": vector,
-                "embedding_model": model_name,
-            })
+            records.append(
+                {
+                    "id": msg["id"],
+                    "conversation_id": msg["conversation_id"],
+                    "platform": msg["platform"],
+                    "title": msg["title"],
+                    "content": msg["content"],
+                    "role": msg["role"],
+                    "timestamp": _parse_timestamp(msg["timestamp"]),
+                    "url": msg["url"],
+                    "vector": vector,
+                    "embedding_model": model_name,
+                }
+            )
 
         if records:
             table.add(records)

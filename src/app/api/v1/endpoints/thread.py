@@ -330,9 +330,7 @@ async def merge_conversations(request: MergeConversationsRequest):
         total = await run_in_threadpool(do_merge)
 
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Merge failed: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Merge failed: {str(e)}")
 
     return {
         "target_id": request.target_id,
@@ -363,9 +361,7 @@ async def get_conversation_tags(conversation_id: str):
 
         combined = await run_in_threadpool(fetch_content)
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Tag extraction failed: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Tag extraction failed: {str(e)}")
 
     if not combined.strip():
         raise HTTPException(status_code=404, detail="Conversation not found")
