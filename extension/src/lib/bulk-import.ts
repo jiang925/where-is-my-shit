@@ -139,7 +139,7 @@ async function sendBatch(
   } catch (error) {
     clearTimeout(timeoutId);
     if (error instanceof Error && error.name === 'AbortError') {
-      throw new Error('Request timeout sending batch to WIMS');
+      throw new Error('Request timeout sending batch to WIMS', { cause: error });
     }
     throw error;
   }
@@ -300,7 +300,6 @@ export async function importChatGPT(
 ): Promise<BulkImportResult> {
   let totalImported = 0;
   let totalSkipped = 0;
-  let alreadyDone = 0;
 
   // 1. Get access token
   onProgress({ phase: 'fetching_token', current: 0, total: 0, message: 'Getting ChatGPT access token...' });
@@ -316,9 +315,8 @@ export async function importChatGPT(
   const allConversations: ChatGPTConversationListItem[] = [];
   let offset = 0;
   const limit = 100;
-  let total = 0;
+  let total: number;
 
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     checkCancelled();
 
@@ -359,7 +357,7 @@ export async function importChatGPT(
 
   // 4. Filter out already-done conversations
   const remaining = allConversations.filter(c => !doneSet.has(c.id));
-  alreadyDone = allConversations.length - remaining.length;
+  const alreadyDone = allConversations.length - remaining.length;
 
   if (remaining.length === 0) {
     onProgress({
@@ -530,7 +528,6 @@ export async function importClaude(
 ): Promise<BulkImportResult> {
   let totalImported = 0;
   let totalSkipped = 0;
-  let alreadyDone = 0;
 
   // 1. Get orgId
   onProgress({ phase: 'fetching_token', current: 0, total: 0, message: 'Getting Claude organization ID...' });
@@ -625,7 +622,7 @@ export async function importClaude(
 
   // 4. Filter out already-done
   const remaining = conversationIds.filter(id => !doneSet.has(id));
-  alreadyDone = conversationIds.length - remaining.length;
+  const alreadyDone = conversationIds.length - remaining.length;
 
   if (remaining.length === 0) {
     onProgress({
