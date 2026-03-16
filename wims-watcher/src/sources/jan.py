@@ -98,7 +98,7 @@ class JanWatcher(BaseWatcher):
         else:
             ts_iso = datetime.now().isoformat()
 
-        message_id = msg.get("id", "")
+        msg.get("id", "")
         msg_thread_id = msg.get("thread_id", thread_id)
 
         return {

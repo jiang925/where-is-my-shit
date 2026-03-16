@@ -203,7 +203,7 @@ export function SearchPage({ onLogout }: SearchPageProps) {
         handleSelectConversation(prev.meta.conversation_id, prev.id);
       }
     }
-  }, [currentResultIndex, allResults]);
+  }, [currentResultIndex, allResults, handleSelectConversation]);
 
   const handleNavigateNext = useCallback(() => {
     if (currentResultIndex >= 0 && currentResultIndex < allResults.length - 1) {
@@ -212,7 +212,7 @@ export function SearchPage({ onLogout }: SearchPageProps) {
         handleSelectConversation(next.meta.conversation_id, next.id);
       }
     }
-  }, [currentResultIndex, allResults]);
+  }, [currentResultIndex, allResults, handleSelectConversation]);
 
   // Handle empty state vs initial state
   const showInitialState = !query;

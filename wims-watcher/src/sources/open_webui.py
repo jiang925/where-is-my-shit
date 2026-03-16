@@ -3,7 +3,6 @@ import logging
 from datetime import datetime
 from typing import Any
 from urllib.request import Request, urlopen
-from urllib.error import URLError
 
 from .base import BaseWatcher
 

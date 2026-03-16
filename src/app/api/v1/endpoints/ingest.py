@@ -1,15 +1,15 @@
 import re
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel
 
+from src.app.api.v1.endpoints.import_data import _get_existing_ids, _parse_timestamp
 from src.app.core.auth import verify_api_key
 from src.app.db.client import db_client
 from src.app.db.compaction import compaction_manager
-from src.app.api.v1.endpoints.import_data import _get_existing_ids, _parse_timestamp
 from src.app.schemas.message import IngestRequest
 from src.app.services.embedding import EmbeddingService
 
