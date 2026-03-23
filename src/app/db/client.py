@@ -4,6 +4,7 @@ from typing import Optional
 import lancedb
 
 from src.app.core.config import settings
+from src.app.db.intelligence_migrations import run_migrations
 from src.app.schemas.message import Message
 
 
@@ -33,8 +34,16 @@ class DBClient:
         Initializes the database:
         - Creates the 'messages' table if it doesn't exist.
         - Configures FTS and Vector indices.
+        - Runs intelligence layer migrations.
         """
         db = self.connect()
+        
+        # Run intelligence layer migrations
+        try:
+            run_migrations(db)
+        except Exception as e:
+            print(f"Warning: Intelligence layer migration failed: {e}")
+        
         table_name = "messages"
 
         if table_name not in db.table_names():

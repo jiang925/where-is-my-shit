@@ -7,11 +7,14 @@ from src.app.api.v1.endpoints import (
     health,
     import_data,
     ingest,
+    knowledge,
+    saved_searches,
     search,
     stats,
     sync,
     terminal,
     thread,
+    threads,
 )
 
 api_router = APIRouter()
@@ -27,3 +30,8 @@ api_router.include_router(terminal.router, tags=["terminal"])
 api_router.include_router(health.router, tags=["health"])
 api_router.include_router(digest.router, tags=["digest"])
 api_router.include_router(sync.router, tags=["sync"])
+
+# New Intelligence Layer endpoints
+api_router.include_router(knowledge.router, prefix="/v1", tags=["knowledge"])
+api_router.include_router(threads.router, prefix="/v1", tags=["threads"])
+api_router.include_router(saved_searches.router, prefix="/v1", tags=["saved-searches"])

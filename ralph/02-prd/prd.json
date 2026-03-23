@@ -1,0 +1,298 @@
+{
+  "version": "1.0",
+  "project": "WIMS Intelligence Layer",
+  "goal": "Transform WIMS from search tool into intelligent AI memory system with proactive context surfacing and knowledge extraction",
+  "phases": [
+    "requirements",
+    "prd",
+    "tech-design",
+    "implementation-plan",
+    "implementation",
+    "testing",
+    "verification",
+    "retrospective"
+  ],
+  "max_iterations": 100,
+  "completion_criteria": [
+    "All P0 features implemented and tested",
+    "Smart Context latency < 200ms (p95)",
+    "Knowledge extraction works for 10+ platforms",
+    "No P0/P1 bugs open"
+  ],
+  "tasks": [
+    {
+      "id": "T1",
+      "phase": "Tech Design",
+      "description": "Design Knowledge data model and schema migrations",
+      "priority": "P0",
+      "status": "pending",
+      "acceptance_criteria": [
+        "Data model documented",
+        "Migration strategy defined",
+        "API contracts specified"
+      ],
+      "dependencies": []
+    },
+    {
+      "id": "T2",
+      "phase": "Implementation",
+      "description": "Create knowledge_items table migration",
+      "priority": "P0",
+      "status": "pending",
+      "acceptance_criteria": [
+        "Migration runs successfully",
+        "Table created with proper schema",
+        "Rollback tested"
+      ],
+      "dependencies": ["T1"]
+    },
+    {
+      "id": "T3",
+      "phase": "Implementation",
+      "description": "Build code extraction pipeline",
+      "priority": "P0",
+      "status": "pending",
+      "acceptance_criteria": [
+        "Extracts code blocks from markdown",
+        "Detects programming language",
+        "Stores with proper metadata"
+      ],
+      "dependencies": ["T2"]
+    },
+    {
+      "id": "T4",
+      "phase": "Implementation",
+      "description": "Build prompt extraction pipeline",
+      "priority": "P0",
+      "status": "pending",
+      "acceptance_criteria": [
+        "Identifies high-quality prompts",
+        "Heuristic scoring implemented",
+        "Stores prompt + context"
+      ],
+      "dependencies": ["T2"]
+    },
+    {
+      "id": "T5",
+      "phase": "Implementation",
+      "description": "Build decision extraction pipeline",
+      "priority": "P0",
+      "status": "pending",
+      "acceptance_criteria": [
+        "Pattern matching for decision keywords",
+        "Extracts decision + rationale",
+        "Links to source conversation"
+      ],
+      "dependencies": ["T2"]
+    },
+    {
+      "id": "T6",
+      "phase": "Implementation",
+      "description": "Create knowledge API endpoints",
+      "priority": "P0",
+      "status": "pending",
+      "acceptance_criteria": [
+        "GET /api/v1/knowledge endpoint",
+        "Filtering by type and tags",
+        "Pagination support"
+      ],
+      "dependencies": ["T3", "T4", "T5"]
+    },
+    {
+      "id": "T7",
+      "phase": "Implementation",
+      "description": "Build knowledge browser UI",
+      "priority": "P0",
+      "status": "pending",
+      "acceptance_criteria": [
+        "New /knowledge route",
+        "Filter by type (code/prompt/decision)",
+        "Search within knowledge",
+        "Copy to clipboard"
+      ],
+      "dependencies": ["T6"]
+    },
+    {
+      "id": "T8",
+      "phase": "Implementation",
+      "description": "Implement Smart Context query logic",
+      "priority": "P0",
+      "status": "pending",
+      "acceptance_criteria": [
+        "Semantic similarity query",
+        "Cross-platform matching",
+        "Performance < 200ms"
+      ],
+      "dependencies": ["T1"]
+    },
+    {
+      "id": "T9",
+      "phase": "Implementation",
+      "description": "Build Smart Context UI components",
+      "priority": "P0",
+      "status": "pending",
+      "acceptance_criteria": [
+        "Related conversations cards",
+        "Shows on search results page",
+        "Click to navigate"
+      ],
+      "dependencies": ["T8"]
+    },
+    {
+      "id": "T10",
+      "phase": "Implementation",
+      "description": "Add saved searches data model",
+      "priority": "P1",
+      "status": "pending",
+      "acceptance_criteria": [
+        "saved_searches table created",
+        "Schema supports filters JSON",
+        "Digest settings stored"
+      ],
+      "dependencies": []
+    },
+    {
+      "id": "T11",
+      "phase": "Implementation",
+      "description": "Build saved searches UI",
+      "priority": "P1",
+      "status": "pending",
+      "acceptance_criteria": [
+        "Save current search button",
+        "List saved searches",
+        "One-click re-run"
+      ],
+      "dependencies": ["T10"]
+    },
+    {
+      "id": "T12",
+      "phase": "Implementation",
+      "description": "Implement digest generation",
+      "priority": "P1",
+      "status": "pending",
+      "acceptance_criteria": [
+        "Background digest job",
+        "New matches detection",
+        "Digest content generation"
+      ],
+      "dependencies": ["T10"]
+    },
+    {
+      "id": "T13",
+      "phase": "Implementation",
+      "description": "Add conversation threading model",
+      "priority": "P1",
+      "status": "pending",
+      "acceptance_criteria": [
+        "conversation_threads table",
+        "thread_conversations junction",
+        "Relationship types enum"
+      ],
+      "dependencies": []
+    },
+    {
+      "id": "T14",
+      "phase": "Implementation",
+      "description": "Build thread linking UI",
+      "priority": "P1",
+      "status": "pending",
+      "acceptance_criteria": [
+        "Link conversation modal",
+        "Thread visualization",
+        "Auto-suggest relationships"
+      ],
+      "dependencies": ["T13"]
+    },
+    {
+      "id": "T15",
+      "phase": "Implementation",
+      "description": "Implement conversation summarization",
+      "priority": "P2",
+      "status": "pending",
+      "acceptance_criteria": [
+        "Extract key points",
+        "Identify decisions",
+        "Editable summaries"
+      ],
+      "dependencies": ["T1"]
+    },
+    {
+      "id": "T16",
+      "phase": "Implementation",
+      "description": "Build analytics dashboard",
+      "priority": "P2",
+      "status": "pending",
+      "acceptance_criteria": [
+        "Usage by platform chart",
+        "Volume over time",
+        "Topic analysis"
+      ],
+      "dependencies": []
+    },
+    {
+      "id": "T17",
+      "phase": "Implementation",
+      "description": "Background job queue system",
+      "priority": "P0",
+      "status": "pending",
+      "acceptance_criteria": [
+        "Task queue implementation",
+        "Worker process",
+        "Retry logic"
+      ],
+      "dependencies": []
+    },
+    {
+      "id": "T18",
+      "phase": "Implementation",
+      "description": "Migration for existing conversations",
+      "priority": "P0",
+      "status": "pending",
+      "acceptance_criteria": [
+        "Batch processing job",
+        "Progress tracking",
+        "Resume capability"
+      ],
+      "dependencies": ["T2", "T17"]
+    },
+    {
+      "id": "T19",
+      "phase": "Testing",
+      "description": "E2E tests for knowledge extraction",
+      "priority": "P0",
+      "status": "pending",
+      "acceptance_criteria": [
+        "Code extraction test",
+        "Prompt extraction test",
+        "API endpoint tests"
+      ],
+      "dependencies": ["T7"]
+    },
+    {
+      "id": "T20",
+      "phase": "Testing",
+      "description": "Performance testing for Smart Context",
+      "priority": "P0",
+      "status": "pending",
+      "acceptance_criteria": [
+        "Latency benchmarks",
+        "Load testing",
+        "p95 < 200ms"
+      ],
+      "dependencies": ["T9"]
+    },
+    {
+      "id": "T21",
+      "phase": "Verification",
+      "description": "Documentation update",
+      "priority": "P1",
+      "status": "pending",
+      "acceptance_criteria": [
+        "README updated",
+        "API docs updated",
+        "User guide created"
+      ],
+      "dependencies": []
+    }
+  ]
+}

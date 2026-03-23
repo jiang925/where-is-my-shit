@@ -14,6 +14,7 @@ from src.app.schemas.message import (
 )
 from src.app.services.embedding import EmbeddingService
 from src.app.services.reranker import UnifiedReranker
+from src.app.services.smart_context import smart_context_engine
 
 # Whitelist of allowed platforms for security validation
 ALLOWED_PLATFORMS = [
@@ -303,3 +304,29 @@ async def search_documents(request: SearchRequest):
         secondary_count=secondary_count,
         total_considered=ranked.total_considered,
     )
+
+
+@router.get("/conversations/{conversation_id}/related")
+async def get_related_conversations(
+    conversation_id: str,
+    limit: int = 3,
+    exclude_same_platform: bool = False
+):
+    """Get conversations related to the specified conversation.
+    
+    Uses semantic similarity to find conversations with similar content.
+    """
+    try:
+        related = await smart_context_engine.find_related_conversations(
+            conversation_id=conversation_id,
+            limit=limit,
+            exclude_same_platform=exclude_same_platform
+        )
+        
+        return {
+            "conversation_id": conversation_id,
+            "related": related
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to find related conversations: {str(e)}")
