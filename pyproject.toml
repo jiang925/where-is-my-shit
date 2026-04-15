@@ -20,7 +20,7 @@ dependencies = [
     "passlib[argon2]>=1.7.4",
     "openai>=1.0.0",
     "fastmcp>=2.0.0",
-    "python-multipart>=0.0.9",
+    "python-multipart>=0.0.26",
 ]
 
 [project.optional-dependencies]
